@@ -1,0 +1,100 @@
+%PDF-1.4
+1 0 obj
+<<
+  /Type /Catalog
+  /Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+  /Type /Pages
+  /Kids [3 0 R]
+  /Count 1
+>>
+endobj
+3 0 obj
+<<
+  /Type /Page
+  /Parent 2 0 R
+  /Resources <<
+    /Font <<
+      /F1 4 0 R
+    >>
+  >>
+  /MediaBox [0 0 612 792]
+  /Contents 5 0 R
+>>
+endobj
+4 0 obj
+<<
+  /Type /Font
+  /Subtype /Type1
+  /BaseFont /Helvetica
+>>
+endobj
+5 0 obj
+<< /Length 300 >>
+stream
+BT
+/F1 24 Tf
+100 700 Td
+(Kindergarten Math Quiz) Tj
+ET
+BT
+/F1 16 Tf
+100 640 Td
+(Question 1: How many circles are here?) Tj
+ET
+BT
+/F1 14 Tf
+100 610 Td
+(O O O) Tj
+ET
+BT
+/F1 14 Tf
+100 580 Td
+(A. 1    B. 2    C. 3    D. 4) Tj
+ET
+BT
+/F1 16 Tf
+100 520 Td
+(Question 2: What is 2 + 2?) Tj
+ET
+BT
+/F1 14 Tf
+100 490 Td
+(* *  +  * *) Tj
+ET
+BT
+/F1 14 Tf
+100 460 Td
+(A. 3    B. 4    C. 5    D. 6) Tj
+ET
+BT
+/F1 16 Tf
+100 400 Td
+(Question 3: Write down the name of a shape!) Tj
+ET
+BT
+/F1 14 Tf
+100 370 Td
+((Triangle, Circle, Square, or Rectangle)) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000074 00000 n 
+0000000140 00000 n 
+0000000276 00000 n 
+0000000356 00000 n 
+trailer
+<<
+  /Size 6
+  /Root 1 0 R
+>>
+startxref
+942
+%%EOF
