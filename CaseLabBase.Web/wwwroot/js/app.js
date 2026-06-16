@@ -52,8 +52,25 @@ function switchLocalPanel(id) {
 // Global user login handler
 async function loginAsRole(userId) {
     // TODO: Team Member 1 - Post credentials to auth login API and route session user to their dashboard.
-    alert("TODO: Team Member 1 - Implement loginAsRole in app.js");
-}
+    try {
+        const res = await fetch(`${API_BASE}/auth/users/${userId}`);
+        if (!res.ok) throw new Error("Could not log in user.");
+
+        state.user = await res.json();
+        localStorage.setItem('caselab_user', JSON.stringify(state.user));
+
+        if (state.user.role === 'student') {
+            window.location.href = "/Student/Dashboard";
+        } else {
+            window.location.href = "/Instructor/Dashboard";
+        }
+    } catch (err) {
+        alert(`Authentication Error: ${err.message}. Make sure the C# Web API is running on port 5088!`);
+    }
+        
+    }
+
+
 
 function logoutSystem() {
     state.user = null;

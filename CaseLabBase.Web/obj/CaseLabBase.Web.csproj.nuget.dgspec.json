@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.Web\\CaseLabBase.Web.csproj": {}
+    "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.Web\\CaseLabBase.Web.csproj": {}
   },
   "projects": {
-    "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.Web\\CaseLabBase.Web.csproj": {
+    "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.Web\\CaseLabBase.Web.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.Web\\CaseLabBase.Web.csproj",
+        "projectUniqueName": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.Web\\CaseLabBase.Web.csproj",
         "projectName": "CaseLabBase.Web",
-        "projectPath": "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.Web\\CaseLabBase.Web.csproj",
+        "projectPath": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.Web\\CaseLabBase.Web.csproj",
         "packagesPath": "C:\\Users\\handa\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.Web\\obj\\",
+        "outputPath": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.Web\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

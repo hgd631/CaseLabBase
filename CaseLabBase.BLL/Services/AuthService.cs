@@ -1,8 +1,9 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using CaseLabBase.BLL.DTOs;
 using CaseLabBase.DAL.Repositories;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace CaseLabBase.BLL.Services
 {
@@ -28,7 +29,16 @@ namespace CaseLabBase.BLL.Services
 
         public async Task<UserDTO?> GetUserByIdAsync(string id)
         {
-    throw new System.NotImplementedException("TODO: Team Member 1 - Implement GetUserByIdAsync in AuthService.cs");
-}
+            // Mem 1: Implement GetUserByIdAsync in AuthService to fetch a user by ID and return a UserDTO
+
+            var u = await _userRepository.GetByIdAsync(id);
+            if (u == null) return null;
+            return new UserDTO
+            {
+                Id = u.Id,
+                Name = u.Name,
+                Role = u.Role
+            };
+        }
     }
 }
