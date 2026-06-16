@@ -1,0 +1,266 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{D41E7A7A-D483-4C3D-8822-261B4CEE6670}|CaseLab.BLL\\CaseLab.BLL.csproj|c:\\users\\handa\\onedrive\\desktop\\cs476\\caselab.bll\\services\\forumservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D41E7A7A-D483-4C3D-8822-261B4CEE6670}|CaseLab.BLL\\CaseLab.BLL.csproj|solutionrelative:caselab.bll\\services\\forumservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D41E7A7A-D483-4C3D-8822-261B4CEE6670}|CaseLab.BLL\\CaseLab.BLL.csproj|c:\\users\\handa\\onedrive\\desktop\\cs476\\caselab.bll\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D41E7A7A-D483-4C3D-8822-261B4CEE6670}|CaseLab.BLL\\CaseLab.BLL.csproj|solutionrelative:caselab.bll\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D41E7A7A-D483-4C3D-8822-261B4CEE6670}|CaseLab.BLL\\CaseLab.BLL.csproj|c:\\users\\handa\\onedrive\\desktop\\cs476\\caselab.bll\\factory\\questionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D41E7A7A-D483-4C3D-8822-261B4CEE6670}|CaseLab.BLL\\CaseLab.BLL.csproj|solutionrelative:caselab.bll\\factory\\questionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D41E7A7A-D483-4C3D-8822-261B4CEE6670}|CaseLab.BLL\\CaseLab.BLL.csproj|c:\\users\\handa\\onedrive\\desktop\\cs476\\caselab.bll\\dtos\\models.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D41E7A7A-D483-4C3D-8822-261B4CEE6670}|CaseLab.BLL\\CaseLab.BLL.csproj|solutionrelative:caselab.bll\\dtos\\models.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F2AF7011-C7D4-4DBF-81A1-E722C1A5ED15}|CaseLab.API\\CaseLab.API.csproj|c:\\users\\handa\\onedrive\\desktop\\cs476\\caselab.api\\controllers\\forumcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F2AF7011-C7D4-4DBF-81A1-E722C1A5ED15}|CaseLab.API\\CaseLab.API.csproj|solutionrelative:caselab.api\\controllers\\forumcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F2AF7011-C7D4-4DBF-81A1-E722C1A5ED15}|CaseLab.API\\CaseLab.API.csproj|c:\\users\\handa\\onedrive\\desktop\\cs476\\caselab.api\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F2AF7011-C7D4-4DBF-81A1-E722C1A5ED15}|CaseLab.API\\CaseLab.API.csproj|solutionrelative:caselab.api\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F2AF7011-C7D4-4DBF-81A1-E722C1A5ED15}|CaseLab.API\\CaseLab.API.csproj|c:\\users\\handa\\onedrive\\desktop\\cs476\\caselab.api\\controllers\\instructorcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F2AF7011-C7D4-4DBF-81A1-E722C1A5ED15}|CaseLab.API\\CaseLab.API.csproj|solutionrelative:caselab.api\\controllers\\instructorcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D41E7A7A-D483-4C3D-8822-261B4CEE6670}|CaseLab.BLL\\CaseLab.BLL.csproj|c:\\users\\handa\\onedrive\\desktop\\cs476\\caselab.bll\\services\\questionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D41E7A7A-D483-4C3D-8822-261B4CEE6670}|CaseLab.BLL\\CaseLab.BLL.csproj|solutionrelative:caselab.bll\\services\\questionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D41E7A7A-D483-4C3D-8822-261B4CEE6670}|CaseLab.BLL\\CaseLab.BLL.csproj|c:\\users\\handa\\onedrive\\desktop\\cs476\\caselab.bll\\observer\\teachernotificationobserver.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D41E7A7A-D483-4C3D-8822-261B4CEE6670}|CaseLab.BLL\\CaseLab.BLL.csproj|solutionrelative:caselab.bll\\observer\\teachernotificationobserver.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D41E7A7A-D483-4C3D-8822-261B4CEE6670}|CaseLab.BLL\\CaseLab.BLL.csproj|c:\\users\\handa\\onedrive\\desktop\\cs476\\caselab.bll\\observer\\isubmissionsubject.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D41E7A7A-D483-4C3D-8822-261B4CEE6670}|CaseLab.BLL\\CaseLab.BLL.csproj|solutionrelative:caselab.bll\\observer\\isubmissionsubject.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D41E7A7A-D483-4C3D-8822-261B4CEE6670}|CaseLab.BLL\\CaseLab.BLL.csproj|c:\\users\\handa\\onedrive\\desktop\\cs476\\caselab.bll\\observer\\isubmissionobserver.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D41E7A7A-D483-4C3D-8822-261B4CEE6670}|CaseLab.BLL\\CaseLab.BLL.csproj|solutionrelative:caselab.bll\\observer\\isubmissionobserver.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A20F8A5D-261B-4E3D-9474-C3B4E2E66708}|CaseLab.Web\\CaseLab.Web.csproj|c:\\users\\handa\\onedrive\\desktop\\cs476\\caselab.web\\wwwroot\\js\\app.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A20F8A5D-261B-4E3D-9474-C3B4E2E66708}|CaseLab.Web\\CaseLab.Web.csproj|solutionrelative:caselab.web\\wwwroot\\js\\app.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\frontend\\index.html||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\index.html||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 356,
+          "SelectedChildIndex": 10,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:129:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Models.cs",
+              "DocumentMoniker": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.BLL\\DTOs\\Models.cs",
+              "RelativeDocumentMoniker": "CaseLab.BLL\\DTOs\\Models.cs",
+              "ToolTip": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.BLL\\DTOs\\Models.cs",
+              "RelativeToolTip": "CaseLab.BLL\\DTOs\\Models.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-15T02:56:01.625Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "QuestionService.cs",
+              "DocumentMoniker": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.BLL\\Services\\QuestionService.cs",
+              "RelativeDocumentMoniker": "CaseLab.BLL\\Services\\QuestionService.cs",
+              "ToolTip": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.BLL\\Services\\QuestionService.cs",
+              "RelativeToolTip": "CaseLab.BLL\\Services\\QuestionService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-15T02:54:02.894Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "TeacherNotificationObserver.cs",
+              "DocumentMoniker": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.BLL\\Observer\\TeacherNotificationObserver.cs",
+              "RelativeDocumentMoniker": "CaseLab.BLL\\Observer\\TeacherNotificationObserver.cs",
+              "ToolTip": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.BLL\\Observer\\TeacherNotificationObserver.cs",
+              "RelativeToolTip": "CaseLab.BLL\\Observer\\TeacherNotificationObserver.cs",
+              "ViewState": "AgIAABkAAAAAAAAAAAAQwBoAAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-15T02:36:50.275Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "ISubmissionSubject.cs",
+              "DocumentMoniker": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.BLL\\Observer\\ISubmissionSubject.cs",
+              "RelativeDocumentMoniker": "CaseLab.BLL\\Observer\\ISubmissionSubject.cs",
+              "ToolTip": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.BLL\\Observer\\ISubmissionSubject.cs",
+              "RelativeToolTip": "CaseLab.BLL\\Observer\\ISubmissionSubject.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-15T02:36:46.664Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "ISubmissionObserver.cs",
+              "DocumentMoniker": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.BLL\\Observer\\ISubmissionObserver.cs",
+              "RelativeDocumentMoniker": "CaseLab.BLL\\Observer\\ISubmissionObserver.cs",
+              "ToolTip": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.BLL\\Observer\\ISubmissionObserver.cs",
+              "RelativeToolTip": "CaseLab.BLL\\Observer\\ISubmissionObserver.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-15T02:36:41.32Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "QuestionFactory.cs",
+              "DocumentMoniker": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.BLL\\Factory\\QuestionFactory.cs",
+              "RelativeDocumentMoniker": "CaseLab.BLL\\Factory\\QuestionFactory.cs",
+              "ToolTip": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.BLL\\Factory\\QuestionFactory.cs",
+              "RelativeToolTip": "CaseLab.BLL\\Factory\\QuestionFactory.cs",
+              "ViewState": "AgIAABMAAAAAAAAAAAAQwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-15T02:36:31.726Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ForumService.cs",
+              "DocumentMoniker": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.BLL\\Services\\ForumService.cs",
+              "RelativeDocumentMoniker": "CaseLab.BLL\\Services\\ForumService.cs",
+              "ToolTip": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.BLL\\Services\\ForumService.cs",
+              "RelativeToolTip": "CaseLab.BLL\\Services\\ForumService.cs",
+              "ViewState": "AgIAADQAAAAAAAAAAAAkwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-15T02:36:05.199Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "InstructorController.cs",
+              "DocumentMoniker": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.API\\Controllers\\InstructorController.cs",
+              "RelativeDocumentMoniker": "CaseLab.API\\Controllers\\InstructorController.cs",
+              "ToolTip": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.API\\Controllers\\InstructorController.cs",
+              "RelativeToolTip": "CaseLab.API\\Controllers\\InstructorController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-15T02:33:02.83Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "ForumController.cs",
+              "DocumentMoniker": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.API\\Controllers\\ForumController.cs",
+              "RelativeDocumentMoniker": "CaseLab.API\\Controllers\\ForumController.cs",
+              "ToolTip": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.API\\Controllers\\ForumController.cs",
+              "RelativeToolTip": "CaseLab.API\\Controllers\\ForumController.cs",
+              "ViewState": "AgIAABAAAAAAAAAAAAAQwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-15T02:32:58.916Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.API\\Controllers\\AuthController.cs",
+              "RelativeDocumentMoniker": "CaseLab.API\\Controllers\\AuthController.cs",
+              "ToolTip": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.API\\Controllers\\AuthController.cs",
+              "RelativeToolTip": "CaseLab.API\\Controllers\\AuthController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-15T02:32:56.426Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "AuthService.cs",
+              "DocumentMoniker": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.BLL\\Services\\AuthService.cs",
+              "RelativeDocumentMoniker": "CaseLab.BLL\\Services\\AuthService.cs",
+              "ToolTip": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.BLL\\Services\\AuthService.cs",
+              "RelativeToolTip": "CaseLab.BLL\\Services\\AuthService.cs",
+              "ViewState": "AgIAAA0AAAAAAAAAAAAQwBQAAAAwAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-05T03:19:52.112Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "app.js",
+              "DocumentMoniker": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.Web\\wwwroot\\js\\app.js",
+              "RelativeDocumentMoniker": "CaseLab.Web\\wwwroot\\js\\app.js",
+              "ToolTip": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLab.Web\\wwwroot\\js\\app.js",
+              "RelativeToolTip": "CaseLab.Web\\wwwroot\\js\\app.js",
+              "ViewState": "AgIAAFQAAAAAAAAAAAAUwBYAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-06-04T01:41:09.67Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "index.html",
+              "DocumentMoniker": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\frontend\\index.html",
+              "RelativeDocumentMoniker": "frontend\\index.html",
+              "ToolTip": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\frontend\\index.html",
+              "RelativeToolTip": "frontend\\index.html",
+              "ViewState": "AgIAAHoAAAAAAAAAAAAmwIMAAABRAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
+              "WhenOpened": "2026-06-01T06:53:07.268Z"
+            }
+          ]
+        },
+        {
+          "DockedWidth": 143,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
+            }
+          ]
+        },
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

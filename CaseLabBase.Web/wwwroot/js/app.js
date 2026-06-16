@@ -361,8 +361,8 @@ function updateCharCount(input, qId) {
 }
 
 async function completeSurveyPipeline() {
-    // TODO: Team Member 3 - Collect exam answer responses and reflections, submitting payloads to exam & survey endpoints.
-    alert("TODO: Team Member 3 - Implement completeSurveyPipeline in app.js");
+    // TODO: Team Member 2 - Collect exam answer responses and reflections, submitting payloads to exam & survey endpoints.
+    alert("TODO: Team Member 2 - Implement completeSurveyPipeline in app.js");
 }
 
 // ================= STUDENT MISTAKE BANK =================

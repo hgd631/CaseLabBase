@@ -14,13 +14,11 @@ namespace CaseLabBase.API.Controllers
     {
         private readonly StudentService _studentService;
         private readonly QuestionService _questionService;
-        private readonly NotificationRepository _notifications;
 
-        public StudentController(StudentService studentService, QuestionService questionService, NotificationRepository notifications)
+        public StudentController(StudentService studentService, QuestionService questionService)
         {
             _studentService = studentService;
             _questionService = questionService;
-            _notifications = notifications;
         }
 
         [HttpPost("submit-exam")]
@@ -34,13 +32,6 @@ namespace CaseLabBase.API.Controllers
             try
             {
                 await _studentService.SubmitExamAsync(request.StudentId, request.QuizTitle, request.Answers ?? new());
-
-                // Notify all teachers a student submitted
-                await _notifications.NotifyAllTeachersAsync(
-                    title: "New Submission Received",
-                    message: $"A student (ID: {request.StudentId}) submitted '{request.QuizTitle}'. Ready for grading.",
-                    linkUrl: $"/Instructor/Dashboard?quizTitle={Uri.EscapeDataString(request.QuizTitle)}"
-                );
 
                 return Ok(new { Message = "Exam submitted successfully." });
             }

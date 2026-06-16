@@ -10,11 +10,12 @@
     --color-text: #0f172a;
     --color-text-muted: #64748b;
     
-    --accent-indigo: #14A384;
-    --accent-indigo-glow: rgba(20, 163, 132, 0.06);
-    --accent-cyan: #14A384;
-    --accent-cyan-glow: rgba(20, 163, 132, 0.06);
-    --accent-violet: #0f8269;
+    --accent-indigo: #3b82f6;
+    --accent-indigo-rgb: 59, 130, 246;
+    --accent-indigo-glow: rgba(59, 130, 246, 0.08);
+    --accent-cyan: #60a5fa;
+    --accent-cyan-glow: rgba(96, 165, 250, 0.08);
+    --accent-violet: #2563eb;
     --accent-emerald: #10b981;
     --accent-rose: #ef4444;
     
@@ -33,35 +34,42 @@
 }
 
 body.dark-theme {
-    --bg-base: #0B1E24;
-    --bg-surface: #132A30;
-    --bg-surface-elevated: #1C3B43;
-    --border-color: rgba(20, 163, 132, 0.15);
-    --border-color-glow: rgba(20, 163, 132, 0.35);
+    --bg-base: #0f172a;
+    --bg-surface: #1e293b;
+    --bg-surface-elevated: #334155;
+    --border-color: rgba(59, 130, 246, 0.15);
+    --border-color-glow: rgba(59, 130, 246, 0.35);
     
-    --color-text: #FFFFFF;
-    --color-text-muted: #8FA89E;
+    --color-text: #f8fafc;
+    --color-text-muted: #94a3b8;
     
-    --accent-indigo: #14A384;
-    --accent-indigo-glow: rgba(20, 163, 132, 0.1);
-    --accent-cyan: #14A384;
-    --accent-cyan-glow: rgba(20, 163, 132, 0.1);
-    --accent-violet: #0f8269;
+    --accent-indigo: #60a5fa;
+    --accent-indigo-rgb: 96, 165, 250;
+    --accent-indigo-glow: rgba(96, 165, 250, 0.1);
+    --accent-cyan: #3b82f6;
+    --accent-cyan-glow: rgba(59, 130, 246, 0.1);
+    --accent-violet: #3b82f6;
     --accent-emerald: #10b981;
     --accent-rose: #ef4444;
     
-    --card-interactive-bg: rgba(19, 42, 48, 0.5);
-    --card-interactive-hover: rgba(19, 42, 48, 0.85);
-    --navbar-bg: rgba(19, 42, 48, 0.85);
+    --card-interactive-bg: rgba(30, 41, 59, 0.5);
+    --card-interactive-hover: rgba(30, 41, 59, 0.85);
+    --navbar-bg: rgba(30, 41, 59, 0.85);
 }
 
 body {
-    background-color: var(--bg-base);
+    background: linear-gradient(135deg, #dbeafe 0%, #f0f9ff 100%);
+    background-attachment: fixed;
     font-family: var(--font-body);
     color: var(--color-text);
     min-height: 100vh;
     padding-bottom: 3rem;
     overflow-x: hidden;
+}
+
+body.dark-theme {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+    background-attachment: fixed !important;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -190,7 +198,7 @@ body.dark-theme .navbar-custom {
 .mcq-option-card.selected {
     background: var(--accent-indigo-glow);
     border-color: var(--accent-indigo);
-    box-shadow: 0 0 12px rgba(20, 163, 132, 0.15);
+    box-shadow: 0 0 12px rgba(var(--accent-indigo-rgb), 0.15);
 }
 
 .mcq-radio-dot {
@@ -296,7 +304,7 @@ body.dark-theme .navbar-custom {
 }
 
 .emoji-btn.selected[data-val="Medium"] {
-    background: rgba(20, 163, 132, 0.15);
+    background: rgba(var(--accent-indigo-rgb), 0.15);
     border-color: var(--accent-cyan);
     color: var(--accent-cyan);
 }
@@ -320,7 +328,7 @@ body.dark-theme .navbar-custom {
 
 .btn-dark-custom:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(20, 163, 132, 0.4);
+    box-shadow: 0 4px 15px rgba(var(--accent-indigo-rgb), 0.4);
     color: #ffffff;
 }
 
@@ -334,7 +342,7 @@ body.dark-theme .navbar-custom {
 }
 
 .btn-outline-custom:hover {
-    background: rgba(20, 163, 132, 0.12);
+    background: rgba(var(--accent-indigo-rgb), 0.12);
     border-color: var(--accent-indigo);
     color: var(--color-text);
 }
@@ -376,7 +384,7 @@ body.dark-theme .navbar-custom {
     right: 0;
     height: 2px;
     background: var(--accent-cyan);
-    box-shadow: 0 0 8px rgba(20, 163, 132, 0.5);
+    box-shadow: 0 0 8px rgba(var(--accent-indigo-rgb), 0.5);
 }
 
 /* Sub tabs (Roster sub tabs) */
@@ -501,8 +509,8 @@ body.dark-theme .navbar-custom {
 }
 
 .badge-custom-cyan {
-    background: rgba(20, 163, 132, 0.1);
-    border-color: rgba(20, 163, 132, 0.35);
+    background: rgba(var(--accent-indigo-rgb), 0.1);
+    border-color: rgba(var(--accent-indigo-rgb), 0.35);
     color: var(--accent-cyan);
 }
 
@@ -560,7 +568,7 @@ body.dark-theme .navbar-custom {
 }
 
 .comment-bubble.self {
-    background: rgba(20, 163, 132, 0.15);
+    background: rgba(var(--accent-indigo-rgb), 0.15);
     border-color: var(--accent-indigo);
     align-self: flex-end;
 }
@@ -706,7 +714,7 @@ body.dark-theme .navbar-custom {
 
 .hover-indigo:hover {
     color: var(--color-text) !important;
-    background: rgba(20, 163, 132, 0.15) !important;
+    background: rgba(var(--accent-indigo-rgb), 0.15) !important;
 }
 
 .bg-danger {

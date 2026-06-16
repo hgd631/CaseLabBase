@@ -17,7 +17,7 @@ namespace CaseLabBase.API.Controllers
             _repo = repo;
         }
 
-        /// <summary>Get recent notifications for a user (last 30). Pass userId and role.</summary>
+        //Get recent notifications for a user (last 30). Pass userId and role.
         [HttpGet]
         public async Task<IActionResult> GetNotifications([FromQuery] string userId, [FromQuery] string role)
         {
@@ -42,7 +42,7 @@ namespace CaseLabBase.API.Controllers
             });
         }
 
-        /// <summary>Mark all notifications as read for a user.</summary>
+        //Mark all notifications as read for a user.
         [HttpPost("mark-read")]
         public async Task<IActionResult> MarkRead([FromQuery] string userId, [FromQuery] string role)
         {

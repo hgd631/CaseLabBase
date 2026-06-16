@@ -1,0 +1,116 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{F2AF7011-C7D4-4DBF-81A1-E722C1A5ED15}|CaseLabBaseBase.API\\CaseLabBaseBase.API.csproj|c:\\users\\handa\\onedrive\\desktop\\cs476\\caselabbasebase.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{F2AF7011-C7D4-4DBF-81A1-E722C1A5ED15}|CaseLabBaseBase.API\\CaseLabBaseBase.API.csproj|solutionrelative:caselabbasebase.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A20F8A5D-261B-4E3D-9474-C3B4E2E66708}|CaseLabBaseBase.Web\\CaseLabBaseBase.Web.csproj|c:\\users\\handa\\onedrive\\desktop\\cs476\\caselabbasebase.web\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{A20F8A5D-261B-4E3D-9474-C3B4E2E66708}|CaseLabBaseBase.Web\\CaseLabBaseBase.Web.csproj|solutionrelative:caselabbasebase.web\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8A8504B6-61D3-48EA-A47E-023F07936E7B}|CaseLabBaseBase.DAL\\CaseLabBaseBase.DAL.csproj|c:\\users\\handa\\onedrive\\desktop\\cs476\\caselabbasebase.dal\\repositories\\notificationrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8A8504B6-61D3-48EA-A47E-023F07936E7B}|CaseLabBaseBase.DAL\\CaseLabBaseBase.DAL.csproj|solutionrelative:caselabbasebase.dal\\repositories\\notificationrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D41E7A7A-D483-4C3D-8822-261B4CEE6670}|CaseLabBaseBase.BLL\\CaseLabBaseBase.BLL.csproj|c:\\users\\handa\\onedrive\\desktop\\cs476\\caselabbasebase.bll\\dtos\\models.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D41E7A7A-D483-4C3D-8822-261B4CEE6670}|CaseLabBaseBase.BLL\\CaseLabBaseBase.BLL.csproj|solutionrelative:caselabbasebase.bll\\dtos\\models.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 356,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:129:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            }
+          ]
+        },
+        {
+          "DockedWidth": 256,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLabBaseBase.API\\appsettings.json",
+              "RelativeDocumentMoniker": "CaseLabBaseBase.API\\appsettings.json",
+              "ToolTip": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLabBaseBase.API\\appsettings.json",
+              "RelativeToolTip": "CaseLabBaseBase.API\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-06-03T18:52:28.005Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLabBaseBase.Web\\appsettings.json",
+              "RelativeDocumentMoniker": "CaseLabBaseBase.Web\\appsettings.json",
+              "ToolTip": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLabBaseBase.Web\\appsettings.json",
+              "RelativeToolTip": "CaseLabBaseBase.Web\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-06-03T18:51:25.27Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "NotificationRepository.cs",
+              "DocumentMoniker": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLabBaseBase.DAL\\Repositories\\NotificationRepository.cs",
+              "RelativeDocumentMoniker": "CaseLabBaseBase.DAL\\Repositories\\NotificationRepository.cs",
+              "ToolTip": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLabBaseBase.DAL\\Repositories\\NotificationRepository.cs",
+              "RelativeToolTip": "CaseLabBaseBase.DAL\\Repositories\\NotificationRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAABHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-03T18:43:42.03Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Models.cs",
+              "DocumentMoniker": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLabBaseBase.BLL\\DTOs\\Models.cs",
+              "RelativeDocumentMoniker": "CaseLabBaseBase.BLL\\DTOs\\Models.cs",
+              "ToolTip": "C:\\Users\\handa\\OneDrive\\Desktop\\cs476\\CaseLabBaseBase.BLL\\DTOs\\Models.cs",
+              "RelativeToolTip": "CaseLabBaseBase.BLL\\DTOs\\Models.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-03T18:42:56.111Z",
+              "EditorCaption": ""
+            }
+          ]
+        },
+        {
+          "DockedWidth": 87,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

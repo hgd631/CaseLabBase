@@ -1,0 +1,16 @@
+C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.BLL\bin\Debug\net10.0\CaseLabBase.BLL.deps.json
+C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.BLL\bin\Debug\net10.0\CaseLabBase.BLL.dll
+C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.BLL\bin\Debug\net10.0\CaseLabBase.BLL.pdb
+C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.BLL\bin\Debug\net10.0\CaseLabBase.DAL.dll
+C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.BLL\bin\Debug\net10.0\CaseLabBase.DAL.pdb
+C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.BLL\obj\Debug\net10.0\CaseLabBase.BLL.csproj.AssemblyReference.cache
+C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.BLL\obj\Debug\net10.0\CaseLabBase.BLL.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.BLL\obj\Debug\net10.0\CaseLabBase.BLL.AssemblyInfoInputs.cache
+C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.BLL\obj\Debug\net10.0\CaseLabBase.BLL.AssemblyInfo.cs
+C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.BLL\obj\Debug\net10.0\CaseLabBase.BLL.csproj.CoreCompileInputs.cache
+C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.BLL\obj\Debug\net10.0\CaseLabBase.BLL.sourcelink.json
+C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.BLL\obj\Debug\net10.0\CaseLabB.2454EE40.Up2Date
+C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.BLL\obj\Debug\net10.0\CaseLabBase.BLL.dll
+C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.BLL\obj\Debug\net10.0\refint\CaseLabBase.BLL.dll
+C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.BLL\obj\Debug\net10.0\CaseLabBase.BLL.pdb
+C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.BLL\obj\Debug\net10.0\ref\CaseLabBase.BLL.dll

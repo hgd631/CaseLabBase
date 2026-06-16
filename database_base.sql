@@ -129,7 +129,6 @@ GO
 INSERT INTO dbo.Users (Id, Name, Role) VALUES
 ('s1', 'Han Dang', 'student'),
 ('s2', 'John Smith', 'student'),
-('s3', 'Alice Cooper', 'student'),
 ('t1', 'Ali Bayeh', 'teacher');
 
 INSERT INTO dbo.ErrorTags (Tag) VALUES
