@@ -1,4 +1,4 @@
 wwwroot\css\index.css
 wwwroot\js\app.js
-C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.Web\wwwroot\css\index.css
-C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.Web\wwwroot\js\app.js
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\wwwroot\css\index.css
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\wwwroot\js\app.js

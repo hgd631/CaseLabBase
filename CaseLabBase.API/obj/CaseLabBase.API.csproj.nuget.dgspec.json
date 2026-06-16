@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.API\\CaseLabBase.API.csproj": {}
+    "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.API\\CaseLabBase.API.csproj": {}
   },
   "projects": {
-    "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.API\\CaseLabBase.API.csproj": {
+    "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.API\\CaseLabBase.API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.API\\CaseLabBase.API.csproj",
+        "projectUniqueName": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.API\\CaseLabBase.API.csproj",
         "projectName": "CaseLabBase.API",
-        "projectPath": "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.API\\CaseLabBase.API.csproj",
+        "projectPath": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.API\\CaseLabBase.API.csproj",
         "packagesPath": "C:\\Users\\handa\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.API\\obj\\",
+        "outputPath": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.API\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -34,8 +34,8 @@
             "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.BLL\\CaseLabBase.BLL.csproj": {
-                "projectPath": "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.BLL\\CaseLabBase.BLL.csproj"
+              "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.BLL\\CaseLabBase.BLL.csproj": {
+                "projectPath": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.BLL\\CaseLabBase.BLL.csproj"
               }
             }
           }
@@ -503,14 +503,14 @@
         }
       }
     },
-    "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.BLL\\CaseLabBase.BLL.csproj": {
+    "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.BLL\\CaseLabBase.BLL.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.BLL\\CaseLabBase.BLL.csproj",
+        "projectUniqueName": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.BLL\\CaseLabBase.BLL.csproj",
         "projectName": "CaseLabBase.BLL",
-        "projectPath": "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.BLL\\CaseLabBase.BLL.csproj",
+        "projectPath": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.BLL\\CaseLabBase.BLL.csproj",
         "packagesPath": "C:\\Users\\handa\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.BLL\\obj\\",
+        "outputPath": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.BLL\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -533,8 +533,8 @@
             "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.DAL\\CaseLabBase.DAL.csproj": {
-                "projectPath": "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.DAL\\CaseLabBase.DAL.csproj"
+              "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.DAL\\CaseLabBase.DAL.csproj": {
+                "projectPath": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.DAL\\CaseLabBase.DAL.csproj"
               }
             }
           }
@@ -849,14 +849,14 @@
         }
       }
     },
-    "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.DAL\\CaseLabBase.DAL.csproj": {
+    "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.DAL\\CaseLabBase.DAL.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.DAL\\CaseLabBase.DAL.csproj",
+        "projectUniqueName": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.DAL\\CaseLabBase.DAL.csproj",
         "projectName": "CaseLabBase.DAL",
-        "projectPath": "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.DAL\\CaseLabBase.DAL.csproj",
+        "projectPath": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.DAL\\CaseLabBase.DAL.csproj",
         "packagesPath": "C:\\Users\\handa\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\handa\\OneDrive\\Desktop\\CaseLabBase\\CaseLabBase.DAL\\obj\\",
+        "outputPath": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.DAL\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
