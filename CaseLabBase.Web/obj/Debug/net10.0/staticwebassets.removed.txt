@@ -1,2 +1,0 @@
-C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.Web\wwwroot\css\index.css
-C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.Web\wwwroot\js\app.js

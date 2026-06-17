@@ -51,7 +51,7 @@ function switchLocalPanel(id) {
 
 // Global user login handler
 async function loginAsRole(userId) {
-    // TODO: Team Member 1 - Post credentials to auth login API and route session user to their dashboard.
+    // Member 1- Han:  Post credentials to auth login API and route session user to their dashboard.
     try {
         const res = await fetch(`${API_BASE}/auth/users/${userId}`);
         if (!res.ok) throw new Error("Could not log in user.");
@@ -82,12 +82,68 @@ function logoutSystem() {
 
 // ================= NOTIFICATION SYSTEM =================
 
+//Member 1-Han: Implement notification polling, dropdown UI, and mark-all-read functionality.
+// State variable to track whether the notification dropdown UI is currently open
 let _notifDropdownOpen = false;
 
+/**
+ * Fetches the current user's notifications from the backend API,
+ * updates the UI notification badge, and populates the dropdown list.
+ */
 async function fetchNotifications() {
-    // TODO: Team Member 1 - Fetch unread notifications from /api/notifications and populate the dropdown badge.
-    alert("TODO: Team Member 1 - Implement fetchNotifications in app.js");
+    // 1. Guard Clause: If there is no logged-in user in the global state, stop immediately
+    if (!state.user) return;
+
+    try {
+        // 2. HTTP Request: Fetch user-specific notifications based on their ID and Role
+        const res = await fetch(`${API_BASE}/notifications?userId=${state.user.id}&role=${state.user.role}`);
+        if (!res.ok) return; // If the server responds with an error status (e.g., 400 or 500), abort
+
+        // 3. Parse JSON: Convert the raw response stream into a usable JavaScript object
+        const data = await res.json();
+
+        // 4. DOM Elements: Grab the badge (unread counter) and list (the dropdown container) elements
+        const badge = document.getElementById('notifBadge');
+        const list = document.getElementById('notifList');
+        if (!badge || !list) return; // Safety check: if elements don't exist in HTML, stop to avoid errors
+
+        // 5. Update Badge UI: Show/hide and update the unread notifications count
+        if (data.unreadCount > 0) {
+            badge.style.display = 'block'; // Make badge visible
+            // If count is greater than 9, display "9+", otherwise show the actual number
+            badge.textContent = data.unreadCount > 9 ? '9+' : data.unreadCount;
+        } else {
+            badge.style.display = 'none'; // Hide badge if there are 0 unread notifications
+        }
+
+        // 6. Handle Empty State: If the user has zero notifications total, display a placeholder message
+        if (data.notifications.length === 0) {
+            list.innerHTML = '<p class="text-secondary small text-center py-4" style="margin:0;">No notifications yet</p>';
+            return;
+        }
+
+        // 7. Render Notifications List: Loop through the array and map each notification to an HTML string
+        list.innerHTML = data.notifications.map(n => `
+            <div onclick="${n.linkUrl ? `window.location='${n.linkUrl}'` : ''}"
+                 style="padding:12px 16px; border-bottom:1px solid #f1f5f9; cursor:${n.linkUrl ? 'pointer' : 'default'};
+                        background:${n.isRead ? '#fff' : '#f5f3ff'}; transition:background 0.15s;"
+                 onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='${n.isRead ? '#fff' : '#f5f3ff'}'">
+                <div class="d-flex align-items-start gap-2">
+                    <span style="font-size:16px; margin-top:1px;">${n.isRead ? '🔔' : '🔴'}</span>
+                    <div style="flex:1; min-width:0;">
+                        <p class="fw-semibold mb-0" style="font-size:12px; color:#1e293b;">${n.title}</p>
+                        <p class="text-secondary mb-0" style="font-size:11px; white-space:normal;">${n.message}</p>
+                        <p class="mb-0" style="font-size:10px; color:#94a3b8; margin-top:2px;">${new Date(n.createdAt).toLocaleString()}</p>
+                    </div>
+                </div>
+            </div>`).join(''); // .join('') turns the mapped array of HTML strings into one clean string for innerHTML
+
+    } catch (_) {
+        /* Fail Silently: Catch network errors (like offline status) so the entire app doesn't crash */
+    }
 }
+
+
 
 function toggleNotifDropdown() {
     const dropdown = document.getElementById('notifDropdown');
