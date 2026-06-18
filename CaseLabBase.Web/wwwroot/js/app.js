@@ -153,9 +153,24 @@ function toggleNotifDropdown() {
     if (_notifDropdownOpen) fetchNotifications();
 }
 
+
+// Member 1-Han : Send POST request to notification mark-read endpoint and refresh current feed state.
 async function markAllNotifsRead() {
-    // TODO: Team Member 1 - Send POST request to notification mark-read endpoint and refresh current feed state.
-    alert("TODO: Team Member 1 - Implement markAllNotifsRead in app.js");
+  
+    // 1. Guard Clause: Stop immediately if no user is currently logged in
+    if (!state.user) return;
+
+    try {
+        // 2. HTTP POST Request: Tell the backend API to mark all notifications as read for this user
+        await fetch(`${API_BASE}/notifications/mark-read?userId=${state.user.id}&role=${state.user.role}`, { method: 'POST' });
+
+        // 3. UI Refresh: Re-fetch notifications so the badge and dropdown update instantly on the screen
+        await fetchNotifications();
+
+    } catch (_) {
+        /* Fail Silently: Catch network issues so the UI doesn't crash if the request fails */
+    }
+
 }
 
 // Close dropdown when clicking outside
