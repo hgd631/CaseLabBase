@@ -65,4 +65,4 @@ C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\refint\C
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\CaseLabBase.Web.pdb
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\CaseLabBase.Web.genruntimeconfig.cache
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\ref\CaseLabBase.Web.dll
-C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\xxafrsm3ut-{0}-xy2n1z5w1n-xy2n1z5w1n.gz
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\xxafrsm3ut-{0}-yrgspwtkht-yrgspwtkht.gz
