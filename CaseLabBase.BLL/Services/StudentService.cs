@@ -53,8 +53,45 @@ namespace CaseLabBase.BLL.Services
 
         public async Task SubmitExamAsync(string studentId, string quizTitle, List<SubmitAnswerRequestItem> answers)
         {
-    throw new System.NotImplementedException("TODO: Team Member 2 - Implement SubmitExamAsync in StudentService.cs");
-}
+            var questions = await _questionRepository.GetByQuizTitleAsync(quizTitle);
+            var submission = new Submission
+            {
+                StudentId = studentId,
+                QuizTitle = quizTitle,
+                Status = "Pending",
+                FinalScore = 0,
+                DisputeStatus = "None",
+            };
+            await _submissionRepository.SaveSubmissionAsync(submission);
+            decimal totalScore = 0;
+            foreach (var item in answers)
+            {
+                var question = questions.FirstOrDefault(q => q.Id == item.QuestionId);
+                if (question == null)
+                    continue;
+                bool isCorrect = string.Equals(
+                    item.StudentAnswer?.Trim(),
+                    question.CorrectKey.Trim(),
+                    System.StringComparison.OrdinalIgnoreCase);
+                decimal earnedScore = isCorrect ? question.MaxScore : 0;
+                totalScore += earnedScore;
+
+                var submissionAnswer = new SubmissionAnswer
+                {
+                    SubmissionId = submission.Id,
+                    QuestionId = question.Id,
+                    StudentAnswer = item.StudentAnswer,
+                    IsCorrect = isCorrect,
+                    EarnedScore = earnedScore
+                };
+                await _submissionRepository.SaveSubmissionAnswerAsync(submissionAnswer);
+            }
+            submission.FinalScore = totalScore;
+            await _submissionRepository.SaveSubmissionAsync(submission);
+
+            await NotifyObserversAsync(submission);
+        } 
+        //Team member 2: Kelly Implemented SubmitExamAsync in StudentService.cs
 
         public async Task SubmitSurveyAsync(string studentId, string quizTitle, List<SubmitSurveyRequestItem> reflections)
         {
