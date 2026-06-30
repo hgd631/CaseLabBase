@@ -51,7 +51,7 @@ function switchLocalPanel(id) {
 
 // Global user login handler
 async function loginAsRole(userId) {
-    // TODO: Team Member 1 - Post credentials to auth login API and route session user to their dashboard.
+    // Member 1- Han:  Post credentials to auth login API and route session user to their dashboard.
     try {
         const res = await fetch(`${API_BASE}/auth/users/${userId}`);
         if (!res.ok) throw new Error("Could not log in user.");
@@ -82,12 +82,68 @@ function logoutSystem() {
 
 // ================= NOTIFICATION SYSTEM =================
 
+//Member 1-Han: Implement notification polling, dropdown UI, and mark-all-read functionality.
+// State variable to track whether the notification dropdown UI is currently open
 let _notifDropdownOpen = false;
 
+/**
+ * Fetches the current user's notifications from the backend API,
+ * updates the UI notification badge, and populates the dropdown list.
+ */
 async function fetchNotifications() {
-    // TODO: Team Member 1 - Fetch unread notifications from /api/notifications and populate the dropdown badge.
-    alert("TODO: Team Member 1 - Implement fetchNotifications in app.js");
+    // 1. Guard Clause: If there is no logged-in user in the global state, stop immediately
+    if (!state.user) return;
+
+    try {
+        // 2. HTTP Request: Fetch user-specific notifications based on their ID and Role
+        const res = await fetch(`${API_BASE}/notifications?userId=${state.user.id}&role=${state.user.role}`);
+        if (!res.ok) return; // If the server responds with an error status (e.g., 400 or 500), abort
+
+        // 3. Parse JSON: Convert the raw response stream into a usable JavaScript object
+        const data = await res.json();
+
+        // 4. DOM Elements: Grab the badge (unread counter) and list (the dropdown container) elements
+        const badge = document.getElementById('notifBadge');
+        const list = document.getElementById('notifList');
+        if (!badge || !list) return; // Safety check: if elements don't exist in HTML, stop to avoid errors
+
+        // 5. Update Badge UI: Show/hide and update the unread notifications count
+        if (data.unreadCount > 0) {
+            badge.style.display = 'block'; // Make badge visible
+            // If count is greater than 9, display "9+", otherwise show the actual number
+            badge.textContent = data.unreadCount > 9 ? '9+' : data.unreadCount;
+        } else {
+            badge.style.display = 'none'; // Hide badge if there are 0 unread notifications
+        }
+
+        // 6. Handle Empty State: If the user has zero notifications total, display a placeholder message
+        if (data.notifications.length === 0) {
+            list.innerHTML = '<p class="text-secondary small text-center py-4" style="margin:0;">No notifications yet</p>';
+            return;
+        }
+
+        // 7. Render Notifications List: Loop through the array and map each notification to an HTML string
+        list.innerHTML = data.notifications.map(n => `
+            <div onclick="${n.linkUrl ? `window.location='${n.linkUrl}'` : ''}"
+                 style="padding:12px 16px; border-bottom:1px solid #f1f5f9; cursor:${n.linkUrl ? 'pointer' : 'default'};
+                        background:${n.isRead ? '#fff' : '#f5f3ff'}; transition:background 0.15s;"
+                 onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='${n.isRead ? '#fff' : '#f5f3ff'}'">
+                <div class="d-flex align-items-start gap-2">
+                    <span style="font-size:16px; margin-top:1px;">${n.isRead ? '🔔' : '🔴'}</span>
+                    <div style="flex:1; min-width:0;">
+                        <p class="fw-semibold mb-0" style="font-size:12px; color:#1e293b;">${n.title}</p>
+                        <p class="text-secondary mb-0" style="font-size:11px; white-space:normal;">${n.message}</p>
+                        <p class="mb-0" style="font-size:10px; color:#94a3b8; margin-top:2px;">${new Date(n.createdAt).toLocaleString()}</p>
+                    </div>
+                </div>
+            </div>`).join(''); // .join('') turns the mapped array of HTML strings into one clean string for innerHTML
+
+    } catch (_) {
+        /* Fail Silently: Catch network errors (like offline status) so the entire app doesn't crash */
+    }
 }
+
+
 
 function toggleNotifDropdown() {
     const dropdown = document.getElementById('notifDropdown');
@@ -97,9 +153,24 @@ function toggleNotifDropdown() {
     if (_notifDropdownOpen) fetchNotifications();
 }
 
+
+// Member 1-Han : Send POST request to notification mark-read endpoint and refresh current feed state.
 async function markAllNotifsRead() {
-    // TODO: Team Member 1 - Send POST request to notification mark-read endpoint and refresh current feed state.
-    alert("TODO: Team Member 1 - Implement markAllNotifsRead in app.js");
+  
+    // 1. Guard Clause: Stop immediately if no user is currently logged in
+    if (!state.user) return;
+
+    try {
+        // 2. HTTP POST Request: Tell the backend API to mark all notifications as read for this user
+        await fetch(`${API_BASE}/notifications/mark-read?userId=${state.user.id}&role=${state.user.role}`, { method: 'POST' });
+
+        // 3. UI Refresh: Re-fetch notifications so the badge and dropdown update instantly on the screen
+        await fetchNotifications();
+
+    } catch (_) {
+        /* Fail Silently: Catch network issues so the UI doesn't crash if the request fails */
+    }
+
 }
 
 // Close dropdown when clicking outside
@@ -404,11 +475,69 @@ async function dispatchStudentEmbeddedChat(qId) {
     alert("TODO: Team Member 5 - Implement dispatchStudentEmbeddedChat in app.js");
 }
 
+
+
 // Sidebar quiz list and selection operations
+//Member 1-Han: Load quizzes list from API, render sidebar buttons, and handle quiz selection state.
 async function loadQuizzesSidebar() {
-    // TODO: Team Member 1 - Retrieve active quizzes list, handle sidebar navigation, and bind event selection triggers.
-    alert("TODO: Team Member 1 - Implement loadQuizzesSidebar in app.js");
+    // 1. DOM Check: Grab the container element where the sidebar quiz list should live
+    const sidebar = document.getElementById('quizListSidebarContainer');
+    if (!sidebar) return; // Guard clause: Stop if the sidebar container isn't on the current page
+
+    try {
+        // 2. Fetch Data: Call the API to get all available quizzes from the server
+        const res = await fetch(`${API_BASE}/questions/quizzes`);
+        if (!res.ok) throw new Error("Failed to fetch quizzes list.");
+
+        // 3. Global State Sync: Parse JSON data and store it in the global 'state' object
+        state.quizzes = await res.json();
+
+        // 4. Empty State Handling: If there are no quizzes available, show a fallback message
+        if (state.quizzes.length === 0) {
+            sidebar.innerHTML = `<div class="text-center py-3 text-secondary small">No quizzes published.</div>`;
+            return;
+        }
+
+        // 5. Default Selection: If no quiz is currently active, auto-select the very first quiz in the array
+        if (!state.selectedQuizTitle && state.quizzes.length > 0) {
+            state.selectedQuizTitle = state.quizzes[0].Title || state.quizzes[0].title;
+        }
+
+        // 6. UI Render Loop: Clear out old content, then dynamically create a button for each quiz
+        sidebar.innerHTML = "";
+        state.quizzes.forEach(quiz => {
+            // Handles potential naming differences from the backend (PascalCase vs camelCase)
+            const title = quiz.title || quiz.Title;
+            const isSelected = state.selectedQuizTitle === title;
+
+            // Create a button element and apply styles dynamically based on selection state
+            const btn = document.createElement('button');
+            btn.className = `btn btn-sm text-start p-2.5 rounded border border-secondary border-opacity-15 w-100 d-flex flex-column gap-1 transition-all`;
+            btn.style.backgroundColor = isSelected ? "var(--accent-indigo)" : "#ffffff";
+            btn.style.color = isSelected ? "#ffffff" : "var(--text-color)";
+
+            // Inject internal layout: quiz title and structural metadata (points, mode)
+            btn.innerHTML = `
+                <strong class="small text-wrap d-block text-start" style="font-size:12px; line-height:1.2; font-weight:600;">${title}</strong>
+                <span class="small opacity-75 d-block text-start" style="font-size: 10px; margin-top:2px;">Points: ${quiz.totalScore || quiz.TotalScore} pts | Mode: ${quiz.quizMode || quiz.QuizMode}</span>
+            `;
+
+            // 7. Interaction: Add click listener to switch to this specific quiz when clicked
+            btn.onclick = () => {
+                selectQuizFromSidebar(title);
+            };
+
+            // Append the finished button element to the sidebar container
+            sidebar.appendChild(btn);
+        });
+    } catch (err) {
+        // 8. Error Handling: Update the UI with a clean warning banner if the network request fails
+        sidebar.innerHTML = `<div class="alert-custom alert-custom-warning small">Error loading quizzes.</div>`;
+    }
 }
+
+
+
 
 async function selectQuizFromSidebar(title) {
     state.selectedQuizTitle = title;
@@ -525,10 +654,54 @@ async function loadQuestionDiagnostics() {
     alert("TODO: Team Member 3 - Implement loadQuestionDiagnostics in app.js");
 }
 
+
+
+//Member 1-Han: Load question list for the active quiz, rendering inline edit cards with answer key mutation capabilities.
 async function renderInlineQuestionEditSection() {
-    // TODO: Team Member 1 - Load questions configuration list from API to expose inline answer mutation cards.
-    alert("TODO: Team Member 1 - Implement renderInlineQuestionEditSection in app.js");
+    // 1. DOM Check: Grab the UI section and container where the question management UI will render
+    const section = document.getElementById('instructorPerQuestionInlineEditSection');
+    const container = document.getElementById('inlineQuestionEditContainer');
+    if (!section || !container) return; // Guard clause: Abort if these elements do not exist on the current page
+
+    try {
+        // 2. Fetch Data: Retrieve the list of quiz questions from the backend API
+        const res = await fetch(`${API_BASE}/questions`);
+        if (!res.ok) return; // Stop if the network response is an error status code
+        const data = await res.json();
+
+        // 3. UI Setup: Make the main section wrapper visible and clear out any stale HTML content
+        section.style.display = "block";
+        container.innerHTML = "";
+
+        // 4. Data Processing & Render: Loop through every retrieved question
+        data.questions.forEach(q => {
+            // Check if the question type is Multiple Choice Question (MCQ)
+            if (q.type === "MCQ") {
+                // Inject an inline edit tool that lets an instructor quickly swap the correct answer key
+                // Note: The conditional ternary operator (${q.correctKey === 'X' ? 'selected' : ''}) keeps the current correct option selected by default
+                container.innerHTML = `
+                    <div class="p-2 border rounded bg-dark-subtle d-flex align-items-center gap-2 small" style="border-color: var(--border-color) !important;">
+                        <strong>Question ${q.id} (MCQ):</strong> Modify solution key target to:
+                        <select class="form-select form-select-sm" style="width:140px; display:inline-block;" onchange="inlineModifyAnswerKey(${q.id}, this.value)">
+                            <option value="B" ${q.correctKey === 'B' ? 'selected' : ''}>Option B</option>
+                            <option value="A" ${q.correctKey === 'A' ? 'selected' : ''}>Option A</option>
+                            <option value="C" ${q.correctKey === 'C' ? 'selected' : ''}>Option C</option>
+                            <option value="D" ${q.correctKey === 'D' ? 'selected' : ''}>Option D</option>
+                        </select>
+                        <span class="text-secondary small italic">Changing key triggers automated classroom re-grading.</span>
+                    </div>`;
+            }
+        });
+    } catch (err) {
+        // 5. Error Catching: Log any unexpected runtime/network errors directly to the developer console
+        console.error(err);
+    }
 }
+
+
+
+
+
 
 async function inlineModifyAnswerKey(qId, val) {
     // TODO: Team Member 4 - POST answer key mutation requests, triggering class-wide auto-regrading.
@@ -819,10 +992,164 @@ function populateQuestionBuilderFromState() {
     }
 }
 
+
+
+// Member 1-Han: Compile form builder inputs, validate question configurations, and submit new quiz task to server for publication.
 async function instructorPublishTask() {
-    // TODO: Team Member 1 - Harvest form builder datasets, validate score weights, and publish the new quiz task to server.
-    alert("TODO: Team Member 1 - Implement instructorPublishTask in app.js");
+    // 1. Initial Validation: Check if Title is provided and Total Score is a positive number
+    const titleVal = document.getElementById('inputTaskTitle').value;
+    if (!titleVal) return alert("Assignment title is required.");
+
+    const totalScoreVal = parseFloat(document.getElementById('inputQuizTotalScore').value);
+    if (isNaN(totalScoreVal) || totalScoreVal <= 0) {
+        return alert("Total Score must be a positive number.");
+    }
+
+    // 2. Mode Check: If the instructor selected "PDF" exam mode, make sure a file was actually uploaded
+    if (state.quizMode === "PDF" && !state.pdfBase64) {
+        return alert("A PDF document must be uploaded in PDF Exam mode.");
+    }
+
+    // 3. Container Validation: Make sure the teacher has added at least one question card to the list
+    let questionsPayload = [];
+    const container = document.getElementById('custom-questions-list-container');
+    if (!container || container.children.length === 0) {
+        return alert("Please add at least one question to publish.");
+    }
+
+    let hasError = false;
+    let sumWeights = 0.0;
+
+    // 4. Processing Loop: Read each individual question card from the UI list
+    Array.from(container.children).forEach((card, idx) => {
+        const type = card.getAttribute('data-type'); // 'MCQ' or 'Essay'
+        const topic = card.querySelector('.custom-q-topic').value.trim() || "General";
+        const scoreInput = card.querySelector('.custom-q-score');
+        const maxScore = scoreInput ? parseFloat(scoreInput.value) || 0.0 : 0.0;
+        sumWeights += maxScore; // Keep a running total of question points
+
+        let prompt = "";
+
+        // Define prompt text depending on whether it's a structural PDF placeholder or manual entry
+        if (state.quizMode === "PDF") {
+            prompt = `Question #${idx + 1} (PDF Exam)`;
+        } else {
+            const promptInput = card.querySelector('.custom-q-prompt');
+            prompt = promptInput ? promptInput.value.trim() : "";
+        }
+
+        if (!prompt) {
+            hasError = true;
+            return;
+        }
+
+        // Process Multiple Choice Questions (MCQ)
+        if (type === 'MCQ') {
+            let optA = "Option A";
+            let optB = "Option B";
+            let optC = "Option C";
+            let optD = "Option D";
+            const key = card.querySelector('.custom-q-key').value;
+
+            // Gather values for options A-D if manually writing questions
+            if (state.quizMode === "Manual") {
+                optA = card.querySelector('.custom-q-optA').value.trim();
+                optB = card.querySelector('.custom-q-optB').value.trim();
+                optC = card.querySelector('.custom-q-optC').value.trim();
+                optD = card.querySelector('.custom-q-optD').value.trim();
+
+                if (!optA || !optB || !optC || !optD) {
+                    hasError = true;
+                    return;
+                }
+            }
+
+            // Append structured MCQ data to our payload array
+            questionsPayload.push({
+                type: "MCQ",
+                topic: topic,
+                prompt: prompt,
+                options: [`A. ${optA}`, `B. ${optB}`, `C. ${optC}`, `D. ${optD}`],
+                correctKey: key,
+                maxScore: maxScore
+            });
+        } else {
+            // Process and append Essay questions to our payload array
+            questionsPayload.push({
+                type: "Essay",
+                topic: topic,
+                prompt: prompt,
+                correctKey: "Custom criteria validation",
+                maxScore: maxScore
+            });
+        }
+    });
+
+    if (hasError) {
+        return alert("Please fill in all topic, prompt, and option fields for all questions.");
+    }
+
+    // 5. Data Integrity Validation: Ensure total score exactly equals sum of individual question values
+    // Uses Math.abs subtraction to safely handle small JavaScript decimal floating-point inaccuracies
+    if (Math.abs(sumWeights - totalScoreVal) > 0.001) {
+        return alert(`Validation Failure: The sum of question weights (${sumWeights.toFixed(1)}) must exactly equal the Total Score (${totalScoreVal.toFixed(1)}).`);
+    }
+
+    // 6. Metadata Gathering: Retrieve supporting configurations from the DOM
+    const timeLimitVal = parseInt(document.getElementById('inputQuizTimeLimit').value) || 40;
+    const deadlineVal = document.getElementById('inputQuizDeadline').value || null;
+    const isQuizOpenVal = document.getElementById('inputIsQuizOpen').checked;
+    const isForumOpenVal = document.getElementById('inputIsForumOpen').checked;
+
+    try {
+        // Construct complete database packaging payload
+        const payload = {
+            title: titleVal,
+            questions: questionsPayload,
+            timeLimitMinutes: timeLimitVal,
+            isQuizOpen: isQuizOpenVal,
+            isForumOpen: isForumOpenVal,
+            deadlineString: deadlineVal,
+            pdfBase64: state.pdfBase64,
+            quizMode: state.quizMode,
+            totalScore: totalScoreVal
+        };
+
+        // 7. Network Request: Send unified package to the backend API via HTTP POST
+        const res = await fetch(`${API_BASE}/questions/publish`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error("Failed to publish assessment.");
+
+        alert("✔ New assessment successfully generated and active configurations updated!");
+
+        // 8. State Refresh: Fetch newly stored information back down to sync the application context
+        const resQ = await fetch(`${API_BASE}/questions`);
+        if (resQ.ok) {
+            const dataQ = await resQ.json();
+            state.activeTaskTitle = dataQ.title;
+            state.questions = dataQ.questions;
+            state.timeLimitMinutes = dataQ.timeLimitMinutes ?? 40;
+            state.isQuizOpen = dataQ.isQuizOpen ?? true;
+            state.isForumOpen = dataQ.isForumOpen ?? true;
+            state.deadlineString = dataQ.deadlineString ?? null;
+            state.pdfBase64 = dataQ.pdfBase64 ?? null;
+            state.quizMode = dataQ.quizMode ?? "Manual";
+            state.totalScore = dataQ.totalScore ?? 10.0;
+        }
+
+        // 9. Redirect view tab to analytics view upon successful creation
+        switchTeacherTab('analytics');
+    } catch (err) {
+        alert(err.message);
+    }
 }
+
+
+
 
 
 
