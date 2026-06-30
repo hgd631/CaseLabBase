@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CaseLabBase.BLL.DTOs;
@@ -132,9 +132,43 @@ namespace CaseLabBase.BLL.Services
     throw new System.NotImplementedException("TODO: Team Member 2 - Implement GetMistakeBankAsync in StudentService.cs");
 }
 
+        // Member Han - Implement InitiateDisputeAsync in StudentService
         public async Task InitiateDisputeAsync(string studentId, int questionId, string reason)
         {
-    throw new System.NotImplementedException("TODO: Team Member 5 - Implement InitiateDisputeAsync in StudentService.cs");
+
+            var question = await _questionRepository.GetByIdAsync(questionId);
+            if (question == null) return;
+
+            var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, question.QuizTitle);
+            var studentUser = await _userRepository.GetByIdAsync(studentId);
+            if (submission == null || studentUser == null) return;
+
+            // 1. Mutate dispute status
+            submission.DisputeStatus = "PendingReview";
+            await _submissionRepository.SaveSubmissionAsync(submission);
+
+            // 2. Open dispute ticket
+            var ticket = new Ticket
+            {
+                StudentId = studentId,
+                QuestionId = questionId,
+                Msg = reason,
+                Status = "Pending"
+            };
+            await _forumRepository.SaveTicketAsync(ticket);
+
+            // 3. Log private thread starting comment
+            var startComment = new Comment
+            {
+                IsPrivate = true,
+                StudentId = studentId,
+                Topic = "Dispute Q" + questionId,
+                Sender = $"{studentUser.Name} (Student)",
+                Message = "🚨 [Dispute Opened]: " + reason,
+                Timestamp = System.DateTime.Now
+            };
+            await _forumRepository.AddCommentAsync(startComment);
+            
 }
     }
 }
