@@ -21,14 +21,38 @@ namespace CaseLabBase.BLL.Services
     throw new System.NotImplementedException("TODO: Team Member 5 - Implement GetForumTopicCommentsAsync in ForumService.cs");
 }
 
+
+
+
+        // Han - Implement GetDisputeCommentsAsync in ForumService.cs
         public async Task<List<CommentDTO>> GetDisputeCommentsAsync(string studentId, string topic)
         {
-    throw new System.NotImplementedException("TODO: Team Member 5 - Implement GetDisputeCommentsAsync in ForumService.cs");
-}
+            var list = await _forumRepository.GetPrivateCommentsForDisputeAsync(studentId, topic);
+            return list.Select(c => new CommentDTO
+            {
+                Id = c.Id,
+                IsPrivate = c.IsPrivate,
+                StudentId = c.StudentId,
+                Topic = c.Topic,
+                Sender = c.Sender,
+                Message = c.Message,
+                Timestamp = c.Timestamp
+            }).ToList();
+        }
 
+        // Han - Implement AddCommentAsync in ForumService.cs
         public async Task AddCommentAsync(CommentDTO comment)
         {
-    throw new System.NotImplementedException("TODO: Team Member 5 - Implement AddCommentAsync in ForumService.cs");
-}
+            var commentEntity = new Comment
+            {
+                IsPrivate = comment.IsPrivate,
+                StudentId = comment.StudentId,
+                Topic = comment.Topic,
+                Sender = comment.Sender,
+                Message = comment.Message,
+                Timestamp = comment.Timestamp
+            };
+            await _forumRepository.AddCommentAsync(commentEntity);
+        }
     }
 }
