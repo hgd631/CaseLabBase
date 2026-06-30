@@ -51,10 +51,76 @@ namespace CaseLabBase.BLL.Services
             }
         }
 
+        //Team member 2: Kelly Implemented SubmitExamAsync in StudentService.cs
         public async Task SubmitExamAsync(string studentId, string quizTitle, List<SubmitAnswerRequestItem> answers)
+
         {
-    throw new System.NotImplementedException("TODO: Team Member 2 - Implement SubmitExamAsync in StudentService.cs");
-}
+            var questions = await _questionRepository.GetByQuizTitleAsync(quizTitle);
+
+            // Check if the quiz contains any essay questions to determine the grading status
+            int essayCount = questions.Count(q => q.Type == "Essay");
+            bool hasEssay = essayCount > 0;
+
+
+            var submission = new Submission
+            {
+                StudentId = studentId,
+                QuizTitle = quizTitle,
+                Status = hasEssay ? "Pending" : "Graded", // Dynamically set status based on question types
+                FinalScore = 0,
+                DisputeStatus = "None",
+                SurveyPainPoint = "Awaiting reflection survey..."
+            };
+            await _submissionRepository.SaveSubmissionAsync(submission);
+            decimal totalScore = 0;
+
+            foreach (var item in answers)
+            {
+                var question = questions.FirstOrDefault(q => q.Id == item.QuestionId);
+                if (question == null)
+                    continue;
+
+                var submissionAnswer = new SubmissionAnswer
+                {
+                    SubmissionId = submission.Id,
+                    QuestionId = question.Id,
+                    StudentAnswer = item.StudentAnswer,
+                    Difficulty = "Medium"
+                   
+                };
+
+                // Separate logic for Multiple Choice Questions (MCQ) and Essay Questions
+                if (question.Type == "MCQ")
+                {
+                    // Perform a safe case-insensitive string comparison with trimming
+                    bool isCorrect = string.Equals(
+                        item.StudentAnswer?.Trim(),
+                        question.CorrectKey?.Trim(),
+                        System.StringComparison.OrdinalIgnoreCase);
+
+                    decimal earnedScore = isCorrect ? question.MaxScore : 0;
+                    totalScore += earnedScore;
+
+                    submissionAnswer.IsCorrect = isCorrect;
+                    submissionAnswer.EarnedScore = earnedScore;
+                    submissionAnswer.TeacherTag = "Auto-Graded";
+                }
+                else // Handles Essay questions that require manual grading by a teacher
+                {
+                    submissionAnswer.IsCorrect = null;
+                    submissionAnswer.EarnedScore = 0;
+                    submissionAnswer.TeacherTag = "Pending";
+                }
+       
+               
+                await _submissionRepository.SaveSubmissionAnswerAsync(submissionAnswer);
+            }
+            submission.FinalScore = totalScore;
+            await _submissionRepository.SaveSubmissionAsync(submission);
+
+            await NotifyObserversAsync(submission);
+        } 
+        
 
         public async Task SubmitSurveyAsync(string studentId, string quizTitle, List<SubmitSurveyRequestItem> reflections)
         {

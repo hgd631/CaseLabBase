@@ -1143,23 +1143,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\handa\\.nuget\\packages\\": {},
+    "C:\\Users\\Kelly\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.API\\CaseLabBase.API.csproj",
+      "projectUniqueName": "C:\\Users\\Kelly\\source\\repos\\CaseLabBase\\CaseLabBase.API\\CaseLabBase.API.csproj",
       "projectName": "CaseLabBase.API",
-      "projectPath": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.API\\CaseLabBase.API.csproj",
-      "packagesPath": "C:\\Users\\handa\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.API\\obj\\",
+      "projectPath": "C:\\Users\\Kelly\\source\\repos\\CaseLabBase\\CaseLabBase.API\\CaseLabBase.API.csproj",
+      "packagesPath": "C:\\Users\\Kelly\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Kelly\\source\\repos\\CaseLabBase\\CaseLabBase.API\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\handa\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\Kelly\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -1176,8 +1176,8 @@
           "framework": "net10.0",
           "targetAlias": "net10.0",
           "projectReferences": {
-            "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.BLL\\CaseLabBase.BLL.csproj": {
-              "projectPath": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.BLL\\CaseLabBase.BLL.csproj"
+            "C:\\Users\\Kelly\\source\\repos\\CaseLabBase\\CaseLabBase.BLL\\CaseLabBase.BLL.csproj": {
+              "projectPath": "C:\\Users\\Kelly\\source\\repos\\CaseLabBase\\CaseLabBase.BLL\\CaseLabBase.BLL.csproj"
             }
           }
         }
