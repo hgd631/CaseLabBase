@@ -95,8 +95,20 @@ namespace CaseLabBase.BLL.Services
 
         public async Task SubmitSurveyAsync(string studentId, string quizTitle, List<SubmitSurveyRequestItem> reflections)
         {
-    throw new System.NotImplementedException("TODO: Team Member 2 - Implement SubmitSurveyAsync in StudentService.cs");
-}
+            var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, quizTitle);
+            if (submission == null)
+                return;
+            foreach (var reflection in reflections)
+            {
+                var answer = submission.Answers.FirstOrDefault(a => a.QuestionId == reflection.QuestionId);
+                if (answer == null)
+                    continue;
+
+                answer.Difficulty = reflection.Difficulty;
+                answer.CommentNote = reflection.CommentNote;
+                await _submissionRepository.SaveSubmissionAnswerAsync(answer);
+            }
+        } //Team member 2: Kelly Implemented SubmitSurveyAsync in StudentService.cs
 
         public async Task<SubmissionDTO?> GetMistakeBankAsync(string studentId, string quizTitle)
         {
