@@ -141,8 +141,43 @@ namespace CaseLabBase.BLL.Services
 
         public async Task<SubmissionDTO?> GetMistakeBankAsync(string studentId, string quizTitle)
         {
-    throw new System.NotImplementedException("TODO: Team Member 2 - Implement GetMistakeBankAsync in StudentService.cs");
-}
+            var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, quizTitle);
+            if (submission == null)
+            {
+                return null;
+            }
+            var submissionDTO = new SubmissionDTO
+            {
+                StudentId = submission.StudentId,
+                StudentName = submission.Student.Name,
+                Status = submission.Status,
+                FinalScore = submission.FinalScore,
+                SurveyPainPoint = submission.SurveyPainPoint,
+                DisputeStatus = submission.DisputeStatus,
+            };
+
+            submissionDTO.Answers = submission.Answers
+                .Where(a => a.IsCorrect == false) // Filter to include only incorrect answers
+                .Select(a => new SubmissionAnswerDTO
+                {
+                    QuestionId = a.QuestionId,
+                    QuestionPrompt = a.Question.Prompt,
+                    QuestionTopic = a.Question.Topic,
+                    QuestionType = a.Question.Type,
+                    StudentAnswer = a.StudentAnswer,
+                    IsCorrect = a.IsCorrect,
+                    TeacherTag = a.TeacherTag,
+                    Difficulty = a.Difficulty,
+                    CommentNote = a.CommentNote,
+                    MaxScore = a.Question.MaxScore,
+                    EarnedScore = a.EarnedScore,
+                    EasyRate = 0,
+                    MediumRate = 0,
+                    HardRate = 0
+                })
+                .ToList();
+            return submissionDTO;
+        } //Team member 2: Kelly Implemented GetMistakeBankAsync in StudentService.cs
 
         public async Task InitiateDisputeAsync(string studentId, int questionId, string reason)
         {
