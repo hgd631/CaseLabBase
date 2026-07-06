@@ -186,8 +186,44 @@ document.addEventListener('click', (e) => {
 // ================= STUDENT WORKSPACE FLOW =================
 
 async function renderStudentDashboard() {
-    // TODO: Team Member 2 - Load student-assigned quizzes and mistake banks, rendering status buttons based on submission records.
-    alert("TODO: Team Member 2 - Implement renderStudentDashboard in app.js");
+    // TODO: Team Member 2 : Kelly - Load student-assigned quizzes and mistake banks, rendering status buttons based on submission records.
+    try {
+        const dashboard = document.getElementById("studentDashboardQuizzesArea");
+        dashboard.innerHTML = "";
+
+        const quizzesRes = await fetch(`${API_BASE}/questions/quizzes`);
+        const quizzes = await quizzesRes.json();
+
+        for (const quiz of quizzes) {
+            const card = document.createElement("div");
+            card.className = "quiz-card";
+
+            const title = document.createElement("h3");
+            title.textContent = quiz.title;
+            card.appendChild(title);
+
+            const examBtn = document.createElement("button");
+            examBtn.textContent = "Start Exam";
+            examBtn.onclick = () => loadQuestionsForExam(quiz.title);
+            card.appendChild(examBtn);
+
+            try {
+                const submissionRes = await fetch(`${API_BASE}/submissions?quizTitle=${encodeURIComponent(quiz.title)}`);
+                if (submissionRes.ok) {
+                    const mistakeBtn = document.createElement("button");
+                    mistakeBtn.textContent = "View Mistake Bank";
+                    mistakeBtn.onclick = () => openStudentMistakeBankWithReload(quiz.title);
+                    card.appendChild(mistakeBtn);
+                }
+            } catch {
+                //if student didnt submit quiz
+            }
+            dashboard.appendChild(card);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("unable to load student dashboard quizzes. Please check the console for more details."); 
+    }
 }
 
 async function loadQuestionsForExam() {
