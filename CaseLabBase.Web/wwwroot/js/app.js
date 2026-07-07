@@ -186,7 +186,7 @@ document.addEventListener('click', (e) => {
 // ================= STUDENT WORKSPACE FLOW =================
 
 async function renderStudentDashboard() {
-    // TODO: Team Member 2 : Kelly - Load student-assigned quizzes and mistake banks, rendering status buttons based on submission records.
+    //  Team Member 2 : Kelly - Load student-assigned quizzes and mistake banks, rendering status buttons based on submission records.
     try {
         const dashboard = document.getElementById("studentDashboardQuizzesArea");
         dashboard.innerHTML = "";
@@ -227,9 +227,57 @@ async function renderStudentDashboard() {
 }
 
 async function loadQuestionsForExam() {
-    // TODO: Team Member 2 - Load active quiz configuration details and initialize questions list layout.
-    alert("TODO: Team Member 2 - Implement loadQuestionsForExam in app.js");
-}
+    //Team Member 2 Kelly - Load active quiz configuration details and initialize questions list layout.
+    try {
+        const response = await fetch(
+            '${API_BASE}/questions/{encodeURIComponent(quizTitle)}'
+        );
+        if (!response.ok) {
+            throw new Error("Failed to load quiz questions.");
+        }
+        const questions = await response.json();
+
+        const container = document.getElementById("examQuestionArea");
+        container.innerHTML = "";
+
+        questions.forEach((questions, index) => {
+            const card = document.createElement("div");
+            card.className = "question-card";
+
+            const prompt = document.createElement("p");
+            prompt.textContent = '${index + 1}. ${questions.prompt}';
+            card.appendChild(prompt);
+
+            if (question.type == "MCQ") {
+                const option = JSON.parse(question.options);
+                option.forEach(option => {
+                    const label = document.createElement("label");
+                    const radio = document.createElement("input");
+                    radio.type = "radio";
+                    radio.name = 'question_${question.id}';
+                    radio.value = option;
+
+                    label.appendChild(radio);
+                    label.append(' ${option}');
+                    card.appendChild(label);
+                    card.appendChild(document.createElement("br"));
+                });
+            } else {
+                const textarea = document.createElement("textarea");
+                textarea.id = 'question_${question.id}';
+                textarea.rows = 4;
+                textarea.cols = 60;
+                card.appendChild(textarea);
+            }
+            container.appendChild(card);
+        });
+        currentQuizTitle = quizTitle;
+    }
+    catch (err) {
+        console.error(err);
+        alert("Unable to load quiz questions.");
+    }
+}   
 
 function openStudentExamForm() {
     // Timer Reset
