@@ -33,8 +33,8 @@ C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\Ca
 C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\CaseLabBase.Web.genruntimeconfig.cache
 C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\ref\CaseLabBase.Web.dll
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\bin\Debug\net10.0\appsettings.json
-C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\bin\Debug\net10.0\CaseLabBase.Web.staticwebassets.endpoints.json
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\bin\Debug\net10.0\CaseLabBase.Web.staticwebassets.runtime.json
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\bin\Debug\net10.0\CaseLabBase.Web.staticwebassets.endpoints.json
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\bin\Debug\net10.0\CaseLabBase.Web.exe
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\bin\Debug\net10.0\CaseLabBase.Web.deps.json
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\bin\Debug\net10.0\CaseLabBase.Web.runtimeconfig.json
@@ -54,15 +54,15 @@ C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\rjsmrazo
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\rjsmcshtml.dswa.cache.json
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\scopedcss\bundle\CaseLabBase.Web.styles.css
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\9ufwhtjs64-{0}-g7guuyx2ed-g7guuyx2ed.gz
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\xxafrsm3ut-{0}-v6e22z4jhj-v6e22z4jhj.gz
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\staticwebassets.build.json
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\staticwebassets.build.json.cache
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\staticwebassets.development.json
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\staticwebassets.build.endpoints.json
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\swae.build.ex.cache
-C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\CaseLabBase.Web.dll
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\refint\CaseLabBase.Web.dll
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\CaseLabBase.Web.pdb
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\CaseLabBase.Web.genruntimeconfig.cache
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\ref\CaseLabBase.Web.dll
-C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\xxafrsm3ut-{0}-yrgspwtkht-yrgspwtkht.gz
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
