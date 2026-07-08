@@ -574,10 +574,42 @@ async function openStudentMistakeBankWithReload() {
     alert("TODO: Team Member 2 - Implement openStudentMistakeBankWithReload in app.js");
 }
 
+
+// Member Han  - Student dispute ticketing and private chat operations
 async function initiateStudentDisputeTicket(qId) {
-    // TODO: Team Member 5 - Prompt student reason statement, opens private dispute thread, and posts start comment.
-    alert("TODO: Team Member 5 - Implement initiateStudentDisputeTicket in app.js");
+    // 1. User Input: Open a native browser prompt box to ask the student why they are contesting the grading
+    const reason = prompt("Enter your dispute reason statement to start a private 1-on-1 chat thread with your instructor:");
+    if (!reason) return; // Guard clause: Exit if the student cancels or leaves the text box blank
+
+    try {
+        // 2. Setup Payload: Assemble the necessary metadata required by the server to log the complaint
+        const payload = {
+            studentId: state.user.id,
+            questionId: qId,
+            message: reason
+        };
+
+        // 3. Network Request: Send a POST request to create the dispute ticket in the backend database
+        const res = await fetch(`${API_BASE}/student/initiate-dispute`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error("Failed to open dispute ticket.");
+
+        // 4. Success Handling: Inform the user and trigger a UI reload to show the updated dispute status
+        alert("Dispute ticket successfully created. A private dialogue has been opened.");
+        openStudentMistakeBankWithReload();
+
+    } catch (err) {
+        // 5. Error Handling: Display a popup banner with the exact error message if the server request fails
+        alert(`Error opening dispute: ${err.message}`);
+    }
 }
+
+
+
 
 async function renderStudentEmbeddedPrivateChatArea(answers) {
     // TODO: Team Member 5 - Load and render private dispute comments streams and audit buttons inside student logs.
@@ -763,10 +795,142 @@ async function loadInstructorAnalytics() {
     }
 }
 
+// Member Han  - Load question diagnostics for the active quiz,
+//compiling student feedback difficulty counts and flagging potential anomaly rating discrepancies.
+
 async function loadQuestionDiagnostics() {
-    // TODO: Team Member 3 - Compile student feedback difficulty counts and flag potential anomaly rating discrepancies.
-    alert("TODO: Team Member 3 - Implement loadQuestionDiagnostics in app.js");
+    // 1. DOM Check: Ensure the container element for displaying question analytics exists on the page
+    const container = document.getElementById('analyticsQuestionDiagnosticsContainer');
+    if (!container) return;
+
+    try {
+        // 2. Build Query & Fetch: Get student submission records for the selected quiz (handles URL encoding for special characters)
+        const titleQuery = state.selectedQuizTitle ? `&quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
+        const resSub = await fetch(`${API_BASE}/instructor/roster?subTab=all${titleQuery}`);
+        if (!resSub.ok) throw new Error();
+        const submissions = await resSub.json();
+
+        // 3. Fallback Check: If no questions exist in the global state, notify the user and exit
+        if (!state.questions || state.questions.length === 0) {
+            container.innerHTML = `<div class="text-center text-secondary py-3 small">No questions have been published.</div>`;
+            return;
+        }
+
+        let html = "";
+
+        // 4. Data Processing Loop: Iterate through each question to analyze its performance metrics
+        state.questions.forEach((q, qIdx) => {
+            let totalAnswers = 0;
+            let correctAnswers = 0;
+            let easyCount = 0;
+            let mediumCount = 0;
+            let hardCount = 0;
+            let anomalies = [];
+
+            // Nested Loop: Scan all student submissions to aggregate data specific to this question
+            submissions.forEach(sub => {
+                const ans = sub.answers.find(a => a.questionId === q.id);
+                if (ans && ans.studentAnswer) {
+                    totalAnswers++;
+                    if (ans.isCorrect === true) {
+                        correctAnswers++;
+                    }
+
+                    // Group student-perceived difficulty feedback distributions
+                    if (ans.difficulty === 'Easy') easyCount++;
+                    else if (ans.difficulty === 'Medium') mediumCount++;
+                    else if (ans.difficulty === 'Hard') hardCount++;
+
+                    // 5. Anomaly Detection: Flag students who got the item correct but subjective-rated it as "Hard"
+                    if (ans.isCorrect === true && ans.difficulty === 'Hard') {
+                        anomalies.push({
+                            studentName: sub.studentName,
+                            studentId: sub.studentId,
+                            note: ans.commentNote || "No reflection notes logged."
+                        });
+                    }
+                }
+            });
+
+            // 6. Calculate Percentages: Compute rates safely preventing potential division-by-zero errors
+            const successRate = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
+            const easyPct = totalAnswers > 0 ? Math.round((easyCount / totalAnswers) * 100) : 0;
+            const medPct = totalAnswers > 0 ? Math.round((mediumCount / totalAnswers) * 100) : 0;
+            const hardPct = totalAnswers > 0 ? Math.round((hardCount / totalAnswers) * 100) : 0;
+
+            // 7. Sub-template Generation: Build warning boxes if any survey discrepancies are flagged
+            let anomaliesHTML = "";
+            if (anomalies.length > 0) {
+                anomaliesHTML += `
+                    <div class="mt-3 p-3 border border-danger rounded bg-danger-subtle" style="background-color: rgba(239, 68, 68, 0.05); border-color: rgba(239, 68, 68, 0.25) !important;">
+                        <h6 class="text-danger fw-bold small mb-2 d-flex align-items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            Flagged Survey Discrepancy Warnings (${anomalies.length}):
+                        </h6>
+                        <ul class="mb-0 ps-3 text-danger small">
+                            ${anomalies.map(a => `
+                                <li class="mb-1">
+                                    <strong>${a.studentName} (${a.studentId})</strong> scored 100% correct but rated this task as <strong>"Hard"</strong>. 
+                                    <br><span class="text-secondary italic">Survey Reflection Note: "${a.note}"</span>
+                                </li>`).join('')}
+                        </ul>
+                    </div>`;
+            } else {
+                anomaliesHTML += `
+                    <div class="mt-3 p-2 border border-success rounded bg-success-subtle text-success small d-flex align-items-center gap-2" style="background-color: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.25) !important;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        No rating anomalies identified. All responses align with cognitive ratings.
+                    </div>`;
+            }
+
+            // 8. Construct Card Template: Assemble the combined item breakdown HTML card
+            html += `
+                <div class="p-3 border rounded bg-white mb-3" style="border-color: var(--border-color) !important;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <span class="badge-custom badge-custom-cyan mb-1 d-inline-block">Question #${qIdx + 1} | Topic: ${q.topic || 'General'}</span>
+                            <h6 class="fw-bold text-dark small mb-0">${q.prompt}</h6>
+                        </div>
+                        <div class="text-end">
+                            <span class="text-secondary small d-block" style="font-size: 11px;">SUCCESS RATE</span>
+                            <strong class="text-cyan font-monospace small" style="font-size: 14px;">${successRate}% (${correctAnswers}/${totalAnswers} Correct)</strong>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mt-2">
+                        <div class="col-md-4">
+                            <div class="p-2 border rounded bg-light text-center small">
+                                <span class="d-block text-secondary" style="font-size: 11px;">😊 Easy Rating</span>
+                                <strong class="text-emerald">${easyPct}%</strong> <span class="text-secondary">(${easyCount})</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-2 border rounded bg-light text-center small">
+                                <span class="d-block text-secondary" style="font-size: 11px;">😐 Medium Rating</span>
+                                <strong class="text-cyan">${medPct}%</strong> <span class="text-secondary">(${mediumCount})</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-2 border rounded bg-light text-center small">
+                                <span class="d-block text-secondary" style="font-size: 11px;">🤯 Hard Rating</span>
+                                <strong class="text-rose">${hardPct}%</strong> <span class="text-secondary">(${hardCount})</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${anomaliesHTML}
+                </div>`;
+        });
+
+        // 9. DOM Injection: Push all constructed cards onto the screen at once
+        container.innerHTML = html;
+    } catch (err) {
+        // 10. Error UI State: Gracefully render a fallback error indicator card if something breaks
+        container.innerHTML = `<div class="alert-custom alert-custom-warning small">Error loading diagnostics dataset.</div>`;
+    }
 }
+
+
 
 
 
@@ -816,11 +980,37 @@ async function renderInlineQuestionEditSection() {
 
 
 
-
+// Member Han  - Inline answer key mutation for MCQ questions, triggering class-wide auto-regrading.
 async function inlineModifyAnswerKey(qId, val) {
-    // TODO: Team Member 4 - POST answer key mutation requests, triggering class-wide auto-regrading.
-    alert("TODO: Team Member 4 - Implement inlineModifyAnswerKey in app.js");
+    try {
+        // 1. Setup Payload: Package the target question ID and the newly selected correct answer option
+        const payload = { questionId: qId, correctKey: val };
+
+        // 2. HTTP Request: Send the updated key to the backend API endpoint using a POST method
+        const res = await fetch(`${API_BASE}/instructor/update-answer-key`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        // 3. Error Checking: If the server returns an unstable response status, drop to the catch block
+        if (!res.ok) throw new Error("Could not update key.");
+
+        // 4. Success Alert: Notify the instructor that the core database record and student scoring balances are altered
+        alert(`Answer key successfully mutated in database. All student scores re-calculated.`);
+
+        // 5. UI Synchronization: Trigger dashboard component reloads to display modified metrics instantly
+        loadInstructorAnalytics();
+        switchRosterSubTab(state.activeRosterSubTab);
+
+    } catch (err) {
+        // 6. Exception Handling: Catch connection issues or system validation rejections smoothly
+        alert(err.message);
+    }
 }
+
+
+
 
 async function switchRosterSubTab(subTab) {
     // TODO: Team Member 3 - Mutate active sub-tab view contexts and initiate roster table content refresh.
