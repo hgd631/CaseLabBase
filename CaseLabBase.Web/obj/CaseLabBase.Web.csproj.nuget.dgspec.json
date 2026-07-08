@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Kelly\\source\\repos\\CaseLabBase\\CaseLabBase.Web\\CaseLabBase.Web.csproj": {}
+    "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.Web\\CaseLabBase.Web.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Kelly\\source\\repos\\CaseLabBase\\CaseLabBase.Web\\CaseLabBase.Web.csproj": {
+    "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.Web\\CaseLabBase.Web.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Kelly\\source\\repos\\CaseLabBase\\CaseLabBase.Web\\CaseLabBase.Web.csproj",
+        "projectUniqueName": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.Web\\CaseLabBase.Web.csproj",
         "projectName": "CaseLabBase.Web",
-        "projectPath": "C:\\Users\\Kelly\\source\\repos\\CaseLabBase\\CaseLabBase.Web\\CaseLabBase.Web.csproj",
-        "packagesPath": "C:\\Users\\Kelly\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Kelly\\source\\repos\\CaseLabBase\\CaseLabBase.Web\\obj\\",
+        "projectPath": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.Web\\CaseLabBase.Web.csproj",
+        "packagesPath": "C:\\Users\\handa\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.Web\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Kelly\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\handa\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],

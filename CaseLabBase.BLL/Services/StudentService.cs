@@ -119,14 +119,17 @@ namespace CaseLabBase.BLL.Services
             await _submissionRepository.SaveSubmissionAsync(submission);
 
             await NotifyObserversAsync(submission);
-        } 
-        
+        }
 
+        //Team member 2: Kelly Implemented SubmitSurveyAsync in StudentService.cs
         public async Task SubmitSurveyAsync(string studentId, string quizTitle, List<SubmitSurveyRequestItem> reflections)
         {
             var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, quizTitle);
             if (submission == null)
                 return;
+
+            // adding a default value for SurveyPainPoint in case no reflections are provided
+            string generalPainPoint = "No notes.";
             foreach (var reflection in reflections)
             {
                 var answer = submission.Answers.FirstOrDefault(a => a.QuestionId == reflection.QuestionId);
@@ -135,10 +138,25 @@ namespace CaseLabBase.BLL.Services
 
                 answer.Difficulty = reflection.Difficulty;
                 answer.CommentNote = reflection.CommentNote;
+
+
+                // If this is an essay question, use its note as the main pain point
+                if (answer.Question.Type == "Essay" && !string.IsNullOrEmpty(reflection.CommentNote))
+                {
+                    generalPainPoint = reflection.CommentNote;
+                }
+
+
                 await _submissionRepository.SaveSubmissionAnswerAsync(answer);
             }
-        } //Team member 2: Kelly Implemented SubmitSurveyAsync in StudentService.cs
 
+            // Update the submission's SurveyPainPoint with the general pain point derived from essay reflections
+            submission.SurveyPainPoint = generalPainPoint;
+            await _submissionRepository.SaveSubmissionAsync(submission);
+        } 
+
+
+        //Team member 2: Kelly Implemented GetMistakeBankAsync in StudentService.cs
         public async Task<SubmissionDTO?> GetMistakeBankAsync(string studentId, string quizTitle)
         {
             var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, quizTitle);
@@ -157,7 +175,7 @@ namespace CaseLabBase.BLL.Services
             };
 
             submissionDTO.Answers = submission.Answers
-                .Where(a => a.IsCorrect == false) // Filter to include only incorrect answers
+
                 .Select(a => new SubmissionAnswerDTO
                 {
                     QuestionId = a.QuestionId,
@@ -171,13 +189,11 @@ namespace CaseLabBase.BLL.Services
                     CommentNote = a.CommentNote,
                     MaxScore = a.Question.MaxScore,
                     EarnedScore = a.EarnedScore,
-                    EasyRate = 0,
-                    MediumRate = 0,
-                    HardRate = 0
+                     
                 })
                 .ToList();
             return submissionDTO;
-        } //Team member 2: Kelly Implemented GetMistakeBankAsync in StudentService.cs
+        } 
 
         public async Task InitiateDisputeAsync(string studentId, int questionId, string reason)
         {
