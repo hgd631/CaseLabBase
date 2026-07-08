@@ -1,0 +1,2 @@
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\wwwroot\css\index.css
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\wwwroot\js\app.js
