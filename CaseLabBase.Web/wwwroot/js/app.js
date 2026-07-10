@@ -563,8 +563,60 @@ function updateCharCount(input, qId) {
 }
 
 async function completeSurveyPipeline() {
-    // TODO: Team Member 2 - Collect exam answer responses and reflections, submitting payloads to exam & survey endpoints.
-    alert("TODO: Team Member 2 - Implement completeSurveyPipeline in app.js");
+    //Team Member 2: Kelly- Collect exam answer responses and reflections, submitting payloads to exam & survey endpoints.
+    try {
+        const answers = state.questions.map(q => ({
+            questionId: q.id,
+            studentAnswer: state.studentAnswers[q.id] ?? ""
+        }));
+
+        //submit exam 
+        const examRes = await fetch(`${API_BASE}/student/submit-exam`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                studentId: state.user.id,
+                quizTitle: state.activeTaskTitle,
+                answers: answers
+            })
+        });
+
+        if (!examRes.ok) {
+            throw new Error(await examRes.text());
+        }
+
+        //build survey payload 
+        const reflections = Object.entries(state.studentSurvey).map(([questionId, survey]) => ({
+            questioId: Number(questionId),
+            difficulty: survey.difficulty,
+            commentNote: survey.note
+        }));
+
+        //submit survey
+        const surveyRes = await fetch(`${API_BASE}/student/submit-survey`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                studentId: state.user.id,
+                quizTitle: state.activeTaskTitle,
+                reflections: reflections
+            })
+        });
+
+        if (!surveyRes.ok) {
+            throw new Error(await surveyRes.text());
+        }
+        alert("Assessment and survey submitted successfully! You may now view your mistake bank for feedback.");
+        window.location.href = "/Student/Dashboard";
+    }
+    catch (err) {
+        console.error(err);
+        alert('Submission failed: ' + err.message); 
+    }
 }
 
 // ================= STUDENT MISTAKE BANK =================
