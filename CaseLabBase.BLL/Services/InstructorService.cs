@@ -65,11 +65,46 @@ namespace CaseLabBase.BLL.Services
 
 
 
-        public async Task<List<SubmissionDTO>> GetRosterSubTabAsync(string subTab, string quizTitle)
-        {
-            throw new System.NotImplementedException("TODO: Team Member 3 - Implement GetRosterSubTabAsync in InstructorService.cs");
-        }
+public async Task<List<SubmissionDTO>> GetRosterSubTabAsync(string subTab, string quizTitle)
+{
+    // 1. Fetch all submissions for this quiz, with Student and Answers/Question already loaded
+    var submissions = await _submissionRepository.GetSubmissionsByQuizWithAnswersAsync(quizTitle);
 
+    // 2. Filter by the requested sub-tab
+    IEnumerable<Submission> filtered = subTab switch
+    {
+        "pending" => submissions.Where(s => s.Status != "Graded"),
+        "graded" => submissions.Where(s => s.Status == "Graded"),
+        "dispute" => submissions.Where(s => s.DisputeStatus != "None"),
+        "all" => submissions,
+        _ => submissions.Where(s => s.Status != "Graded") // default to pending if an unknown subTab is passed
+    };
+
+    // Member 3- Hitesh : Map each Submission entity into a SubmissionDTO for the frontend
+    return filtered.Select(s => new SubmissionDTO
+    {
+        StudentId = s.StudentId,
+        StudentName = s.Student.Name,
+        Status = s.Status,
+        FinalScore = s.FinalScore,
+        SurveyPainPoint = s.SurveyPainPoint,
+        DisputeStatus = s.DisputeStatus,
+        Answers = s.Answers.Select(a => new SubmissionAnswerDTO
+        {
+            QuestionId = a.QuestionId,
+            QuestionPrompt = a.Question.Prompt,
+            QuestionTopic = a.Question.Topic,
+            QuestionType = a.Question.Type,
+            StudentAnswer = a.StudentAnswer,
+            IsCorrect = a.IsCorrect,
+            TeacherTag = a.TeacherTag,
+            Difficulty = a.Difficulty,
+            CommentNote = a.CommentNote,
+            MaxScore = a.Question.MaxScore,
+            EarnedScore = a.EarnedScore
+        }).ToList()
+    }).ToList();
+}
         public async Task GradeSubmissionAsync(string studentId, string quizTitle, List<GradeQuestionItem> grades)
         {
             throw new System.NotImplementedException("TODO: Team Member 4 - Implement GradeSubmissionAsync in InstructorService.cs");
