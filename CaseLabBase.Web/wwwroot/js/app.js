@@ -186,14 +186,128 @@ document.addEventListener('click', (e) => {
 // ================= STUDENT WORKSPACE FLOW =================
 
 async function renderStudentDashboard() {
-    // TODO: Team Member 2 - Load student-assigned quizzes and mistake banks, rendering status buttons based on submission records.
-    alert("TODO: Team Member 2 - Implement renderStudentDashboard in app.js");
+    // Team Member 2 : Kelly - Load student-assigned quizzes and mistake banks, rendering status buttons based on submission records.
+    try {
+        // FIXED: Used the correct container ID from index.html instead of the non-existent one
+        const dashboard = document.getElementById("assignmentContainerStudent");
+        if (!dashboard) return;
+        dashboard.innerHTML = "";
+        // Fetch all active quizzes
+        const quizzesRes = await fetch(`${API_BASE}/questions/quizzes`);
+        if (!quizzesRes.ok) throw new Error("Failed to load quizzes.");
+        const quizzes = await quizzesRes.json();
+        // Iterate through each quiz to generate quiz cards
+        for (const quiz of quizzes) {
+            const card = document.createElement("div");
+            // FIXED: Added standard styling class names to align with premium glassmorphism theme
+            card.className = "glass-card d-flex flex-column gap-3 mb-3 p-3";
+            // Title and header section
+            const headerDiv = document.createElement("div");
+            headerDiv.className = "d-flex justify-content-between align-items-center";
+
+            const title = document.createElement("strong");
+            title.className = "d-block text-white";
+            title.textContent = quiz.title;
+            headerDiv.appendChild(title);
+            card.appendChild(headerDiv);
+            // FIXED: Call the correct API endpoint with quizTitle to check if submission exists
+            const submissionRes = await fetch(`${API_BASE}/student/mistake-bank/${state.user.id}?quizTitle=${encodeURIComponent(quiz.title)}`);
+
+            if (submissionRes.ok) {
+                // If a submission exists, parse the status and display appropriate status badge
+                const submissionData = await submissionRes.json();
+
+                const statusBadge = document.createElement("span");
+                if (submissionData.status === "Pending") {
+                    statusBadge.className = "badge-custom badge-custom-amber text-center";
+                    statusBadge.textContent = "✔ Submission processed. Awaiting Instructor Grading.";
+                } else if (submissionData.status === "Graded") {
+                    statusBadge.className = "badge-custom badge-custom-emerald text-center";
+                    statusBadge.textContent = `✔ Graded. Result Score Registry: ${submissionData.finalScore} / 10.0 pts.`;
+                }
+                card.appendChild(statusBadge);
+                // View Mistake Bank button
+                const mistakeBtn = document.createElement("button");
+                mistakeBtn.className = "btn btn-sm btn-outline-custom w-100";
+                mistakeBtn.textContent = "View Mistake Bank";
+                // FIXED: Set state variables and call the correct refresh function
+                mistakeBtn.onclick = async () => {
+                    state.activeTaskTitle = quiz.title;
+                    openStudentMistakeBankWithReload();
+                };
+                card.appendChild(mistakeBtn);
+            } else {
+                // If no submission exists (Not Started)
+                const timeInfo = document.createElement("span");
+                timeInfo.className = "text-secondary small";
+                timeInfo.textContent = "Time Allowed: 40 Minutes";
+                headerDiv.appendChild(timeInfo);
+                const examBtn = document.createElement("button");
+                examBtn.className = "btn btn-dark-custom btn-sm w-100";
+                examBtn.textContent = "Execute Form Task";
+                // FIXED: Fetch questions for this quiz first, set state variables, and call the correct exam form function
+                examBtn.onclick = async () => {
+                    state.activeTaskTitle = quiz.title;
+
+                    const qRes = await fetch(`${API_BASE}/questions?quizTitle=${encodeURIComponent(quiz.title)}`);
+                    if (qRes.ok) {
+                        const qData = await qRes.json();
+                        state.questions = qData.questions;
+                        openStudentExamForm();
+                    } else {
+                        alert("Failed to load questions for this exam.");
+                    }
+                };
+                card.appendChild(examBtn);
+            }
+            dashboard.appendChild(card);
+        }
+    } catch (err) {
+        console.error(err);
+        dashboard.innerHTML = `<div class="alert-custom alert-custom-warning small">Error loading tasks: ${err.message}</div>`;
+    }
 }
 
 async function loadQuestionsForExam() {
-    // TODO: Team Member 2 - Load active quiz configuration details and initialize questions list layout.
-    alert("TODO: Team Member 2 - Implement loadQuestionsForExam in app.js");
-}
+    // Team Member 2 Kelly - Load active quiz configuration details and initialize questions list layout.
+    try {
+        // Get the quiz title from URL search parameters (if any)
+        const urlParams = new URLSearchParams(window.location.search);
+        const qTitle = urlParams.get('quizTitle');
+        const titleQuery = qTitle ? `?quizTitle=${encodeURIComponent(qTitle)}` : "";
+        // Fetch quiz questions from the API using the correct query parameters
+        const resQ = await fetch(`${API_BASE}/questions${titleQuery}`);
+        if (!resQ.ok) throw new Error();
+        const dataQ = await resQ.json();
+
+        // Save the metadata to the global application state
+        state.isQuizOpen = dataQ.isQuizOpen ?? true;
+        state.deadlineString = dataQ.deadlineString ?? null;
+        state.timeLimitMinutes = dataQ.timeLimitMinutes ?? 40;
+        state.pdfBase64 = dataQ.pdfBase64 ?? null;
+        state.quizMode = dataQ.quizMode ?? "Manual";
+        state.totalScore = dataQ.totalScore ?? 10.0;
+
+        // FIXED: Prevent access if the quiz is closed or has expired
+        if (typeof isQuizActive === "function" && !isQuizActive()) {
+            alert("This assessment is currently closed or has passed its deadline.");
+            window.location.href = "/Student/Dashboard";
+            return;
+        }
+        // Save active questions and title to the global state
+        state.activeTaskTitle = dataQ.title;
+        state.questions = dataQ.questions;
+
+        // Update the page title element
+        document.getElementById('examTitle').innerText = state.activeTaskTitle;
+
+        // FIXED: Call the project's standard rendering function instead of duplicate document.createElement code
+        openStudentExamForm();
+    } catch (err) {
+        console.error(err);
+        alert("Failed to load questions.");
+    }
+}   
 
 function openStudentExamForm() {
     // Timer Reset
