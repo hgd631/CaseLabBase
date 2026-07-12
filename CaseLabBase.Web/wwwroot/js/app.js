@@ -1010,17 +1010,146 @@ async function inlineModifyAnswerKey(qId, val) {
 }
 
 
+// Member Hitesh - Utility function to escape HTML special characters to prevent XSS attacks in dynamic content rendering.
 
+function escapeHtml(str) {
+    if (str === null || str === undefined) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
 
 async function switchRosterSubTab(subTab) {
-    // TODO: Team Member 3 - Mutate active sub-tab view contexts and initiate roster table content refresh.
-    alert("TODO: Team Member 3 - Implement switchRosterSubTab in app.js");
+    state.activeRosterSubTab = subTab;
+
+    // 1. Update sub-tab button active states
+    ['pending', 'graded', 'dispute'].forEach(tab => {
+        const btn = document.getElementById(`sub-btn-${tab}`);
+        if (btn) btn.classList.toggle('active', tab === subTab);
+    });
+
+    // 2. Update the panel heading + column header to match the selected sub-tab
+    const heading = document.getElementById('rosterBlockHeadingTitle');
+    const noteHeader = document.getElementById('dynamicRosterNoteColumnHeader');
+    if (subTab === 'pending') {
+        if (heading) heading.innerText = "📥 Ungraded Student Submissions Queue";
+        if (noteHeader) noteHeader.innerText = "Stated Survey Pain Point";
+    } else if (subTab === 'graded') {
+        if (heading) heading.innerText = "🟢 Graded Submission Logs";
+        if (noteHeader) noteHeader.innerText = "Stated Survey Pain Point";
+    } else if (subTab === 'dispute') {
+        if (heading) heading.innerText = " 🚨Active Dispute Tickets";
+        if (noteHeader) noteHeader.innerText = "Dispute Status";
+    }
+
+    // 3. Load the table for the selected sub-tab
+    await renderMultiStudentRosterTable();
+
+    // 4. Refresh the dispute badge count independently, so it stays visible even when
+    //    the instructor is looking at a different sub-tab (e.g. "Pending").
+    await refreshDisputeBadgeCount();
 }
 
+// Hitesh - Load and render the multi-student roster table based on the currently selected sub-tab and quiz title.
 async function renderMultiStudentRosterTable() {
-    // TODO: Team Member 3 - Retrieve student roster summaries filtered by tab parameters and render table rows.
-    alert("TODO: Team Member 3 - Implement renderMultiStudentRosterTable in app.js");
+    const tbody = document.getElementById('multiStudentRosterTableBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="5" class="text-center text-secondary p-4 small">
+                <div class="spinner-border spinner-border-sm text-cyan me-2" role="status"></div>
+                Loading student roster datasets...
+            </td>
+        </tr>`;
+
+    try {
+        const titleQuery = state.selectedQuizTitle ? `&quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
+        const res = await fetch(`${API_BASE}/instructor/roster?subTab=${state.activeRosterSubTab}${titleQuery}`);
+        if (!res.ok) throw new Error("Failed to fetch roster.");
+
+        const submissions = await res.json();
+
+        if (!submissions || submissions.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-secondary p-4 small">
+                        No submissions found for this view.
+                    </td>
+                </tr>`;
+            return;
+        }
+
+        tbody.innerHTML = submissions.map(sub => {
+            // FIXED: Restore dynamic action button styles and labels based on the active sub-tab
+            let btnText = "Grade Form";
+            let btnClass = "btn-dark-custom";
+
+            if (state.activeRosterSubTab === "graded") {
+                btnText = "Review Paper Workspace";
+                btnClass = "btn-outline-custom";
+            } else if (state.activeRosterSubTab === "dispute") {
+                btnText = "🚨 Audit Dispute";
+                btnClass = "btn-dark-custom bg-danger border-danger";
+            }
+            // FIXED: Render the actual survey note/dispute message instead of a status badge
+            const noteCellContent = `<span class="text-secondary small italic">${escapeHtml(sub.surveyPainPoint) || 'No notes.'}</span>`;
+            // FIXED: Restore cyan bold monospace score style from original layout
+            const scoreCellContent = sub.status === 'Graded'
+                ? `${sub.finalScore} pts`
+                : '--';
+
+
+            // Action button routes to the grading desk for this student + quiz
+            const gradingUrl = `/Instructor/Grading?studentId=${encodeURIComponent(sub.studentId)}&quizTitle=${encodeURIComponent(state.selectedQuizTitle || '')}`;
+            // FIXED: Column 2 restored to "Submission_Stream_[studentId].json" to match the column header
+            return `
+                <tr>
+                    <td><strong>${escapeHtml(sub.studentName)}</strong></td>
+                    <td class="text-secondary font-monospace" style="font-size:12px;">Submission_Stream_${escapeHtml(sub.studentId)}.json</td>
+                    <td class="text-center">${noteCellContent}</td>
+                    <td class="text-center fw-bold font-monospace text-cyan small">${scoreCellContent}</td>
+                    <td><a class="btn btn-sm ${btnClass} py-1 px-3" style="font-size:12px;" href="${gradingUrl}">${btnText}</a></td>
+                </tr>`;
+        }).join('');
+    } catch (err) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center p-4 small">
+                    <div class="alert-custom alert-custom-warning d-inline-block">Error loading roster: ${escapeHtml(err.message)}</div>
+                </td>
+            </tr>`;
+    }
 }
+
+
+// Keeps the "Active Disputes" badge count fresh regardless of which sub-tab is showing.
+async function refreshDisputeBadgeCount() {
+    const badge = document.getElementById('subTabTicketBadgeCount');
+    if (!badge) return;
+
+    try {
+        const titleQuery = state.selectedQuizTitle ? `&quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
+        const res = await fetch(`${API_BASE}/instructor/roster?subTab=dispute${titleQuery}`);
+        if (!res.ok) return;
+
+        const disputes = await res.json();
+        const count = disputes ? disputes.length : 0;
+
+        if (count > 0) {
+            badge.style.display = 'inline-block';
+            badge.innerText = count > 9 ? '9+' : count;
+        } else {
+            badge.style.display = 'none';
+        }
+    } catch (_) {
+        /* Fail silently — badge just won't update this cycle */
+    }
+}
+
 
 
 
