@@ -1598,15 +1598,122 @@ async function renderInstructorPrivateTicketChatArea(studentId, answers) {
     }
 }
 
+// Team Member 5 - Ethan - Implementation of instructor dispute feedback function
 async function dispatchInstructorEmbeddedChat(studentId, qId) {
-    // TODO: Team Member 5 - Send message from teacher inside private dispute chat workspace.
-    alert("TODO: Team Member 5 - Implement dispatchInstructorEmbeddedChat in app.js");
+
+    const input = document.getElementById(
+        `instructor-chat-input-${studentId}-${qId}`
+    );
+
+    if(!input)
+        return;
+
+    const message = input.value.trim();
+
+    if(!message)
+        return;
+
+    const payload = {
+        studentId: studentId,
+        questionID: qId,
+        message: message
+    };
+
+    try { 
+        const res = await fetch(`${API_BASE}/instructor/dispute-message`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok){
+            throw new Error("Failed to send instructor message.")
+        }
+
+        input.value = "";
+
+        await renderInstructorEmbeddedPrivateChatArea(
+            /* required data */
+        )
+
+     } catch (err){
+        console.error(err);
+        alert(`Error sending message: ${err.message}`);
+    }
 }
 
+//Team member 5 - Ethan - Implementation of score override by instructor function
 async function executeInstructorManualScoreOverride(studentId, qId, isApproved) {
-    // TODO: Team Member 5 - Submit dispute audits and score override points registries.
-    alert("TODO: Team Member 5 - Implement executeInstructorManualScoreOverride in app.js");
+    //Prevent invalid requests
+    if(!studentId || !qId || typeof isApproved !== "boolean"){
+        console.error("Invalid score override arguments.", {
+            studentId,
+            qId,
+            isApproved
+        });
+
+        alert("Unable to process the dispute because required information is missing.");
+        return;
+    }
+
+    const actionText = isApproved ? "approve" : "reject";
+
+    //confirm the instruvtor intended to perform the action
+    const confirmed = confirm(
+        `Are you sure you want to ${actionText} this students dispute?`
+    );
+
+    if(!confirmed)
+        return;
+
+    const payload = {
+        studentId: studentId,
+        questionId: qId,
+        isApproved: isApproved
+    };
+
+    try {
+        const res = await fetch(
+            `${API_BASE}/instructor/manual-score-override`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            }
+        );
+
+        if(!res.ok) {
+            const errorText = await res.text();
+
+            throw new Error(
+                errorText || `Failed to ${actionText} the dispute.`
+            );
+        }
+
+        const result = await res.json().catch(() => null);
+
+        alert(
+            isApproved
+            ? "Dispute approved. The students score has been updated."
+            : "Dispute rejected. The students original score has been retained."
+        );
+
+        await switchRosterSubTab(state.activeRosterSubTab);
+
+        } catch(err){
+            console.error("Manual score override error:", err);
+
+            alert(
+                `Error processing the score override: ${err.message}`
+            );
+        }
+
 }
+
 
 // ================= COURSE FORUM SYSTEM =================
 
@@ -1837,6 +1944,7 @@ function switchForumTopic(topic, tabId, viewportId) {
     renderUnifiedForumComponent(viewportId, topic);
 }
 
+// Team Member 5 - Ethan - Implementing 
 async function renderUnifiedForumComponent(targetContainerID, filterTopic) {
     // TODO: Team Member 5 - Query forum comments for specific topics and render scroll streams.
     alert("TODO: Team Member 5 - Implement renderUnifiedForumComponent in app.js");
