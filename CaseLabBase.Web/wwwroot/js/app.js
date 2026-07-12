@@ -921,13 +921,13 @@ async function switchRosterSubTab(subTab) {
     const heading = document.getElementById('rosterBlockHeadingTitle');
     const noteHeader = document.getElementById('dynamicRosterNoteColumnHeader');
     if (subTab === 'pending') {
-        if (heading) heading.innerText = "Ungraded Student Submissions Queue";
+        if (heading) heading.innerText = "📥 Ungraded Student Submissions Queue";
         if (noteHeader) noteHeader.innerText = "Stated Survey Pain Point";
     } else if (subTab === 'graded') {
-        if (heading) heading.innerText = "Graded Submission Logs";
+        if (heading) heading.innerText = "🟢 Graded Submission Logs";
         if (noteHeader) noteHeader.innerText = "Stated Survey Pain Point";
     } else if (subTab === 'dispute') {
-        if (heading) heading.innerText = "Active Dispute Tickets";
+        if (heading) heading.innerText = " 🚨Active Dispute Tickets";
         if (noteHeader) noteHeader.innerText = "Dispute Status";
     }
 
@@ -939,6 +939,7 @@ async function switchRosterSubTab(subTab) {
     await refreshDisputeBadgeCount();
 }
 
+// Hitesh - Load and render the multi-student roster table based on the currently selected sub-tab and quiz title.
 async function renderMultiStudentRosterTable() {
     const tbody = document.getElementById('multiStudentRosterTableBody');
     if (!tbody) return;
@@ -969,32 +970,37 @@ async function renderMultiStudentRosterTable() {
         }
 
         tbody.innerHTML = submissions.map(sub => {
-            // Column 3 content depends on which sub-tab we're viewing
-            const noteCellContent = state.activeRosterSubTab === 'dispute'
-                ? `<span class="badge-custom badge-custom-rose">${escapeHtml(sub.disputeStatus || 'Open')}</span>`
-                : `<span class="text-secondary small">${escapeHtml(sub.surveyPainPoint) || '—'}</span>`;
+            // FIXED: Restore dynamic action button styles and labels based on the active sub-tab
+            let btnText = "Grade Form";
+            let btnClass = "btn-dark-custom";
 
-            // Score column depends on grading status
+            if (state.activeRosterSubTab === "graded") {
+                btnText = "Review Paper Workspace";
+                btnClass = "btn-outline-custom";
+            } else if (state.activeRosterSubTab === "dispute") {
+                btnText = "🚨 Audit Dispute";
+                btnClass = "btn-dark-custom bg-danger border-danger";
+            }
+            // FIXED: Render the actual survey note/dispute message instead of a status badge
+            const noteCellContent = `<span class="text-secondary small italic">${escapeHtml(sub.surveyPainPoint) || 'No notes.'}</span>`;
+            // FIXED: Restore cyan bold monospace score style from original layout
             const scoreCellContent = sub.status === 'Graded'
-                ? `<strong>${sub.finalScore} / ${state.totalScore}</strong>`
-                : `<span class="badge-custom badge-custom-amber">Pending</span>`;
+                ? `${sub.finalScore} pts`
+                : '--';
+
 
             // Action button routes to the grading desk for this student + quiz
             const gradingUrl = `/Instructor/Grading?studentId=${encodeURIComponent(sub.studentId)}&quizTitle=${encodeURIComponent(state.selectedQuizTitle || '')}`;
-            const actionLabel = state.activeRosterSubTab === 'dispute'
-                ? 'Review Dispute'
-                : (sub.status === 'Graded' ? 'View / Edit Grade' : 'Grade Submission');
-
+            // FIXED: Column 2 restored to "Submission_Stream_[studentId].json" to match the column header
             return `
                 <tr>
-                    <td>${escapeHtml(sub.studentName)} <span class="text-secondary small">(${escapeHtml(sub.studentId)})</span></td>
-                    <td><span class="text-secondary small">${escapeHtml(sub.status)}</span></td>
+                    <td><strong>${escapeHtml(sub.studentName)}</strong></td>
+                    <td class="text-secondary font-monospace" style="font-size:12px;">Submission_Stream_${escapeHtml(sub.studentId)}.json</td>
                     <td class="text-center">${noteCellContent}</td>
-                    <td class="text-center">${scoreCellContent}</td>
-                    <td><a class="btn btn-sm btn-dark-custom" href="${gradingUrl}">${actionLabel}</a></td>
+                    <td class="text-center fw-bold font-monospace text-cyan small">${scoreCellContent}</td>
+                    <td><a class="btn btn-sm ${btnClass} py-1 px-3" style="font-size:12px;" href="${gradingUrl}">${btnText}</a></td>
                 </tr>`;
         }).join('');
-
     } catch (err) {
         tbody.innerHTML = `
             <tr>
@@ -1004,6 +1010,7 @@ async function renderMultiStudentRosterTable() {
             </tr>`;
     }
 }
+
 
 // Keeps the "Active Disputes" badge count fresh regardless of which sub-tab is showing.
 async function refreshDisputeBadgeCount() {
@@ -1028,6 +1035,8 @@ async function refreshDisputeBadgeCount() {
         /* Fail silently — badge just won't update this cycle */
     }
 }
+
+
 
 
 // Assignment Factory creator dynamic views
