@@ -1620,6 +1620,7 @@ async function dispatchInstructorEmbeddedChat(studentId, qId) {
     };
 
     try { 
+        //Submit the instructor's dispute messaggee to the API
         const res = await fetch(`${API_BASE}/instructor/dispute-message`, {
             method: "POST",
             headers: {
@@ -1634,8 +1635,10 @@ async function dispatchInstructorEmbeddedChat(studentId, qId) {
 
         input.value = "";
 
+        //Refresh the private dispute chat so the new message is displayed
         await renderInstructorEmbeddedPrivateChatArea(
-            /* required data */
+            studentId,
+            qId
         )
 
      } catch (err){
@@ -1645,13 +1648,14 @@ async function dispatchInstructorEmbeddedChat(studentId, qId) {
 }
 
 //Team member 5 - Ethan - Implementation of score override by instructor function
-async function executeInstructorManualScoreOverride(studentId, qId, isApproved) {
+async function executeInstructorManualScoreOverride(studentId, qId, isApproved, manualOverrideScore = null) {
     //Prevent invalid requests
     if(!studentId || !qId || typeof isApproved !== "boolean"){
-        console.error("Invalid score override arguments.", {
+        console.error("Invalid dispute resolution arguments.", {
             studentId,
             qId,
-            isApproved
+            isApproved, 
+            manualOverrideScore
         });
 
         alert("Unable to process the dispute because required information is missing.");
@@ -1660,7 +1664,7 @@ async function executeInstructorManualScoreOverride(studentId, qId, isApproved) 
 
     const actionText = isApproved ? "approve" : "reject";
 
-    //confirm the instruvtor intended to perform the action
+    //confirm the instructor intended to perform the action
     const confirmed = confirm(
         `Are you sure you want to ${actionText} this students dispute?`
     );
@@ -1669,14 +1673,17 @@ async function executeInstructorManualScoreOverride(studentId, qId, isApproved) 
         return;
 
     const payload = {
-        studentId: studentId,
+        studentId,
+        quizTitle: state.activeQuizTitle ?? null,
         questionId: qId,
-        isApproved: isApproved
+        isApproved,
+        manualOverrideScore
     };
 
     try {
+        //Submit the instructor's dispute decision to API
         const res = await fetch(
-            `${API_BASE}/instructor/manual-score-override`,
+            `${API_BASE}/instructor/resolve-dispute`,
             {
                 method: "POST",
                 headers: {
@@ -1697,21 +1704,24 @@ async function executeInstructorManualScoreOverride(studentId, qId, isApproved) 
         const result = await res.json().catch(() => null);
 
         alert(
+            result?.message ??
+            (
             isApproved
             ? "Dispute approved. The students score has been updated."
             : "Dispute rejected. The students original score has been retained."
+            )
         );
 
+        //Refresh the instructor dispute workspace
         await switchRosterSubTab(state.activeRosterSubTab);
 
         } catch(err){
-            console.error("Manual score override error:", err);
+            console.error("Dispute resolution error:", err);
 
             alert(
-                `Error processing the score override: ${err.message}`
+                `Error processing the dispute: ${err.message}`
             );
         }
-
 }
 
 
@@ -1742,9 +1752,35 @@ function getStudyGuideForTopic(topic) {
 }
 
 async function initializeForumPage() {
-    // TODO: Team Member 5 - Load current forum active channels list and configure topic categories.
-    alert("TODO: Team Member 5 - Implement initializeForumPage in app.js");
+ 
+    const topicSelect = document.getElementById("forum-topic-select");
+
+    try {
+        if (topicSelect) {
+            topicSelect.innerHTML = "";
+
+            forumTopics.forEach(topic => {
+                const option = document.createElement("option");
+                option.value = topic;
+                option.textContent = topic;
+                topicSelect.appendChild(option);
+            });
+
+            topicSelect.addEventListener("change", async event => {
+                await loadForumTopic(event.target.value);
+            });
+        }
+
+        const defaultTopic = forumTopics[0];
+
+        if (defaultTopic) {
+            await loadForumTopic(defaultTopic);
+        }
+    } catch (error) {
+        console.error("Failed to initialize forum page:", error);
+    }
 }
+
 
 // Simple Q&A forum for MCQ-only quizzes (one room, no per-topic tabs)
 function renderSimpleQAForum(container, quizTitle, isInstructor) {
@@ -1924,10 +1960,72 @@ function teacherToggleUpload(panelId) {
     panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
 }
 
+// Team member 5 - Ethan - Implementation of teacher material submission function
 async function teacherSubmitMaterial(panelId, topic) {
-    // TODO: Team Member 5 - Post study guide hyperlinks to specific topic forums.
-    alert("TODO: Team Member 5 - Implement teacherSubmitMaterial in app.js");
+
+    const panel = document.getElementById(panelId);
+
+    if (!panel) {
+        console.error(`Material panel not found: ${panelId}`);
+        return;
+    }
+
+    const materialInput = panel.querySelector(
+        'input[type="url"], input[name="materialUrl"], input[name="studyGuideUrl"]'
+    );
+
+    if (!materialInput) {
+        console.error(`No material URL input found inside panel: ${panelId}`);
+        return;
+    }
+
+    const materialUrl = materialInput.value.trim();
+
+    if (!materialUrl) {
+        alert("Please enter a study guide link.");
+        return;
+    }
+
+    try {
+        new URL(materialUrl);
+    } catch {
+        alert("Please enter a valid hyperlink.");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/forum/comment`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                isPrivate: false,
+                studentId: null,
+                topic: topic,
+                sender: "Instructor",
+                message: materialUrl
+            })
+        });
+
+        if (!response.ok) {
+            const errorMessage = await response.text();
+            throw new Error(errorMessage || "Failed to post study material.");
+        }
+
+        materialInput.value = "";
+
+        alert("Study material posted successfully.");
+
+        // Reload the topic's public forum comments.
+        // Replace this with the actual forum-rendering function in app.js.
+        await loadForumComments(topic);
+    } catch (error) {
+        console.error("Error posting study material:", error);
+        alert(`Unable to post study material: ${error.message}`);
+    }
 }
+
 
 function switchForumTopic(topic, tabId, viewportId) {
     const clickedTab = document.getElementById(tabId);
@@ -1944,16 +2042,152 @@ function switchForumTopic(topic, tabId, viewportId) {
     renderUnifiedForumComponent(viewportId, topic);
 }
 
-// Team Member 5 - Ethan - Implementing 
+// Team Member 5 - Ethan - Implementing function to fetch and dsiplay forum comments
 async function renderUnifiedForumComponent(targetContainerID, filterTopic) {
-    // TODO: Team Member 5 - Query forum comments for specific topics and render scroll streams.
-    alert("TODO: Team Member 5 - Implement renderUnifiedForumComponent in app.js");
+   
+    const container = document.getElementById(targetContainerID);
+
+    if (!container) {
+        console.error(`Forum container "${targetContainerID}" was not found.`);
+        return;
+    }
+
+    if (!filterTopic || !filterTopic.trim()) {
+        container.innerHTML = `
+            <p class="forum-error">A forum topic is required.</p>
+        `;
+        return;
+    }
+
+    container.innerHTML = `
+        <p class="forum-loading">Loading comments...</p>
+    `;
+
+    try {
+        const response = await fetch(
+            `${API_BASE}/forum/${encodeURIComponent(filterTopic)}`
+        );
+
+        if (!response.ok) {
+            const errorMessage = await response.text();
+
+            throw new Error(
+                errorMessage ||
+                `Unable to load forum comments. Status: ${response.status}`
+            );
+        }
+
+        const comments = await response.json();
+
+        container.innerHTML = "";
+
+        if (!Array.isArray(comments) || comments.length === 0) {
+            container.innerHTML = `
+                <p class="forum-empty">
+                    No comments have been posted for this topic yet.
+                </p>
+            `;
+            return;
+        }
+
+        comments
+            .sort(
+                (firstComment, secondComment) =>
+                    new Date(firstComment.timestamp) -
+                    new Date(secondComment.timestamp)
+            )
+            .forEach(comment => {
+                const commentElement = document.createElement("div");
+                commentElement.classList.add("forum-comment");
+
+                const sender = escapeHtml(comment.sender || "Unknown");
+                const message = escapeHtml(comment.message || "");
+                const timestamp = formatForumTimestamp(comment.timestamp);
+
+                commentElement.innerHTML = `
+                    <div class="forum-comment-header">
+                        <strong class="forum-comment-sender">${sender}</strong>
+                        <span class="forum-comment-time">${timestamp}</span>
+                    </div>
+
+                    <div class="forum-comment-message">
+                        ${message}
+                    </div>
+                `;
+
+                container.appendChild(commentElement);
+            });
+
+        container.scrollTop = container.scrollHeight;
+    } catch (error) {
+        console.error("Unable to render forum comments:", error);
+
+        container.innerHTML = `
+            <p class="forum-error">
+                Unable to load the forum comments right now.
+            </p>
+        `;
+    }
 }
 
+//Team member 5 - Ethan - Implementation of dispatching forum comments for immediate viewing
 async function dispatchLiveCommentSubmission(targetContainerID, filterTopic) {
-    // TODO: Team Member 5 - Post new comments to forum streams and update layouts.
-    alert("TODO: Team Member 5 - Implement dispatchLiveCommentSubmission in app.js");
+    
+    const input = document.getElementById(`${targetContainerID}-input`);
+
+    if (!input) {
+        console.error("Forum input field not found.");
+        return;
+    }
+
+    const message = input.value.trim();
+
+    if (!message) {
+        alert("Please enter a comment before submitting.");
+        return;
+    }
+
+    const currentUser = JSON.parse(localStorage.getItem("caselab_user"));
+
+    if (!currentUser){
+        alert("No logged in user found.");
+        return;
+    }
+
+    const comment = {
+        topic: filterTopic,
+        sender: currentUser.name,
+        studentId: currentUser.studentId,
+        message: message, 
+        isPrivate: false
+    };
+
+    try {
+        const response = await fetch(`${API_BASE}/forum/comment`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(comment)
+        });
+
+        if (!response.ok) {
+            throw new Error(await response.text());
+        }
+
+        input.value = "";
+
+        await renderUnifiedForumComponent(
+            targetContainerID,
+            filterTopic
+        );
+    }
+    catch (error) {
+        console.error("Unable to submit forum comment:", error);
+        alert("Failed to post your comment.");
+    }
 }
+
 
 // Page-based router initialization on DOM Load
 window.addEventListener('DOMContentLoaded', async () => {
