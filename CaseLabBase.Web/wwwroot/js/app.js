@@ -622,8 +622,32 @@ async function completeSurveyPipeline() {
 // ================= STUDENT MISTAKE BANK =================
 
 async function openStudentMistakeBankWithReload() {
-    // TODO: Team Member 2 - Query student evaluation logs for active mistake checks, compiling correct/incorrect answer states.
-    alert("TODO: Team Member 2 - Implement openStudentMistakeBankWithReload in app.js");
+    // Team Member 2: Kelly- Query student evaluation logs for active mistake checks, compiling correct/incorrect answer states.
+    
+    try {
+        const res = await fetch(`${API_BASE}/student/mistake-bank/${state.user.id}?quizTitle=${encodeURIComponent(state.activeTaskTitle)}`);
+
+        if (!res.ok) throw new Error("Failed to load mistake bank.");
+        const data = await res.json();
+        state.openStudentMistakeBankWithReload = data;
+        const container = document.getElementById('studentMistakeBankContainer');
+        container.innerHTML = "";
+        data.answers.forEach(answer => {
+            container.innerHTML += `
+             <div class="mistake-card" >
+            <><h4> ${data.quizTitle}</h4>
+            <p>${answer.QuestionTopic}</p><p>Question: ${answer.questionsPayload}</p
+            ><p>Your Answer: ${answer.studentAnswer}</p>
+            <p>Result: ${answer.isCorrect ? "Correct" : "Incorrect"}</p></>
+            </div >
+                `;
+
+        });
+    } catch (err) {
+        console.error(err);
+        alert("Error loading mistake bank: " + err.message); 
+    }
+
 }
 
 
