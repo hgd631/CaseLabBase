@@ -18,8 +18,30 @@ namespace CaseLabBase.BLL.Services
 
         public async Task<List<CommentDTO>> GetForumTopicCommentsAsync(string topic)
         {
-    throw new System.NotImplementedException("TODO: Team Member 5 - Implement GetForumTopicCommentsAsync in ForumService.cs");
-}
+            //Validate the requested forum topic.
+            if (string.IsNullOrWhiteSpace(topic))
+            {
+                throw new ArgumentException(
+                "A forum topic is required.",
+                nameof(topic)
+                );
+            }
+
+            //Retrieve all public comments associated with the requested topic.
+            var comments = await _forumRepository.GetPublicCommentsByTopicAsync(topic);
+
+            //Convert the database comment entities into DTOs for the API response.
+            return comments.Select(comment => new CommentDTO
+            {
+                Id = comment.Id,
+                IsPrivate = comment.IsPrivate,
+                StudentId = comment.StudentId,
+                Topic = comment.Topic,
+                Sender = comment.Sender,
+                Message = comment.Message,
+                Timestamp = comment.Timestamp
+            }).ToList();
+        }
 
 
 

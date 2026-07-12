@@ -75,10 +75,79 @@ namespace CaseLabBase.BLL.Services
             throw new System.NotImplementedException("TODO: Team Member 4 - Implement GradeSubmissionAsync in InstructorService.cs");
         }
 
+        //Team Member 5 - Ethan - Implement of instructpr dispute resolution and manual score override processsing
         public async Task ResolveDisputeAsync(string studentId, string quizTitle, int questionId, bool isApproved, decimal manualOverrideScore)
         {
-            throw new System.NotImplementedException("TODO: Team Member 5 - Implement ResolveDisputeAsync in InstructorService.cs");
+
+            //Validate the required dispute information.
+            if (string.IsNullOrWhiteSpace(studentId))
+                {
+                 throw new ArgumentException("Student ID is required.", nameof(studentId));
+                }
+
+            if (string.IsNullOrWhiteSpace(quizTitle))
+                {
+                 throw new ArgumentException("Quiz title is required.", nameof(quizTitle));
+                }
+
+            if (questionId <= 0)
+                {
+                 throw new ArgumentException(
+                    "A valid question ID is required.",
+                    nameof(questionId)
+                 );
+                }
+
+            if (manualOverrideScore < 0)
+                {
+                 throw new ArgumentException(
+                 "The manual override score cannot be negative.",
+                 nameof(manualOverrideScore)
+                 );
+                }
+
+            //Retrieve the student's submission and its associated answers.
+            var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, quizTitle);
+
+            if (submission == null)
+            {
+                throw new InvalidOperationException(
+                $"No submission was found for student '{studentId}' " +
+                $"and quiz '{quizTitle}'."
+                );
+            }
+
+            //Locate the answer associated with the disputed question.
+            var disputedAnswer = submission.Answers.FirstOrDefault(answer => answer.QuestionId == questionId);
+
+            if (disputedAnswer == null)
+            {
+                throw new InvalidOperationException(
+                $"Question '{questionId}' was not found in the student's submission."
+                );
+            }
+
+            if (isApproved)
+             {
+                //Apply the score selected by the instructor.
+                disputedAnswer.EarnedScore = manualOverrideScore;
+
+                await _submissionRepository.SaveSubmissionAnswerAsync(disputedAnswer);
+
+                //Recalculate the overall submission score after the override.
+                submission.FinalScore = submission.Answers.Sum(answer => answer.EarnedScore);
+
+                submission.DisputeStatus = "Approved";
+             }
+            else
+             {
+                //A rejected dispute leaves the original earned score unchanged.
+                submission.DisputeStatus = "Rejected";
+             }
+
+            await _submissionRepository.SaveSubmissionAsync(submission);
         }
+
 
         // Han  - Implement GetErrorTagsAsync in InstructorService
         public async Task<List<string>> GetErrorTagsAsync()
