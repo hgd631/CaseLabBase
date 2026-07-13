@@ -104,6 +104,24 @@ public async Task<List<SubmissionDTO>> GetRosterSubTabAsync(string subTab, strin
             EarnedScore = a.EarnedScore
         }).ToList()
     }).ToList();
+    
+}
+// Member 3: Hitesh //NEW: Sends a reminder notification to every student with a pending (ungraded) submission for this quiz.
+public async Task<int> RemindPendingStudentsAsync(string quizTitle, NotificationRepository notifications)
+{
+    var pendingRoster = await GetRosterSubTabAsync("pending", quizTitle);
+
+    foreach (var sub in pendingRoster)
+    {
+        await notifications.NotifyUserAsync(
+            userId: sub.StudentId,
+            title: "Reminder: Assignment Pending",
+            message: $"Your instructor is reminding you to complete '{quizTitle}'. Please submit as soon as possible.",
+            linkUrl: "/Student/Dashboard"
+        );
+    }
+
+    return pendingRoster.Count;
 }
         public async Task GradeSubmissionAsync(string studentId, string quizTitle, List<GradeQuestionItem> grades)
         {

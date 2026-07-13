@@ -1124,7 +1124,20 @@ async function renderMultiStudentRosterTable() {
             </tr>`;
     }
 }
+async function remindPendingStudents() {
+    if (!confirm("Send a reminder notification to all students with pending submissions?")) return;
 
+    try {
+        const titleQuery = state.selectedQuizTitle ? `?quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
+        const res = await fetch(`${API_BASE}/instructor/remind-pending${titleQuery}`, { method: 'POST' });
+        if (!res.ok) throw new Error("Failed to send reminders.");
+
+        const data = await res.json();
+        alert(data.message || `Reminded ${data.count} student(s).`);
+    } catch (err) {
+        alert(`Error: ${err.message}`);
+    }
+}
 
 // Keeps the "Active Disputes" badge count fresh regardless of which sub-tab is showing.
 async function refreshDisputeBadgeCount() {
