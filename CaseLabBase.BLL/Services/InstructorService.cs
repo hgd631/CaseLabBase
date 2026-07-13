@@ -72,7 +72,65 @@ namespace CaseLabBase.BLL.Services
 
         public async Task GradeSubmissionAsync(string studentId, string quizTitle, List<GradeQuestionItem> grades)
         {
-            throw new System.NotImplementedException("TODO: Team Member 4 - Implement GradeSubmissionAsync in InstructorService.cs");
+            // TODO: Team Member 4 - Implement GradeSubmissionAsync in InstructorService.cs
+            if (string.IsNullOrWhiteSpace(studentId) || string.IsNullOrWhiteSpace(quizTitle) || grades == null)
+                return;
+
+            // 1) Load existing submission (including answers)
+            var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, quizTitle);
+
+            // If no submission exists, create an empty one so we can attach answers
+            if (submission == null)
+            {
+                submission = new Submission
+                {
+                    StudentId = studentId,
+                    QuizTitle = quizTitle,
+                    Status = "Graded",
+                    FinalScore = 0.00m,
+                    DisputeStatus = "None",
+                    SurveyPainPoint = submission?.SurveyPainPoint
+                };
+                await _submissionRepository.SaveSubmissionAsync(submission);
+            }
+
+            decimal total = 0.00m;
+
+            foreach (var g in grades)
+            {
+                if (g == null) continue;
+
+                // Find matching answer if present
+                var ans = submission.Answers.FirstOrDefault(a => a.QuestionId == g.QuestionId);
+
+                if (ans == null)
+                {
+                    // Create a new answer record when missing
+                    ans = new SubmissionAnswer
+                    {
+                        SubmissionId = submission.Id,
+                        QuestionId = g.QuestionId,
+                        StudentAnswer = null,
+                        IsCorrect = null,
+                        TeacherTag = g.ChosenTag,
+                        CommentNote = null,
+                        EarnedScore = g.EarnedScore
+                    };
+                    await _submissionRepository.SaveSubmissionAnswerAsync(ans);
+                }
+                else
+                {
+                    ans.EarnedScore = g.EarnedScore;
+                    ans.TeacherTag = g.ChosenTag;
+                    await _submissionRepository.SaveSubmissionAnswerAsync(ans);
+                }
+
+                total += ans.EarnedScore;
+            }
+
+            submission.FinalScore = total;
+            submission.Status = "Graded";
+            await _submissionRepository.SaveSubmissionAsync(submission);
         }
 
         public async Task ResolveDisputeAsync(string studentId, string quizTitle, int questionId, bool isApproved, decimal manualOverrideScore)

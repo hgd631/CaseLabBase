@@ -1590,12 +1590,98 @@ async function instructorPublishTask() {
 
 async function routeTargetStudentToEvaluationDesk(studentId) {
     // TODO: Team Member 4 - Load student submission and reflection logs, verifying automated crosscheck warnings.
-    alert("TODO: Team Member 4 - Implement routeTargetStudentToEvaluationDesk in app.js");
+    try {
+        const titleQuery = state.selectedQuizTitle ? `?quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
+        const res = await fetch(`${API_BASE}/student/mistake-bank/${encodeURIComponent(studentId)}${titleQuery}`);
+        if (!res.ok) throw new Error('Failed to load student submission.');
+
+        const dto = await res.json();
+        state.activeGradingStudentID = studentId;
+        document.getElementById('currentGradingStudentNameHeader').innerText = dto.studentName || studentId;
+
+        const container = document.getElementById('gradingQuestionsLoopContainer');
+        if (!container) return;
+
+        // Build question cards
+        if (!dto.answers || dto.answers.length === 0) {
+            container.innerHTML = `<div class="text-center py-4 text-secondary small">No submission answers available for this student.</div>`;
+            return;
+        }
+
+        container.innerHTML = '';
+        dto.answers.forEach(a => {
+            const card = document.createElement('div');
+            card.className = 'mb-3 p-3 border rounded bg-light';
+            card.style.borderColor = 'var(--border-color) !important';
+
+            card.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <strong>Q${a.questionId}</strong>
+                        <div class="small text-secondary">Topic: ${escapeHtml(a.questionTopic)}</div>
+                    </div>
+                    <div class="text-end small text-secondary">Max: ${a.maxScore} pts</div>
+                </div>
+                <div class="mb-2"><em>${escapeHtml(a.questionPrompt)}</em></div>
+                <div class="mb-2 p-2 bg-white border rounded small">Student Answer: ${escapeHtml(a.studentAnswer ?? '(no answer)')}</div>
+                <div class="d-flex align-items-center gap-2 mt-2">
+                    <label class="form-label small mb-0">Assign Score:</label>
+                    <input type="number" step="0.1" min="0" max="${a.maxScore}" id="inputEarnedScore-${a.questionId}" class="form-control form-control-sm" value="${a.earnedScore ?? 0}">
+                    <div class="ms-3 small text-secondary">Selected Tag: <strong id="selected-tag-label-${a.questionId}">${escapeHtml(a.teacherTag ?? 'None')}</strong></div>
+                </div>
+                <div class="mt-3" id="q-template-bank-${a.questionId}"></div>
+            `;
+
+            container.appendChild(card);
+        });
+
+        // Load global tag bank and render per-question banks
+        await loadInstructorGrowCards(dto.answers);
+        // Load private dispute chat area
+        await renderInstructorPrivateTicketChatArea(studentId, dto.answers);
+    } catch (err) {
+        alert(`Error loading grading desk: ${err.message}`);
+    }
 }
 
 async function loadInstructorGrowCards(answers = null) {
     // TODO: Team Member 4 - Fetch templates configuration and build select feedback buttons for grading cards.
-    alert("TODO: Team Member 4 - Implement loadInstructorGrowCards in app.js");
+    try {
+        const res = await fetch(`${API_BASE}/instructor/error-tags`);
+        if (!res.ok) throw new Error('Unable to fetch error tag templates.');
+        const tags = await res.json();
+        state.errorTags = Array.isArray(tags) ? tags : [];
+
+        // Render global template list
+        const bank = document.getElementById('templateBankRadioGroup');
+        if (bank) {
+            bank.innerHTML = '';
+            state.errorTags.forEach(t => {
+                const row = document.createElement('div');
+                row.className = 'd-flex align-items-center gap-2';
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-sm btn-outline-custom w-100 text-start';
+                btn.innerText = t;
+                btn.onclick = () => {
+                    state.chosenTag = t;
+                    const label = document.getElementById('currentSelectedCardLabel');
+                    if (label) label.innerText = t;
+                };
+                row.appendChild(btn);
+                bank.appendChild(row);
+            });
+        }
+
+        // Render per-question banks if answers provided
+        if (answers && Array.isArray(answers)) {
+            answers.forEach(a => {
+                renderTemplateBankForQuestion(a.questionId, a.teacherTag);
+            });
+        }
+    } catch (err) {
+        // Fail silently but show console error
+        console.error('loadInstructorGrowCards:', err.message);
+    }
 }
 
 function renderTemplateBankForQuestion(qId, selectedTag = null) {
@@ -1646,12 +1732,71 @@ function selectTemplateCardForQuestion(qId, element, tag) {
 
 async function generateGrowCardActionForQuestion(qId) {
     // TODO: Team Member 4 - Post new custom feedback error tag template to database list and refresh banks.
-    alert("TODO: Team Member 4 - Implement generateGrowCardActionForQuestion in app.js");
+    // This function kept for compatibility; delegates to the global generator
+    return generateGrowCardAction();
+}
+
+async function generateGrowCardAction() {
+    try {
+        const input = document.getElementById('inputGrowFeedback');
+        if (!input) return;
+        const value = input.value.trim();
+        if (!value) { alert('Enter a non-empty template.'); return; }
+
+        const res = await fetch(`${API_BASE}/instructor/error-tags`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(value)
+        });
+
+        if (!res.ok) throw new Error('Failed to add template.');
+        input.value = '';
+        // Refresh bank
+        await loadInstructorGrowCards();
+        alert('Template added.');
+    } catch (err) {
+        alert(`Error adding template: ${err.message}`);
+    }
+
 }
 
 async function instructorSubmitEvaluation() {
     // TODO: Team Member 4 - Compile allocated scores and feedback tags from grading panels, sending grades to commit endpoint.
-    alert("TODO: Team Member 4 - Implement instructorSubmitEvaluation in app.js");
+    try {
+        if (!state.activeGradingStudentID) { alert('No active student selected.'); return; }
+        const studentId = state.activeGradingStudentID;
+        const quizTitle = state.selectedQuizTitle || state.activeTaskTitle;
+
+        // Collect grades from the DOM
+        const grades = [];
+        document.querySelectorAll('[id^="inputEarnedScore-"]').forEach(input => {
+            const id = input.id.replace('inputEarnedScore-', '');
+            const qId = parseInt(id, 10);
+            const val = parseFloat(input.value) || 0.0;
+            const label = document.getElementById(`selected-tag-label-${qId}`);
+            const tag = label ? label.innerText : null;
+            grades.push({ questionId: qId, earnedScore: val, chosenTag: tag });
+        });
+
+        const payload = { studentId: studentId, quizTitle: quizTitle, grades: grades };
+
+        const res = await fetch(`${API_BASE}/instructor/grade`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+            const txt = await res.text();
+            throw new Error(txt || 'Failed to submit grades.');
+        }
+
+        alert('✔ Evaluation committed successfully.');
+        // Optionally navigate back to roster or refresh
+        window.location.href = '/Instructor/Dashboard';
+    } catch (err) {
+        alert(`Grade submission error: ${err.message}`);
+    }
 }
 
 async function renderInstructorPrivateTicketChatArea(studentId, answers) {
