@@ -73,7 +73,8 @@ public async Task<List<SubmissionDTO>> GetRosterSubTabAsync(string subTab, strin
     // 2. Filter by the requested sub-tab
     IEnumerable<Submission> filtered = subTab switch
     {
-        "pending" => submissions.Where(s => s.Status != "Graded"),
+        "not-submitted" => submissions.Where(s => s.Status == "Not Started"),
+        "ungraded" => submissions.Where(s => s.Status != "Graded"),
         "graded" => submissions.Where(s => s.Status == "Graded"),
         "dispute" => submissions.Where(s => s.DisputeStatus != "None"),
         "all" => submissions,
@@ -111,20 +112,19 @@ public async Task<List<SubmissionDTO>> GetRosterSubTabAsync(string subTab, strin
 // students who already submitted (even if ungraded) are excluded, since they don't need a nudge.
 public async Task<int> RemindPendingStudentsAsync(string quizTitle, NotificationRepository notifications)
 {
-    var fullRoster = await GetRosterSubTabAsync("all", quizTitle);
-    var notStarted = fullRoster.Where(d => d.Status == "Not Started").ToList();
+    var notStartedRoster = await GetRosterSubTabAsync("not-submitted", quizTitle); // was "pending"
 
-    foreach (var sub in notStarted)
+    foreach (var sub in notStartedRoster)
     {
         await notifications.NotifyUserAsync(
             userId: sub.StudentId,
             title: "Reminder: Assignment Not Started",
-            message: $"Your instructor is reminding you to start and complete '{quizTitle}'. Please submit as soon as possible.",
+            message: $"Your instructor is reminding you that '{quizTitle}' hasn't been started yet. Please complete it before the deadline.",
             linkUrl: "/Student/Dashboard"
         );
     }
 
-    return notStarted.Count;
+    return notStartedRoster.Count;
 }
         public async Task GradeSubmissionAsync(string studentId, string quizTitle, List<GradeQuestionItem> grades)
         {

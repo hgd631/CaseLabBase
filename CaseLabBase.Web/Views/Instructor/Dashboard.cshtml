@@ -88,14 +88,18 @@
                             <button class="btn btn-sm btn-outline-custom text-indigo border-indigo" onclick="remindPendingStudents()">
                                 Remind Pending Students
                             </button>
+
                             <!-- Roster Sub-Tabs -->
                             <div class="sub-tab-container m-0 border-0">
                                 <ul class="sub-tab-nav">
-                                    <li class="sub-tab-link active" id="sub-btn-pending" onclick="switchRosterSubTab('pending')">
-                                        Pending Ungraded
+                                    <li class="sub-tab-link active" id="sub-btn-notsubmitted" onclick="switchRosterSubTab('not-submitted')">
+                                        Not Submitted
+                                    </li>
+                                    <li class="sub-tab-link" id="sub-btn-ungraded" onclick="switchRosterSubTab('ungraded')">
+                                        Submitted &middot; Ungraded
                                     </li>
                                     <li class="sub-tab-link" id="sub-btn-graded" onclick="switchRosterSubTab('graded')">
-                                        Graded Logs
+                                        Submitted &middot; Graded
                                     </li>
                                     <li class="sub-tab-link d-flex align-items-center gap-1" id="sub-btn-dispute" onclick="switchRosterSubTab('dispute')">
                                         Active Disputes

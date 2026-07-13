@@ -1025,31 +1025,31 @@ function escapeHtml(str) {
 async function switchRosterSubTab(subTab) {
     state.activeRosterSubTab = subTab;
 
-    // 1. Update sub-tab button active states
-    ['pending', 'graded', 'dispute'].forEach(tab => {
+    // 1. Update sub-tab button active states (now 4 tabs)
+    ['notsubmitted', 'ungraded', 'graded', 'dispute'].forEach(tab => {
         const btn = document.getElementById(`sub-btn-${tab}`);
-        if (btn) btn.classList.toggle('active', tab === subTab);
+        const tabKey = tab === 'notsubmitted' ? 'not-submitted' : tab;
+        if (btn) btn.classList.toggle('active', tabKey === subTab);
     });
 
-    // 2. Update the panel heading + column header to match the selected sub-tab
+    // 2. Update heading + column header per sub-tab
     const heading = document.getElementById('rosterBlockHeadingTitle');
     const noteHeader = document.getElementById('dynamicRosterNoteColumnHeader');
-    if (subTab === 'pending') {
-        if (heading) heading.innerText = "📥 Ungraded Student Submissions Queue";
+    if (subTab === 'not-submitted') {
+        if (heading) heading.innerText = "Students Who Haven't Submitted";
+        if (noteHeader) noteHeader.innerText = "Stated Survey Pain Point";
+    } else if (subTab === 'ungraded') {
+        if (heading) heading.innerText = "Submitted — Awaiting Grading";
         if (noteHeader) noteHeader.innerText = "Stated Survey Pain Point";
     } else if (subTab === 'graded') {
-        if (heading) heading.innerText = "🟢 Graded Submission Logs";
+        if (heading) heading.innerText = "Graded Submission Logs";
         if (noteHeader) noteHeader.innerText = "Stated Survey Pain Point";
     } else if (subTab === 'dispute') {
-        if (heading) heading.innerText = " 🚨Active Dispute Tickets";
+        if (heading) heading.innerText = "Active Dispute Tickets";
         if (noteHeader) noteHeader.innerText = "Dispute Status";
     }
 
-    // 3. Load the table for the selected sub-tab
     await renderMultiStudentRosterTable();
-
-    // 4. Refresh the dispute badge count independently, so it stays visible even when
-    //    the instructor is looking at a different sub-tab (e.g. "Pending").
     await refreshDisputeBadgeCount();
 }
 
