@@ -79,7 +79,7 @@ namespace CaseLabBase.BLL.Services
             // 1) Load existing submission (including answers)
             var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, quizTitle);
 
-            // If no submission exists, create an empty one so we can attach answers
+            // If no submission exists
             if (submission == null)
             {
                 submission = new Submission
