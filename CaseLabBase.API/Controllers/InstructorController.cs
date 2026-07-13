@@ -124,6 +124,20 @@ namespace CaseLabBase.API.Controllers
             await _instructorService.UpdateAnswerKeyAsync(request.QuestionId, request.CorrectKey);
             return Ok(new { Message = "Answer key mutated and classroom re-graded." });
         }
+
+        [HttpPost("remind-pending")]
+
+        public async Task<IActionResult> RemindPendingStudents([FromQuery] string? quizTitle)
+        {
+            var title = await GetDefaultQuizTitleAsync(quizTitle);
+            if (string.IsNullOrEmpty(title))
+            {
+                return NotFound("No active quiz to send reminders for.");
+            }
+        
+            int count = await _instructorService.RemindPendingStudentsAsync(title, _notifications);
+            return Ok(new { Message = $"Reminded {count} student(s).", Count = count });
+        }
     }
 
     public class UpdateAnswerKeyRequest
