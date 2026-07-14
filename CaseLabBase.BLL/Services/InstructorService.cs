@@ -80,6 +80,40 @@ namespace CaseLabBase.BLL.Services
             throw new System.NotImplementedException("TODO: Team Member 5 - Implement ResolveDisputeAsync in InstructorService.cs");
         }
 
+        // Han - Implement ResolveSubmissionDisputeAsync in InstructorService.cs
+        public async Task ResolveSubmissionDisputeAsync(string studentId, string quizTitle, bool isApproved)
+        {
+            var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, quizTitle);
+            if (submission == null) return;
+
+            submission.DisputeStatus = isApproved ? "Resolved_Accepted" : "Resolved_Rejected";
+            await _submissionRepository.SaveSubmissionAsync(submission);
+
+            // Close any pending tickets for this student under this quiz (if any)
+            var tickets = await _forumRepository.GetAllTicketsAsync();
+            var submissionQuestions = submission.Answers.Select(a => a.QuestionId).ToList();
+            var activeTickets = tickets.Where(t => t.StudentId == studentId && submissionQuestions.Contains(t.QuestionId) && t.Status == "Pending").ToList();
+            foreach (var ticket in activeTickets)
+            {
+                ticket.Status = isApproved ? "Accepted" : "Rejected";
+                await _forumRepository.SaveTicketAsync(ticket);
+            }
+
+            // Log private thread resolution comment
+            var comment = new Comment
+            {
+                IsPrivate = true,
+                StudentId = studentId,
+                Topic = "Dispute " + studentId + " - " + quizTitle,
+                Sender = "Dr. Ali Bayeh (Instructor)",
+                Message = $"🟢 [Submission Dispute Resolved]: Audit finalized. Status marked as {(isApproved ? "Approved (Accepted)" : "Closed (Rejected)")}. Final submission score stands at {submission.FinalScore} pts.",
+                Timestamp = DateTime.Now
+            };
+            await _forumRepository.AddCommentAsync(comment);
+        }
+
+
+
         // Han  - Implement GetErrorTagsAsync in InstructorService
         public async Task<List<string>> GetErrorTagsAsync()
         {
@@ -92,7 +126,6 @@ namespace CaseLabBase.BLL.Services
         {
             await _submissionRepository.AddErrorTagAsync(new ErrorTag { Tag = tag });
         }
-
 
 
         // Member Han  - Implement UpdateAnswerKeyAsync in InstructorService
@@ -128,5 +161,11 @@ namespace CaseLabBase.BLL.Services
                 }
             }
         }
+
+        public async Task RenameErrorTagAsync(string oldTag, string newTag)
+        {
+            await _submissionRepository.RenameErrorTagAsync(oldTag, newTag);
+        }
+
     }
 }

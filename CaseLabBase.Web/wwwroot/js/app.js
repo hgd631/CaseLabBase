@@ -1,21 +1,50 @@
 // CaseLabBase - Client Script (app.js)
 const API_BASE = "http://localhost:5088/api";
 
+const SafeStorage = {
+    getItem(key) {
+        try {
+            return sessionStorage.getItem(key);
+        } catch (e) {
+            return window._safeSessionState?.[key] || null;
+        }
+    },
+    setItem(key, value) {
+        try {
+            sessionStorage.setItem(key, value);
+        } catch (e) {
+            if (!window._safeSessionState) window._safeSessionState = {};
+            window._safeSessionState[key] = value;
+        }
+    },
+    removeItem(key) {
+        try {
+            sessionStorage.removeItem(key);
+        } catch (e) {
+            if (window._safeSessionState) {
+                delete window._safeSessionState[key];
+            }
+        }
+    }
+};
+
 let state = {
     user: null, // Logged-in user DTO { id, name, role }
     activeTaskTitle: "Quiz 1: Elementary Math Basics",
     activeSelectedPresetOption: 1,
     activeRosterSubTab: "pending",
-    
+    activeMistakeSubTab: "mistakes",
+
     questions: [], // Active questions retrieved from API
     studentAnswers: {}, // Student's typed responses
     studentSurvey: {}, // Survey ratings and notes
     flaggedQuestions: {}, // Questions flagged by student to revisit
-    
+
     errorTags: [], // Grow-As-You-Go error tag templates
     chosenTag: null, // Error tag selected during grading
     activeGradingStudentID: null, // Student currently being evaluated
-    
+
+    currentExamQuestionIndex: 0, // Current active question index when taking exam
     examTimerInterval: null,
     examSecondsRemaining: 2394, // 39:54
 
@@ -31,9 +60,8 @@ let state = {
 function isQuizActive() {
     if (!state.isQuizOpen) return false;
     if (state.deadlineString) {
-        const cleanStr = state.deadlineString.replace('T', ' ');
-        const deadline = new Date(cleanStr);
-        if (new Date() > deadline) return false;
+        const deadline = parseLocalDateString(state.deadlineString);
+        if (deadline && new Date() > deadline) return false;
     }
     return true;
 }
@@ -48,7 +76,6 @@ function switchLocalPanel(id) {
         target.classList.add('active');
     }
 }
-
 // Global user login handler
 async function loginAsRole(userId) {
     // Member 1- Han:  Post credentials to auth login API and route session user to their dashboard.
@@ -86,10 +113,6 @@ function logoutSystem() {
 // State variable to track whether the notification dropdown UI is currently open
 let _notifDropdownOpen = false;
 
-/**
- * Fetches the current user's notifications from the backend API,
- * updates the UI notification badge, and populates the dropdown list.
- */
 async function fetchNotifications() {
     // 1. Guard Clause: If there is no logged-in user in the global state, stop immediately
     if (!state.user) return;
@@ -143,7 +166,17 @@ async function fetchNotifications() {
     }
 }
 
+async function clickNotification(id, linkUrl) {
+    try {
+        await fetch(`${API_BASE}/notifications/mark-single-read/${id}`, { method: 'POST' });
+    } catch (_) { }
 
+    if (linkUrl) {
+        window.location = linkUrl;
+    } else {
+        await fetchNotifications();
+    }
+}
 
 function toggleNotifDropdown() {
     const dropdown = document.getElementById('notifDropdown');
@@ -186,132 +219,20 @@ document.addEventListener('click', (e) => {
 // ================= STUDENT WORKSPACE FLOW =================
 
 async function renderStudentDashboard() {
-    // Team Member 2 : Kelly - Load student-assigned quizzes and mistake banks, rendering status buttons based on submission records.
-    try {
-        // FIXED: Used the correct container ID from index.html instead of the non-existent one
-        const dashboard = document.getElementById("assignmentContainerStudent");
-        if (!dashboard) return;
-        dashboard.innerHTML = "";
-        // Fetch all active quizzes
-        const quizzesRes = await fetch(`${API_BASE}/questions/quizzes`);
-        if (!quizzesRes.ok) throw new Error("Failed to load quizzes.");
-        const quizzes = await quizzesRes.json();
-        // Iterate through each quiz to generate quiz cards
-        for (const quiz of quizzes) {
-            const card = document.createElement("div");
-            // FIXED: Added standard styling class names to align with premium glassmorphism theme
-            card.className = "glass-card d-flex flex-column gap-3 mb-3 p-3";
-            // Title and header section
-            const headerDiv = document.createElement("div");
-            headerDiv.className = "d-flex justify-content-between align-items-center";
-
-            const title = document.createElement("strong");
-            title.className = "d-block text-white";
-            title.textContent = quiz.title;
-            headerDiv.appendChild(title);
-            card.appendChild(headerDiv);
-            // FIXED: Call the correct API endpoint with quizTitle to check if submission exists
-            const submissionRes = await fetch(`${API_BASE}/student/mistake-bank/${state.user.id}?quizTitle=${encodeURIComponent(quiz.title)}`);
-
-            if (submissionRes.ok) {
-                // If a submission exists, parse the status and display appropriate status badge
-                const submissionData = await submissionRes.json();
-
-                const statusBadge = document.createElement("span");
-                if (submissionData.status === "Pending") {
-                    statusBadge.className = "badge-custom badge-custom-amber text-center";
-                    statusBadge.textContent = "✔ Submission processed. Awaiting Instructor Grading.";
-                } else if (submissionData.status === "Graded") {
-                    statusBadge.className = "badge-custom badge-custom-emerald text-center";
-                    statusBadge.textContent = `✔ Graded. Result Score Registry: ${submissionData.finalScore} / 10.0 pts.`;
-                }
-                card.appendChild(statusBadge);
-                // View Mistake Bank button
-                const mistakeBtn = document.createElement("button");
-                mistakeBtn.className = "btn btn-sm btn-outline-custom w-100";
-                mistakeBtn.textContent = "View Mistake Bank";
-                // FIXED: Set state variables and call the correct refresh function
-                mistakeBtn.onclick = async () => {
-                    state.activeTaskTitle = quiz.title;
-                    openStudentMistakeBankWithReload();
-                };
-                card.appendChild(mistakeBtn);
-            } else {
-                // If no submission exists (Not Started)
-                const timeInfo = document.createElement("span");
-                timeInfo.className = "text-secondary small";
-                timeInfo.textContent = "Time Allowed: 40 Minutes";
-                headerDiv.appendChild(timeInfo);
-                const examBtn = document.createElement("button");
-                examBtn.className = "btn btn-dark-custom btn-sm w-100";
-                examBtn.textContent = "Execute Form Task";
-                // FIXED: Fetch questions for this quiz first, set state variables, and call the correct exam form function
-                examBtn.onclick = async () => {
-                    state.activeTaskTitle = quiz.title;
-
-                    const qRes = await fetch(`${API_BASE}/questions?quizTitle=${encodeURIComponent(quiz.title)}`);
-                    if (qRes.ok) {
-                        const qData = await qRes.json();
-                        state.questions = qData.questions;
-                        openStudentExamForm();
-                    } else {
-                        alert("Failed to load questions for this exam.");
-                    }
-                };
-                card.appendChild(examBtn);
-            }
-            dashboard.appendChild(card);
-        }
-    } catch (err) {
-        console.error(err);
-        dashboard.innerHTML = `<div class="alert-custom alert-custom-warning small">Error loading tasks: ${err.message}</div>`;
-    }
+    // TODO: Team Member 2 - Load student-assigned quizzes and mistake banks, rendering status buttons based on submission records.
+    alert("TODO: Team Member 2 - Implement renderStudentDashboard in app.js");
 }
 
 async function loadQuestionsForExam() {
-    // Team Member 2 Kelly - Load active quiz configuration details and initialize questions list layout.
-    try {
-        // Get the quiz title from URL search parameters (if any)
-        const urlParams = new URLSearchParams(window.location.search);
-        const qTitle = urlParams.get('quizTitle');
-        const titleQuery = qTitle ? `?quizTitle=${encodeURIComponent(qTitle)}` : "";
-        // Fetch quiz questions from the API using the correct query parameters
-        const resQ = await fetch(`${API_BASE}/questions${titleQuery}`);
-        if (!resQ.ok) throw new Error();
-        const dataQ = await resQ.json();
-
-        // Save the metadata to the global application state
-        state.isQuizOpen = dataQ.isQuizOpen ?? true;
-        state.deadlineString = dataQ.deadlineString ?? null;
-        state.timeLimitMinutes = dataQ.timeLimitMinutes ?? 40;
-        state.pdfBase64 = dataQ.pdfBase64 ?? null;
-        state.quizMode = dataQ.quizMode ?? "Manual";
-        state.totalScore = dataQ.totalScore ?? 10.0;
-
-        // FIXED: Prevent access if the quiz is closed or has expired
-        if (typeof isQuizActive === "function" && !isQuizActive()) {
-            alert("This assessment is currently closed or has passed its deadline.");
-            window.location.href = "/Student/Dashboard";
-            return;
-        }
-        // Save active questions and title to the global state
-        state.activeTaskTitle = dataQ.title;
-        state.questions = dataQ.questions;
-
-        // Update the page title element
-        document.getElementById('examTitle').innerText = state.activeTaskTitle;
-
-        // FIXED: Call the project's standard rendering function instead of duplicate document.createElement code
-        openStudentExamForm();
-    } catch (err) {
-        console.error(err);
-        alert("Failed to load questions.");
-    }
-}   
-
+    // TODO: Team Member 2 - Load active quiz configuration details and initialize questions list layout.
+    alert("TODO: Team Member 2 - Implement loadQuestionsForExam in app.js");
+}
 function openStudentExamForm() {
+    // Reset question navigation index
+    state.currentExamQuestionIndex = 0;
+
     // Timer Reset
-    state.examSecondsRemaining = state.timeLimitMinutes * 60; 
+    state.examSecondsRemaining = state.timeLimitMinutes * 60;
     startExamTimer();
 
     const layoutArea = document.getElementById('examWorkspaceLayoutArea');
@@ -326,142 +247,252 @@ function openStudentExamForm() {
                 </div>
             </div>
             <div class="col-lg-6">
-                <div class="glass-panel d-flex flex-column gap-3" style="max-height: 650px; overflow-y: auto; border-color: var(--border-color) !important; padding-right: 5px;">
-                    <h5 class="fw-bold text-dark border-bottom pb-2 mb-2" style="font-family: var(--font-heading);">✏️ Enter Exam Responses Below:</h5>
-                    <div id="studentActiveQuestionsArea"></div>
-                    <div class="mt-2">
-                        <button class="btn btn-dark-custom btn-lg w-100 py-3 fw-bold" onclick="lockExamAndOpenSurvey()">
-                            Submit Responses & Proceed to Survey
-                        </button>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="glass-panel p-3 mb-3" style="border-color: var(--border-color) !important;">
+                            <h6 class="fw-bold text-dark mb-2" style="font-family: var(--font-heading); font-size: 13px;">📊 Progress</h6>
+                            <div id="examProgressPercentageText" class="small text-secondary mb-2 fw-semibold" style="font-size: 11px;">0 / 0 (0%)</div>
+                            <div class="progress mb-3" style="height: 4px; background-color: #f1f5f9;">
+                                <div id="examProgressBarIndicator" class="progress-bar bg-success" role="progressbar" style="width: 0%;"></div>
+                            </div>
+                            <div id="examQuestionNavGrid" class="d-flex flex-wrap gap-2 overflow-y-auto" style="max-height: 480px;"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div id="studentActiveQuestionsArea"></div>
                     </div>
                 </div>
             </div>`;
     } else {
         layoutArea.innerHTML = `
-            <div class="col-lg-9 mx-auto">
-                <div class="glass-panel">
-                    <div id="studentActiveQuestionsArea"></div>
-                    <div class="mt-4">
-                        <button class="btn btn-dark-custom btn-lg w-100 py-3 fw-bold" onclick="lockExamAndOpenSurvey()">
-                            Submit Responses & Proceed to Survey
-                        </button>
+            <div class="col-lg-3">
+                <div class="glass-panel p-3 mb-3" style="border-color: var(--border-color) !important;">
+                    <h6 class="fw-bold text-dark mb-2" style="font-family: var(--font-heading);">📊 Progress Grid</h6>
+                    <div id="examProgressPercentageText" class="small text-secondary mb-2 fw-semibold">0 / 0 Answered (0%)</div>
+                    <div class="progress mb-3" style="height: 6px; border-radius: 3px; background-color: #f1f5f9;">
+                        <div id="examProgressBarIndicator" class="progress-bar bg-success" role="progressbar" style="width: 0%; border-radius: 3px;"></div>
+                    </div>
+                    <div id="examQuestionNavGrid" class="d-flex flex-wrap gap-2 overflow-y-auto" style="max-height: 250px;"></div>
+                </div>
+                <div class="glass-panel p-3" style="border-color: var(--border-color) !important;">
+                    <h6 class="fw-bold text-dark mb-2" style="font-family: var(--font-heading);">Legend</h6>
+                    <div class="d-flex flex-column gap-2 small">
+                        <div class="d-flex align-items-center gap-2"><span class="badge bg-success" style="width:16px;height:16px;display:inline-block;"> </span> Answered</div>
+                        <div class="d-flex align-items-center gap-2"><span class="badge bg-warning" style="width:16px;height:16px;display:inline-block;"> </span> Flagged to Revisit</div>
+                        <div class="d-flex align-items-center gap-2"><span class="badge bg-secondary" style="width:16px;height:16px;display:inline-block;"> </span> Unanswered</div>
                     </div>
                 </div>
+            </div>
+            <div class="col-lg-9">
+                <div id="studentActiveQuestionsArea"></div>
             </div>`;
     }
 
-    const container = document.getElementById('studentActiveQuestionsArea');
-    if (!container) return;
-
-    // Flagged questions summary bar
-    let html = `
-        <div id="flaggedSummaryBar" class="d-flex align-items-center gap-2 mb-3 p-2 rounded d-none"
-             style="background: #fef3c7; border: 1.5px solid #f59e0b; border-radius: 8px;">
-            <span style="font-size:16px;">&#x1F6A9;</span>
-            <span class="small fw-semibold text-dark">Flagged for later: <span id="flaggedCount" class="fw-bold text-amber">0</span> question(s) &mdash; <em class="text-secondary fw-normal" style="font-size:11px;">Click the flag on a question to mark it as &ldquo;hard&rdquo; and revisit.</em></span>
-        </div>`;
-
-    state.questions.forEach((q, idx) => {
-        html += `<div class="glass-card mb-4" id="q-card-wrapper-${q.id}" style="border: 1.5px solid var(--border-color); transition: border-color 0.2s;">`;
-
-        // Card header: question title + flag button
-        const labelText = state.quizMode === "PDF"
-            ? `Question #${idx + 1} (${q.type})`
-            : `Question #${idx + 1}: ${q.prompt}`;
-
-        html += `
-            <div class="d-flex justify-content-between align-items-start mb-3">
-                <h6 class="fw-bold text-dark mb-0 me-3" style="flex:1; line-height:1.4;">${labelText}</h6>
-                <button id="flag-btn-${q.id}" onclick="toggleFlagQuestion(${q.id})"
-                    title="Flag this question to revisit later"
-                    class="btn p-0 d-flex align-items-center justify-content-center flex-shrink-0"
-                    style="width:30px; height:30px; background:transparent; border:1.5px solid #e2e8f0; border-radius:6px; font-size:14px; color:#94a3b8; transition:all 0.2s;">
-                    &#x1F3F3;
-                </button>
-            </div>`;
-
-        if (q.type === "MCQ") {
-            html += `<div class="d-flex flex-column">`;
-            if (state.quizMode === "PDF") {
-                ['A', 'B', 'C', 'D'].forEach(optKey => {
-                    html += `
-                        <div class="mcq-option-card" id="mcq-card-${q.id}-${optKey}" onclick="selectStudentMCQOption(${q.id}, '${optKey}')">
-                            <div class="mcq-radio-dot" id="mcq-dot-${q.id}-${optKey}"></div>
-                            <span class="small">Option ${optKey}</span>
-                        </div>`;
-                });
-            } else {
-                q.options.forEach(opt => {
-                    const optKey = opt.trim().substring(0, 1);
-                    html += `
-                        <div class="mcq-option-card" id="mcq-card-${q.id}-${optKey}" onclick="selectStudentMCQOption(${q.id}, '${optKey}')">
-                            <div class="mcq-radio-dot" id="mcq-dot-${q.id}-${optKey}"></div>
-                            <span class="small">${opt}</span>
-                        </div>`;
-                });
-            }
-            html += `</div>`;
-        } else if (q.type === "Essay") {
-            html += `
-                <div class="code-editor-wrapper">
-                    <div class="code-editor-header">
-                        <div class="code-editor-dots">
-                            <div class="code-editor-dot dot-red"></div>
-                            <div class="code-editor-dot dot-yellow"></div>
-                            <div class="code-editor-dot dot-green"></div>
-                        </div>
-                        <span class="text-secondary small font-monospace">index.js</span>
-                    </div>
-                    <textarea class="form-control code-input" id="active-student-essay-${q.id}" rows="3" placeholder="// Type your response code logic payload here..."></textarea>
-                </div>`;
-        }
-
-        html += `</div>`;
-    });
-
-    container.innerHTML = html;
+    renderActiveQuestionCard();
 }
 
-// Toggle flag on a question card
+
+function updateQuestionNavigationGrid() {
+    const grid = document.getElementById('examQuestionNavGrid');
+    if (!grid) return;
+
+    let html = "";
+    state.questions.forEach((q, idx) => {
+        const isCurrent = idx === state.currentExamQuestionIndex;
+        const isFlagged = state.flaggedQuestions[q.id] || false;
+
+        let isAnswered = false;
+        if (q.type === "MCQ") {
+            isAnswered = !!state.studentAnswers[q.id];
+        } else if (q.type === "Essay") {
+            const textarea = document.getElementById(`active-student-essay-${q.id}`);
+            const val = textarea ? textarea.value : (state.studentAnswers[q.id] || "");
+            isAnswered = val.trim().length > 0;
+        }
+
+        let bgClass = "btn-outline-secondary text-secondary";
+        let extraStyle = "";
+
+        if (isCurrent) {
+            extraStyle = "border: 2.5px solid var(--accent-purple) !important; font-weight: bold;";
+        }
+
+        if (isFlagged) {
+            bgClass = "bg-warning text-dark border-warning";
+        } else if (isAnswered) {
+            bgClass = "bg-success text-white border-success";
+        }
+
+        const flagIndicator = isFlagged ? "🚩" : "";
+        const dotIndicator = isAnswered && !isFlagged ? "●" : "";
+
+        html += `
+            <button onclick="switchToQuestion(${idx})" class="btn btn-sm ${bgClass} position-relative font-monospace" style="width: 45px; height: 45px; ${extraStyle}">
+                ${idx + 1}
+                ${flagIndicator ? `<span style="position: absolute; top: -5px; right: -5px; font-size: 10px;">${flagIndicator}</span>` : ""}
+                ${dotIndicator ? `<span style="position: absolute; bottom: 2px; right: 2px; font-size: 8px;">${dotIndicator}</span>` : ""}
+            </button>
+        `;
+    });
+
+    grid.innerHTML = html;
+
+    const answeredCount = state.questions.filter((q, idx) => {
+        if (q.type === "MCQ") return !!state.studentAnswers[q.id];
+        if (q.type === "Essay") {
+            const textarea = document.getElementById(`active-student-essay-${q.id}`);
+            const val = textarea ? textarea.value : (state.studentAnswers[q.id] || "");
+            return val.trim().length > 0;
+        }
+        return false;
+    }).length;
+
+    const progressPercent = (answeredCount / state.questions.length) * 100;
+    const progressText = document.getElementById('examProgressPercentageText');
+    if (progressText) progressText.innerText = `${answeredCount} / ${state.questions.length} Answered (${Math.round(progressPercent)}%)`;
+
+    const progressBar = document.getElementById('examProgressBarIndicator');
+    if (progressBar) progressBar.style.width = `${progressPercent}%`;
+}
+function switchToQuestion(index) {
+    if (index < 0 || index >= state.questions.length) return;
+
+    const prevQ = state.questions[state.currentExamQuestionIndex];
+    if (prevQ && prevQ.type === "Essay") {
+        const textarea = document.getElementById(`active-student-essay-${prevQ.id}`);
+        if (textarea) {
+            state.studentAnswers[prevQ.id] = textarea.value;
+        }
+    }
+
+    state.currentExamQuestionIndex = index;
+    renderActiveQuestionCard();
+}
+function renderActiveQuestionCard() {
+    const qArea = document.getElementById('studentActiveQuestionsArea');
+    if (!qArea) return;
+
+    const q = state.questions[state.currentExamQuestionIndex];
+    const idx = state.currentExamQuestionIndex;
+
+    const isFirst = idx === 0;
+    const isLast = idx === state.questions.length - 1;
+    const isFlagged = state.flaggedQuestions[q.id] || false;
+
+    const savedAns = state.studentAnswers[q.id] || "";
+
+    const labelText = state.quizMode === "PDF"
+        ? `Question #${idx + 1} (${q.type})`
+        : `Question #${idx + 1}: ${q.prompt}`;
+
+    let html = `
+        <div class="glass-card p-4 border border-secondary border-opacity-20 mb-3">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <h5 class="fw-bold text-dark mb-0 me-3" style="flex: 1; line-height: 1.4; font-family: var(--font-heading);">${labelText}</h5>
+                <button id="flag-btn-${q.id}" onclick="toggleFlagQuestion(${q.id})"
+                    title="Flag this question to revisit later"
+                    class="btn btn-sm ${isFlagged ? 'btn-warning text-dark' : 'btn-outline-secondary text-secondary'} d-flex align-items-center justify-content-center flex-shrink-0 gap-1"
+                    style="border-radius: 6px; font-weight: bold; transition: all 0.2s;">
+                    🚩 ${isFlagged ? 'Flagged' : 'Flag'}
+                </button>
+            </div>
+    `;
+
+    if (q.type === "MCQ") {
+        html += `<div class="d-flex flex-column gap-2">`;
+        const optionsList = state.quizMode === "PDF" ? ['A', 'B', 'C', 'D'] : q.options;
+
+        optionsList.forEach(opt => {
+            const optKey = state.quizMode === "PDF" ? opt : opt.trim().substring(0, 1);
+            const isSelected = state.studentAnswers[q.id] === optKey;
+
+            html += `
+                <div class="mcq-option-card ${isSelected ? 'selected' : ''}" id="mcq-card-${q.id}-${optKey}" onclick="selectStudentMCQOption(${q.id}, '${optKey}')">
+                    <div class="mcq-radio-dot ${isSelected ? 'selected' : ''}" id="mcq-dot-${q.id}-${optKey}"></div>
+                    <span class="small">${state.quizMode === "PDF" ? `Option ${opt}` : opt}</span>
+                </div>`;
+        });
+        html += `</div>`;
+    } else if (q.type === "Essay") {
+        html += `
+            <div class="code-editor-wrapper">
+                <div class="code-editor-header">
+                    <div class="code-editor-dots">
+                        <div class="code-editor-dot dot-red"></div>
+                        <div class="code-editor-dot dot-yellow"></div>
+                        <div class="code-editor-dot dot-green"></div>
+                    </div>
+                    <span class="text-secondary small font-monospace">index.js</span>
+                </div>
+                <textarea class="form-control code-input" id="active-student-essay-${q.id}" rows="8" 
+                    oninput="state.studentAnswers[${q.id}] = this.value; updateQuestionNavigationGrid();"
+                    placeholder="// Type your response code logic payload here...">${savedAns}</textarea>
+            </div>`;
+    }
+
+    html += `
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+            <button class="btn btn-sm btn-outline-custom" ${isFirst ? 'disabled' : ''} onclick="switchToQuestion(${idx - 1})">
+                ◀ Previous
+            </button>
+            <span class="text-secondary small fw-semibold font-monospace">Question ${idx + 1} of ${state.questions.length}</span>
+            ${isLast ? `
+            <button class="btn btn-sm btn-success fw-bold" onclick="lockExamAndOpenSurvey()">
+                Submit Responses & Continue ▶
+            </button>
+            ` : `
+            <button class="btn btn-sm btn-dark-custom" onclick="switchToQuestion(${idx + 1})">
+                Next Question ▶
+            </button>
+            `}
+        </div>
+    `;
+
+    qArea.innerHTML = html;
+    updateQuestionNavigationGrid();
+}
+
+//Toggle flag on a question card
 function toggleFlagQuestion(qId) {
     state.flaggedQuestions[qId] = !state.flaggedQuestions[qId];
     const isFlagged = state.flaggedQuestions[qId];
 
-    const card = document.getElementById(`q-card-wrapper-${qId}`);
-    const btn  = document.getElementById(`flag-btn-${qId}`);
-
-    if (card) {
-        card.style.borderColor = isFlagged ? '#f59e0b' : 'var(--border-color)';
-        card.style.borderWidth  = isFlagged ? '2px' : '1.5px';
-    }
+    const btn = document.getElementById(`flag-btn-${qId}`);
     if (btn) {
-        btn.innerHTML = isFlagged ? '&#x1F6A9;' : '&#x1F3F3;';
-        btn.style.color         = isFlagged ? '#f59e0b' : '#94a3b8';
-        btn.style.borderColor   = isFlagged ? '#f59e0b' : '#e2e8f0';
+        if (isFlagged) {
+            btn.className = "btn btn-sm btn-warning text-dark d-flex align-items-center justify-content-center flex-shrink-0 gap-1";
+            btn.innerHTML = "🚩 Flagged";
+        } else {
+            btn.className = "btn btn-sm btn-outline-secondary text-secondary d-flex align-items-center justify-content-center flex-shrink-0 gap-1";
+            btn.innerHTML = "🚩 Flag";
+        }
     }
 
-    // Update summary bar
-    const count = Object.values(state.flaggedQuestions).filter(Boolean).length;
-    const bar   = document.getElementById('flaggedSummaryBar');
-    const countEl = document.getElementById('flaggedCount');
-    if (countEl) countEl.innerText = count;
-    if (bar) bar.classList.toggle('d-none', count === 0);
+    updateQuestionNavigationGrid();
 }
 
 function selectStudentMCQOption(qId, key) {
     const q = state.questions.find(quest => quest.id === qId);
     if (!q) return;
 
-    q.options.forEach(opt => {
-        const k = opt.trim().substring(0, 1);
+    const optList = state.quizMode === "PDF" ? ['A', 'B', 'C', 'D'] : q.options;
+
+    optList.forEach(opt => {
+        const k = state.quizMode === "PDF" ? opt : opt.trim().substring(0, 1);
         const card = document.getElementById(`mcq-card-${qId}-${k}`);
         if (card) card.classList.remove('selected');
+        const dot = document.getElementById(`mcq-dot-${qId}-${k}`);
+        if (dot) dot.classList.remove('selected');
     });
 
     const selectedCard = document.getElementById(`mcq-card-${qId}-${key}`);
     if (selectedCard) selectedCard.classList.add('selected');
+    const selectedDot = document.getElementById(`mcq-dot-${qId}-${key}`);
+    if (selectedDot) selectedDot.classList.add('selected');
 
     state.studentAnswers[qId] = key;
+    updateQuestionNavigationGrid();
 }
 
 function startExamTimer() {
@@ -474,7 +505,7 @@ function startExamTimer() {
             lockExamAndOpenSurvey();
             return;
         }
-        
+
         const minutes = Math.floor(state.examSecondsRemaining / 60);
         const seconds = state.examSecondsRemaining % 60;
         const display = document.getElementById('examTimerDisplay');
@@ -483,7 +514,6 @@ function startExamTimer() {
         }
     }, 1000);
 }
-
 function lockExamAndOpenSurvey() {
     clearInterval(state.examTimerInterval);
 
@@ -496,14 +526,14 @@ function lockExamAndOpenSurvey() {
 
     switchLocalPanel('screen-student-exam');
     switchLocalPanel('screen-student-survey');
-    
+
     const surveyContainer = document.getElementById('studentSurveyQuestionsRepetitionArea');
     if (!surveyContainer) return;
     surveyContainer.innerHTML = "";
 
     state.questions.forEach((q, idx) => {
         const studentAns = state.studentAnswers[q.id] || "No response recorded.";
-        
+
         let blockHTML = `
             <div class="glass-card mb-4" style="background-color: #ffffff; border: 1px solid var(--border-color);">`;
         if (state.quizMode === "PDF") {
@@ -535,7 +565,7 @@ function lockExamAndOpenSurvey() {
                     </div>
                 </div>
             </div>`;
-            
+
         state.studentSurvey[q.id] = { difficulty: "Medium", note: "" };
         surveyContainer.innerHTML += blockHTML;
     });
@@ -555,6 +585,8 @@ function selectSurveyDifficulty(qId, level) {
     state.studentSurvey[qId].difficulty = level;
 }
 
+
+
 function updateCharCount(input, qId) {
     if (input.value.length > 200) {
         input.value = input.value.substring(0, 200);
@@ -569,27 +601,138 @@ async function completeSurveyPipeline() {
 
 // ================= STUDENT MISTAKE BANK =================
 
+function onMistakeQuizDropdownChange(val) {
+    state.selectedQuizTitle = val;
+    const newUrl = window.location.pathname + '?quizTitle=' + encodeURIComponent(val);
+    window.history.pushState({ path: newUrl }, '', newUrl);
+    openStudentMistakeBankWithReload();
+}
+
+
 async function openStudentMistakeBankWithReload() {
     // TODO: Team Member 2 - Query student evaluation logs for active mistake checks, compiling correct/incorrect answer states.
     alert("TODO: Team Member 2 - Implement openStudentMistakeBankWithReload in app.js");
 }
+function switchMistakeBankSubTab(tab) {
+    state.activeMistakeSubTab = tab;
 
+    const mistakeBtn = document.getElementById('mistake-tab-btn');
+    const passedBtn = document.getElementById('passed-tab-btn');
+    const disputeBtn = document.getElementById('dispute-tab-btn');
+
+    const mistakePanel = document.getElementById('panel-student-mistakes');
+    const passedPanel = document.getElementById('panel-student-passed');
+    const disputePanel = document.getElementById('panel-student-disputes');
+
+    if (mistakeBtn) mistakeBtn.classList.remove('active');
+    if (passedBtn) passedBtn.classList.remove('active');
+    if (disputeBtn) disputeBtn.classList.remove('active');
+
+    if (mistakePanel) mistakePanel.classList.add('d-none');
+    if (passedPanel) passedPanel.classList.add('d-none');
+    if (disputePanel) disputePanel.classList.add('d-none');
+
+    if (tab === 'mistakes') {
+        if (mistakeBtn) mistakeBtn.classList.add('active');
+        if (mistakePanel) mistakePanel.classList.remove('d-none');
+    } else if (tab === 'passed') {
+        if (passedBtn) passedBtn.classList.add('active');
+        if (passedPanel) passedPanel.classList.remove('d-none');
+    } else if (tab === 'disputes') {
+        if (disputeBtn) disputeBtn.classList.add('active');
+        if (disputePanel) disputePanel.classList.remove('d-none');
+    }
+}
 
 // Member Han  - Student dispute ticketing and private chat operations
-async function initiateStudentDisputeTicket(qId) {
-    // 1. User Input: Open a native browser prompt box to ask the student why they are contesting the grading
-    const reason = prompt("Enter your dispute reason statement to start a private 1-on-1 chat thread with your instructor:");
-    if (!reason) return; // Guard clause: Exit if the student cancels or leaves the text box blank
+async function initiateStudentSubmissionDispute() {
+    const reason = prompt("Enter your dispute reason statement to start a private 1-on-1 chat thread with your instructor for this entire submission:");
+    if (!reason) return;
 
     try {
-        // 2. Setup Payload: Assemble the necessary metadata required by the server to log the complaint
+        const payload = {
+            studentId: state.user.id,
+            quizTitle: state.selectedQuizTitle || state.activeTaskTitle,
+            message: reason
+        };
+
+        const res = await fetch(`${API_BASE}/student/initiate-submission-dispute`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error("Failed to open dispute.");
+
+        alert("Dispute dialogue successfully opened.");
+        openStudentMistakeBankWithReload();
+    } catch (err) {
+        alert(`Error opening dispute: ${err.message}`);
+    }
+}
+async function loadStudentUnifiedDisputeChat() {
+    const streamContainer = document.getElementById('studentUnifiedDisputeChatStream');
+    if (!streamContainer) return;
+
+    try {
+        const topic = `Dispute ${state.user.id} - ${state.selectedQuizTitle || state.activeTaskTitle}`;
+        const res = await fetch(`${API_BASE}/forum/dispute/${state.user.id}/${encodeURIComponent(topic)}`);
+        if (!res.ok) throw new Error();
+
+        const comments = await res.json();
+        streamContainer.innerHTML = comments.map(c => {
+            const isSelf = c.sender.includes(state.user.name);
+            return `
+                <div class="comment-bubble ${isSelf ? 'self' : ''}">
+                    <span class="d-block small fw-bold" style="color: var(--accent-cyan); font-size: 11px;">${c.sender}</span>
+                    <span style="font-size: 12.5px;">${c.message}</span>
+                </div>`;
+        }).join('');
+
+        streamContainer.scrollTop = streamContainer.scrollHeight;
+    } catch (err) {
+        streamContainer.innerHTML = `<div class="text-center text-secondary small py-3">Error loading messages.</div>`;
+    }
+}
+async function sendStudentUnifiedDisputeMessage() {
+    const field = document.getElementById('inputStudentUnifiedDisputeMessage');
+    if (!field || !field.value.trim()) return;
+
+    try {
+        const topic = `Dispute ${state.user.id} - ${state.selectedQuizTitle || state.activeTaskTitle}`;
+        const payload = {
+            isPrivate: true,
+            studentId: state.user.id,
+            topic: topic,
+            sender: `${state.user.name} (Student)`,
+            message: field.value.trim()
+        };
+
+        const res = await fetch(`${API_BASE}/forum/comment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error("Failed to send message.");
+
+        field.value = "";
+        await loadStudentUnifiedDisputeChat();
+    } catch (err) {
+        alert(err.message);
+    }
+}
+async function initiateStudentDisputeTicket(qId) {
+    const reason = prompt("Enter your dispute reason statement to start a private 1-on-1 chat thread with your instructor:");
+    if (!reason) return;
+
+    try {
         const payload = {
             studentId: state.user.id,
             questionId: qId,
             message: reason
         };
 
-        // 3. Network Request: Send a POST request to create the dispute ticket in the backend database
         const res = await fetch(`${API_BASE}/student/initiate-dispute`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -598,18 +741,12 @@ async function initiateStudentDisputeTicket(qId) {
 
         if (!res.ok) throw new Error("Failed to open dispute ticket.");
 
-        // 4. Success Handling: Inform the user and trigger a UI reload to show the updated dispute status
         alert("Dispute ticket successfully created. A private dialogue has been opened.");
         openStudentMistakeBankWithReload();
-
     } catch (err) {
-        // 5. Error Handling: Display a popup banner with the exact error message if the server request fails
         alert(`Error opening dispute: ${err.message}`);
     }
 }
-
-
-
 
 async function renderStudentEmbeddedPrivateChatArea(answers) {
     // TODO: Team Member 5 - Load and render private dispute comments streams and audit buttons inside student logs.
@@ -687,7 +824,7 @@ async function loadQuizzesSidebar() {
 
 async function selectQuizFromSidebar(title) {
     state.selectedQuizTitle = title;
-    
+
     const quiz = state.quizzes.find(q => (q.title || q.Title) === title);
     if (quiz) {
         state.activeTaskTitle = quiz.title || quiz.Title;
@@ -700,9 +837,276 @@ async function selectQuizFromSidebar(title) {
         state.totalScore = quiz.totalScore || quiz.TotalScore;
     }
 
+    // Toggle panels
+    const placeholder = document.getElementById('teacherDashboardEmptyPlaceholder');
+    if (placeholder) placeholder.classList.add('d-none');
+    const createContainer = document.getElementById('quizCreateViewContainer');
+    if (createContainer) createContainer.classList.add('d-none');
+    const selectedContainer = document.getElementById('quizSelectedViewContainer');
+    if (selectedContainer) selectedContainer.classList.remove('d-none');
+
+    const headerTitle = document.getElementById('activeQuizTitleHeader');
+    if (headerTitle) headerTitle.innerText = state.activeTaskTitle;
+
     await loadQuizzesSidebar();
-    await loadInstructorAnalytics();
-    await switchRosterSubTab(state.activeRosterSubTab);
+    await switchQuizSubTab(state.activeQuizSubTab || 'view');
+}
+
+function enterCreateQuizMode() {
+    state.selectedQuizTitle = null;
+    state.activeTaskTitle = "";
+    state.timeLimitMinutes = 40;
+    state.totalScore = 10.0;
+    state.deadlineString = "";
+    state.isQuizOpen = true;
+    state.isForumOpen = true;
+    state.pdfBase64 = null;
+    state.quizMode = "Manual";
+    state.questions = []; // Blank questions array
+
+    // Deselect sidebar buttons
+    document.querySelectorAll('#quizListSidebarContainer button').forEach(b => {
+        b.style.backgroundColor = "#ffffff";
+        b.style.color = "var(--text-color)";
+    });
+
+    const placeholder = document.getElementById('teacherDashboardEmptyPlaceholder');
+    if (placeholder) placeholder.classList.add('d-none');
+    const selectedContainer = document.getElementById('quizSelectedViewContainer');
+    if (selectedContainer) selectedContainer.classList.add('d-none');
+    const createContainer = document.getElementById('quizCreateViewContainer');
+    if (createContainer) createContainer.classList.remove('d-none');
+
+    // Reset create form inputs to blank
+    document.getElementById('inputTaskTitle').value = "";
+    document.getElementById('inputQuizTimeLimit').value = 40;
+    document.getElementById('inputQuizTotalScore').value = 10.0;
+    document.getElementById('inputQuizDeadline').value = "";
+    document.getElementById('inputIsQuizOpen').checked = true;
+    document.getElementById('inputIsForumOpen').checked = true;
+    document.getElementById('inputQuizMode').value = "Manual";
+    document.getElementById('pdfUploadWrapper').classList.add('d-none');
+    document.getElementById('quizPdfStatusLabel').innerText = "No PDF document attached.";
+
+    const container = document.getElementById('custom-questions-list-container');
+    if (container) container.innerHTML = "";
+}
+async function switchQuizSubTab(subTab) {
+    state.activeQuizSubTab = subTab;
+    document.querySelectorAll('#quizSubTabs .nav-link-custom').forEach(l => l.classList.remove('active'));
+    document.querySelectorAll('.quiz-sub-tab-content').forEach(c => c.classList.add('d-none'));
+
+    const tabBtn = document.getElementById(`quiz-sub-btn-${subTab}`);
+    if (tabBtn) tabBtn.classList.add('active');
+
+    const tabContent = document.getElementById(`quiz-sub-tab-content-${subTab}`);
+    if (tabContent) tabContent.classList.remove('d-none');
+
+    if (subTab === 'view') {
+        await renderViewQuizQuestions();
+    } else if (subTab === 'grading') {
+        await switchRosterSubTab(state.activeRosterSubTab || 'pending');
+    } else if (subTab === 'diagnostics') {
+        await loadInstructorAnalytics();
+    }
+}
+
+async function renderViewQuizQuestions() {
+    const container = document.getElementById('viewQuizQuestionsContainer');
+    if (!container) return;
+    container.innerHTML = "";
+
+    try {
+        const titleQuery = state.selectedQuizTitle ? `?quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
+        const res = await fetch(`${API_BASE}/questions${titleQuery}`);
+        if (!res.ok) {
+            container.innerHTML = `<div class="text-center py-3 text-secondary small">Error loading questions.</div>`;
+            return;
+        }
+
+        const data = await res.json();
+        const questions = data.questions;
+
+        const dlFormatted = formatLocalDateTime(data.deadlineString);
+
+        let settingsPanelHTML = `
+            <div class="glass-panel mb-4 p-3 border rounded bg-light shadow-sm" style="border-color: rgba(99, 102, 241, 0.25) !important;">
+                <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-1" style="font-family: var(--font-heading);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4l3 3"></path></svg>
+                    Quiz-Level Parameters & Access Configuration
+                </h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="small text-secondary fw-semibold">📅 Due Date (Deadline)</label>
+                        <input type="datetime-local" class="form-control form-control-sm text-dark bg-white" id="edit-quiz-deadline" value="${dlFormatted}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="small text-secondary fw-semibold">⏱ Time Limit (Minutes)</label>
+                        <input type="number" class="form-control form-control-sm text-dark bg-white" id="edit-quiz-timelimit" value="${data.timeLimitMinutes ?? 40}">
+                    </div>
+                    <div class="col-md-5 d-flex align-items-end gap-3 flex-wrap">
+                        <div class="form-check form-switch mb-1">
+                            <input class="form-check-input" type="checkbox" id="edit-quiz-isopen" ${data.isQuizOpen ? 'checked' : ''}>
+                            <label class="form-check-label small fw-semibold text-secondary" for="edit-quiz-isopen">Quiz Open</label>
+                        </div>
+                        <div class="form-check form-switch mb-1">
+                            <input class="form-check-input" type="checkbox" id="edit-quiz-isforumopen" ${data.isForumOpen ? 'checked' : ''}>
+                            <label class="form-check-label small fw-semibold text-secondary" for="edit-quiz-isforumopen">Forum Open</label>
+                        </div>
+                        <button class="btn btn-sm btn-dark-custom px-3 ms-auto" onclick="saveActiveQuizSettings()">
+                            Save Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = settingsPanelHTML;
+
+        if (!questions || questions.length === 0) {
+            container.innerHTML += `<div class="text-center py-3 text-secondary small border rounded p-4 bg-white">No questions found for this quiz.</div>`;
+            return;
+        }
+
+        questions.forEach((q, idx) => {
+            const card = document.createElement('div');
+            card.className = "p-3 border rounded bg-white mb-3 shadow-sm";
+            card.style.borderColor = "var(--border-color)";
+
+            let cardHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
+                    <h6 class="small fw-bold text-dark mb-0">Question #${idx + 1} (${q.type})</h6>
+                    <span class="badge bg-secondary font-monospace" style="font-size: 10px;">ID: ${q.id}</span>
+                </div>
+                <div class="row g-2 mb-2">
+                    <div class="col-md-8">
+                        <label class="small text-secondary fw-semibold">Prompt / Question Content</label>
+                        <input type="text" class="form-control form-control-sm text-dark bg-white" id="edit-q-prompt-${q.id}" value="${q.prompt || ''}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="small text-secondary fw-semibold">Topic</label>
+                        <input type="text" class="form-control form-control-sm text-dark bg-white" id="edit-q-topic-${q.id}" value="${q.topic || 'General'}">
+                    </div>
+                </div>
+                <div class="row g-2 mb-2">
+                    <div class="col-md-6">
+                        <label class="small text-secondary fw-semibold">Question Score Weight</label>
+                        <input type="number" step="0.1" class="form-control form-control-sm text-dark bg-white" id="edit-q-score-${q.id}" value="${q.maxScore}">
+                    </div>`;
+
+            if (q.type === 'MCQ') {
+                const optA = q.options && q.options[0] ? q.options[0].replace(/^A\.\s*/, '') : '';
+                const optB = q.options && q.options[1] ? q.options[1].replace(/^B\.\s*/, '') : '';
+                const optC = q.options && q.options[2] ? q.options[2].replace(/^C\.\s*/, '') : '';
+                const optD = q.options && q.options[3] ? q.options[3].replace(/^D\.\s*/, '') : '';
+
+                cardHTML += `
+                    <div class="col-md-6">
+                        <label class="small text-secondary fw-semibold">Correct Option Key</label>
+                        <select class="form-select form-select-sm text-dark bg-white" id="edit-q-key-${q.id}">
+                            <option value="A" ${q.correctKey === 'A' ? 'selected' : ''}>Option A</option>
+                            <option value="B" ${q.correctKey === 'B' ? 'selected' : ''}>Option B</option>
+                            <option value="C" ${q.correctKey === 'C' ? 'selected' : ''}>Option C</option>
+                            <option value="D" ${q.correctKey === 'D' ? 'selected' : ''}>Option D</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="small text-secondary fw-semibold d-block mb-1">Answer Options Content</label>
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control form-control-sm text-dark bg-white" id="edit-q-optA-${q.id}" value="${optA}" placeholder="Option A text">
+                        </div>
+                        <div class="col-md-6">
+                            <input type="text" class="form-control form-control-sm text-dark bg-white" id="edit-q-optB-${q.id}" value="${optB}" placeholder="Option B text">
+                        </div>
+                        <div class="col-md-6">
+                            <input type="text" class="form-control form-control-sm text-dark bg-white" id="edit-q-optC-${q.id}" value="${optC}" placeholder="Option C text">
+                        </div>
+                        <div class="col-md-6">
+                            <input type="text" class="form-control form-control-sm text-dark bg-white" id="edit-q-optD-${q.id}" value="${optD}" placeholder="Option D text">
+                        </div>
+                    </div>
+                </div>`;
+            } else {
+                cardHTML += `
+                    <div class="col-md-6">
+                        <!-- Spacer -->
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="small text-secondary fw-semibold">Marking Guidelines (Quiz Note / Ideas to Check)</label>
+                    <textarea class="form-control form-control-sm text-dark bg-white" id="edit-q-guide-${q.id}" rows="2" placeholder="e.g. Ensure they check boundary cases, use clean loops...">${q.markingGuide || ''}</textarea>
+                </div>`;
+            }
+
+            cardHTML += `
+                <div class="text-end">
+                    <button class="btn btn-sm btn-dark-custom px-3 py-1 fw-semibold" onclick="saveQuestionChanges(${q.id}, '${q.type}')">Save Changes</button>
+                </div>`;
+
+            card.innerHTML = cardHTML;
+            container.appendChild(card);
+        });
+    } catch (err) {
+        container.innerHTML = `<div class="alert-custom alert-custom-warning small">Error rendering question console: ${err.message}</div>`;
+    }
+}
+async function saveQuestionChanges(qId, type) {
+    const prompt = document.getElementById(`edit-q-prompt-${qId}`).value.trim();
+    const topic = document.getElementById(`edit-q-topic-${qId}`).value.trim() || "General";
+    const maxScore = parseFloat(document.getElementById(`edit-q-score-${qId}`).value) || 0.0;
+
+    if (!prompt) {
+        return alert("Question prompt is required.");
+    }
+
+    let options = null;
+    let correctKey = "";
+    let markingGuide = null;
+
+    if (type === 'MCQ') {
+        const optA = document.getElementById(`edit-q-optA-${qId}`).value.trim();
+        const optB = document.getElementById(`edit-q-optB-${qId}`).value.trim();
+        const optC = document.getElementById(`edit-q-optC-${qId}`).value.trim();
+        const optD = document.getElementById(`edit-q-optD-${qId}`).value.trim();
+        correctKey = document.getElementById(`edit-q-key-${qId}`).value;
+
+        if (!optA || !optB || !optC || !optD) {
+            return alert("All option fields A, B, C, D are required.");
+        }
+        options = [`A. ${optA}`, `B. ${optB}`, `C. ${optC}`, `D. ${optD}`];
+    } else {
+        markingGuide = document.getElementById(`edit-q-guide-${qId}`).value.trim();
+        correctKey = "Custom criteria validation";
+    }
+
+    try {
+        const payload = {
+            id: qId,
+            prompt: prompt,
+            topic: topic,
+            maxScore: maxScore,
+            correctKey: correctKey,
+            options: options,
+            markingGuide: markingGuide
+        };
+
+        const res = await fetch(`${API_BASE}/questions/update-question`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error("Failed to update question.");
+
+        alert("✔ Question successfully updated in database! " + (type === 'MCQ' ? "Classroom MCQ answers re-graded." : ""));
+
+        // Refresh active questions list view
+        await renderViewQuizQuestions();
+    } catch (err) {
+        alert("Error saving edits: " + err.message);
+    }
 }
 
 // ================= INSTRUCTOR DASHBOARD FLOW =================
@@ -710,62 +1114,50 @@ async function selectQuizFromSidebar(title) {
 async function switchTeacherTab(tab) {
     document.querySelectorAll('.teacher-tab-content').forEach(c => c.classList.add('d-none'));
     document.querySelectorAll('#teacherTabs .nav-link-custom').forEach(l => l.classList.remove('active'));
-    
+
     document.getElementById(`teacher-tab-${tab}`).classList.remove('d-none');
     document.getElementById(`tab-btn-${tab}`).classList.add('active');
-    
-    if (tab === 'manager') {
-        // Pre-populate global configurations
-        const inputTitle = document.getElementById('inputTaskTitle');
-        if (inputTitle) inputTitle.value = state.activeTaskTitle;
-        const inputLimit = document.getElementById('inputQuizTimeLimit');
-        if (inputLimit) inputLimit.value = state.timeLimitMinutes;
-        const inputTotalScore = document.getElementById('inputQuizTotalScore');
-        if (inputTotalScore) inputTotalScore.value = state.totalScore;
-        const inputDeadline = document.getElementById('inputQuizDeadline');
-        if (inputDeadline) inputDeadline.value = state.deadlineString ? state.deadlineString.substring(0, 16) : ""; // Convert ISO to local format YYYY-MM-DDThh:mm
-        const checkQuiz = document.getElementById('inputIsQuizOpen');
-        if (checkQuiz) checkQuiz.checked = state.isQuizOpen;
-        const checkForum = document.getElementById('inputIsForumOpen');
-        if (checkForum) checkForum.checked = state.isForumOpen;
 
-        const inputQuizMode = document.getElementById('inputQuizMode');
-        if (inputQuizMode) {
-            inputQuizMode.value = state.quizMode;
-        }
-        const wrapper = document.getElementById('pdfUploadWrapper');
-        if (wrapper) {
-            if (state.quizMode === "PDF") {
-                wrapper.classList.remove('d-none');
-            } else {
-                wrapper.classList.add('d-none');
-            }
-        }
-        populateQuestionBuilderFromState();
-        const statusLabel = document.getElementById('quizPdfStatusLabel');
-        if (statusLabel) {
-            statusLabel.innerText = state.pdfBase64 ? "✔ PDF document attached and active." : "No PDF document attached.";
-        }
-    }
     if (tab === 'analytics') {
-        switchRosterSubTab(state.activeRosterSubTab);
-        loadInstructorAnalytics();
+        await loadQuizzesSidebar();
+
+        if (state.selectedQuizTitle) {
+            const placeholder = document.getElementById('teacherDashboardEmptyPlaceholder');
+            if (placeholder) placeholder.classList.add('d-none');
+            const createContainer = document.getElementById('quizCreateViewContainer');
+            if (createContainer) createContainer.classList.add('d-none');
+            const selectedContainer = document.getElementById('quizSelectedViewContainer');
+            if (selectedContainer) selectedContainer.classList.remove('d-none');
+
+            const headerTitle = document.getElementById('activeQuizTitleHeader');
+            if (headerTitle) headerTitle.innerText = state.selectedQuizTitle;
+
+            await switchQuizSubTab(state.activeQuizSubTab || 'view');
+        } else {
+            const placeholder = document.getElementById('teacherDashboardEmptyPlaceholder');
+            if (placeholder) placeholder.classList.remove('d-none');
+            const createContainer = document.getElementById('quizCreateViewContainer');
+            if (createContainer) createContainer.classList.add('d-none');
+            const selectedContainer = document.getElementById('quizSelectedViewContainer');
+            if (selectedContainer) selectedContainer.classList.add('d-none');
+        }
     }
     if (tab === 'forum') {
         initializeInstructorDashboardForum();
     }
 }
-
 async function loadInstructorAnalytics() {
     try {
         const titleQuery = state.selectedQuizTitle ? `?quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
         const res = await fetch(`${API_BASE}/instructor/analytics${titleQuery}`);
         if (!res.ok) throw new Error("Failed to load analytics.");
-        
+
         const data = await res.json();
-        document.getElementById('analyticsTaskTitle').innerText = data.activeTaskTitle;
+        const titleEl = document.getElementById('analyticsTaskTitle');
+        if (titleEl) titleEl.innerText = data.activeTaskTitle;
+
         document.getElementById('analyticsSubmissionCount').innerText = `${data.totalSubmissionsCount} / 60 Students`;
-        
+
         const failBadge = document.getElementById('analyticsFailureRate');
         failBadge.innerText = `${data.failureRatePercentage}% Failure Rate`;
         if (data.failureRatePercentage > 40) {
@@ -775,7 +1167,7 @@ async function loadInstructorAnalytics() {
         }
 
         document.getElementById('classAvgLabelField').innerText = `Class Avg: ${data.classAverageScore} / ${state.totalScore}`;
-        
+
         // Fetch active questions for the selected quiz to update state.questions
         const resQ = await fetch(`${API_BASE}/questions${titleQuery}`);
         if (resQ.ok) {
@@ -783,42 +1175,71 @@ async function loadInstructorAnalytics() {
             state.questions = dataQ.questions;
         }
 
-        if (data.totalSubmissionsCount > 0) {
-            renderInlineQuestionEditSection();
-        } else {
-            document.getElementById('instructorPerQuestionInlineEditSection').style.display = "none";
+        const inlineEditSec = document.getElementById('instructorPerQuestionInlineEditSection');
+        if (inlineEditSec) {
+            if (data.totalSubmissionsCount > 0) {
+                renderInlineQuestionEditSection();
+            } else {
+                inlineEditSec.style.display = "none";
+            }
         }
-        
+
         await loadQuestionDiagnostics();
     } catch (err) {
         console.error(err);
     }
 }
+async function saveActiveQuizSettings() {
+    const deadlineRaw = document.getElementById('edit-quiz-deadline').value;
+    const deadlineVal = deadlineRaw ? convertReginaToUtcIso(deadlineRaw) : null;
+    const timeLimitVal = parseInt(document.getElementById('edit-quiz-timelimit').value) || 40;
+    const isQuizOpenVal = document.getElementById('edit-quiz-isopen').checked;
+    const isForumOpenVal = document.getElementById('edit-quiz-isforumopen').checked;
+
+    try {
+        const payload = {
+            title: state.selectedQuizTitle || state.activeTaskTitle,
+            timeLimitMinutes: timeLimitVal,
+            isQuizOpen: isQuizOpenVal,
+            isForumOpen: isForumOpenVal,
+            deadlineString: deadlineVal
+        };
+
+        const res = await fetch(`${API_BASE}/questions/update-settings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error("Failed to save quiz settings.");
+
+        alert("✔ Quiz settings updated successfully.");
+        await switchQuizSubTab('view');
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
 
 // Member Han  - Load question diagnostics for the active quiz,
 //compiling student feedback difficulty counts and flagging potential anomaly rating discrepancies.
 
 async function loadQuestionDiagnostics() {
-    // 1. DOM Check: Ensure the container element for displaying question analytics exists on the page
     const container = document.getElementById('analyticsQuestionDiagnosticsContainer');
     if (!container) return;
 
     try {
-        // 2. Build Query & Fetch: Get student submission records for the selected quiz (handles URL encoding for special characters)
         const titleQuery = state.selectedQuizTitle ? `&quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
         const resSub = await fetch(`${API_BASE}/instructor/roster?subTab=all${titleQuery}`);
         if (!resSub.ok) throw new Error();
         const submissions = await resSub.json();
 
-        // 3. Fallback Check: If no questions exist in the global state, notify the user and exit
         if (!state.questions || state.questions.length === 0) {
             container.innerHTML = `<div class="text-center text-secondary py-3 small">No questions have been published.</div>`;
             return;
         }
 
         let html = "";
-
-        // 4. Data Processing Loop: Iterate through each question to analyze its performance metrics
         state.questions.forEach((q, qIdx) => {
             let totalAnswers = 0;
             let correctAnswers = 0;
@@ -827,7 +1248,6 @@ async function loadQuestionDiagnostics() {
             let hardCount = 0;
             let anomalies = [];
 
-            // Nested Loop: Scan all student submissions to aggregate data specific to this question
             submissions.forEach(sub => {
                 const ans = sub.answers.find(a => a.questionId === q.id);
                 if (ans && ans.studentAnswer) {
@@ -835,13 +1255,11 @@ async function loadQuestionDiagnostics() {
                     if (ans.isCorrect === true) {
                         correctAnswers++;
                     }
-
-                    // Group student-perceived difficulty feedback distributions
                     if (ans.difficulty === 'Easy') easyCount++;
                     else if (ans.difficulty === 'Medium') mediumCount++;
                     else if (ans.difficulty === 'Hard') hardCount++;
 
-                    // 5. Anomaly Detection: Flag students who got the item correct but subjective-rated it as "Hard"
+                    // Flag rating anomalies: scored high but rated "Hard"
                     if (ans.isCorrect === true && ans.difficulty === 'Hard') {
                         anomalies.push({
                             studentName: sub.studentName,
@@ -852,13 +1270,11 @@ async function loadQuestionDiagnostics() {
                 }
             });
 
-            // 6. Calculate Percentages: Compute rates safely preventing potential division-by-zero errors
             const successRate = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
             const easyPct = totalAnswers > 0 ? Math.round((easyCount / totalAnswers) * 100) : 0;
             const medPct = totalAnswers > 0 ? Math.round((mediumCount / totalAnswers) * 100) : 0;
             const hardPct = totalAnswers > 0 ? Math.round((hardCount / totalAnswers) * 100) : 0;
 
-            // 7. Sub-template Generation: Build warning boxes if any survey discrepancies are flagged
             let anomaliesHTML = "";
             if (anomalies.length > 0) {
                 anomaliesHTML += `
@@ -883,7 +1299,6 @@ async function loadQuestionDiagnostics() {
                     </div>`;
             }
 
-            // 8. Construct Card Template: Assemble the combined item breakdown HTML card
             html += `
                 <div class="p-3 border rounded bg-white mb-3" style="border-color: var(--border-color) !important;">
                     <div class="d-flex justify-content-between align-items-start mb-2">
@@ -922,16 +1337,11 @@ async function loadQuestionDiagnostics() {
                 </div>`;
         });
 
-        // 9. DOM Injection: Push all constructed cards onto the screen at once
         container.innerHTML = html;
     } catch (err) {
-        // 10. Error UI State: Gracefully render a fallback error indicator card if something breaks
         container.innerHTML = `<div class="alert-custom alert-custom-warning small">Error loading diagnostics dataset.</div>`;
     }
 }
-
-
-
 
 
 //Member 1-Han: Load question list for the active quiz, rendering inline edit cards with answer key mutation capabilities.
@@ -1010,146 +1420,17 @@ async function inlineModifyAnswerKey(qId, val) {
 }
 
 
-// Member Hitesh - Utility function to escape HTML special characters to prevent XSS attacks in dynamic content rendering.
 
-function escapeHtml(str) {
-    if (str === null || str === undefined) return "";
-    return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-}
 
 async function switchRosterSubTab(subTab) {
-    state.activeRosterSubTab = subTab;
-
-    // 1. Update sub-tab button active states
-    ['pending', 'graded', 'dispute'].forEach(tab => {
-        const btn = document.getElementById(`sub-btn-${tab}`);
-        if (btn) btn.classList.toggle('active', tab === subTab);
-    });
-
-    // 2. Update the panel heading + column header to match the selected sub-tab
-    const heading = document.getElementById('rosterBlockHeadingTitle');
-    const noteHeader = document.getElementById('dynamicRosterNoteColumnHeader');
-    if (subTab === 'pending') {
-        if (heading) heading.innerText = "📥 Ungraded Student Submissions Queue";
-        if (noteHeader) noteHeader.innerText = "Stated Survey Pain Point";
-    } else if (subTab === 'graded') {
-        if (heading) heading.innerText = "🟢 Graded Submission Logs";
-        if (noteHeader) noteHeader.innerText = "Stated Survey Pain Point";
-    } else if (subTab === 'dispute') {
-        if (heading) heading.innerText = " 🚨Active Dispute Tickets";
-        if (noteHeader) noteHeader.innerText = "Dispute Status";
-    }
-
-    // 3. Load the table for the selected sub-tab
-    await renderMultiStudentRosterTable();
-
-    // 4. Refresh the dispute badge count independently, so it stays visible even when
-    //    the instructor is looking at a different sub-tab (e.g. "Pending").
-    await refreshDisputeBadgeCount();
+    // TODO: Team Member 3 - Mutate active sub-tab view contexts and initiate roster table content refresh.
+    alert("TODO: Team Member 3 - Implement switchRosterSubTab in app.js");
 }
 
-// Hitesh - Load and render the multi-student roster table based on the currently selected sub-tab and quiz title.
 async function renderMultiStudentRosterTable() {
-    const tbody = document.getElementById('multiStudentRosterTableBody');
-    if (!tbody) return;
-
-    tbody.innerHTML = `
-        <tr>
-            <td colspan="5" class="text-center text-secondary p-4 small">
-                <div class="spinner-border spinner-border-sm text-cyan me-2" role="status"></div>
-                Loading student roster datasets...
-            </td>
-        </tr>`;
-
-    try {
-        const titleQuery = state.selectedQuizTitle ? `&quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
-        const res = await fetch(`${API_BASE}/instructor/roster?subTab=${state.activeRosterSubTab}${titleQuery}`);
-        if (!res.ok) throw new Error("Failed to fetch roster.");
-
-        const submissions = await res.json();
-
-        if (!submissions || submissions.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="5" class="text-center text-secondary p-4 small">
-                        No submissions found for this view.
-                    </td>
-                </tr>`;
-            return;
-        }
-
-        tbody.innerHTML = submissions.map(sub => {
-            // FIXED: Restore dynamic action button styles and labels based on the active sub-tab
-            let btnText = "Grade Form";
-            let btnClass = "btn-dark-custom";
-
-            if (state.activeRosterSubTab === "graded") {
-                btnText = "Review Paper Workspace";
-                btnClass = "btn-outline-custom";
-            } else if (state.activeRosterSubTab === "dispute") {
-                btnText = "🚨 Audit Dispute";
-                btnClass = "btn-dark-custom bg-danger border-danger";
-            }
-            // FIXED: Render the actual survey note/dispute message instead of a status badge
-            const noteCellContent = `<span class="text-secondary small italic">${escapeHtml(sub.surveyPainPoint) || 'No notes.'}</span>`;
-            // FIXED: Restore cyan bold monospace score style from original layout
-            const scoreCellContent = sub.status === 'Graded'
-                ? `${sub.finalScore} pts`
-                : '--';
-
-
-            // Action button routes to the grading desk for this student + quiz
-            const gradingUrl = `/Instructor/Grading?studentId=${encodeURIComponent(sub.studentId)}&quizTitle=${encodeURIComponent(state.selectedQuizTitle || '')}`;
-            // FIXED: Column 2 restored to "Submission_Stream_[studentId].json" to match the column header
-            return `
-                <tr>
-                    <td><strong>${escapeHtml(sub.studentName)}</strong></td>
-                    <td class="text-secondary font-monospace" style="font-size:12px;">Submission_Stream_${escapeHtml(sub.studentId)}.json</td>
-                    <td class="text-center">${noteCellContent}</td>
-                    <td class="text-center fw-bold font-monospace text-cyan small">${scoreCellContent}</td>
-                    <td><a class="btn btn-sm ${btnClass} py-1 px-3" style="font-size:12px;" href="${gradingUrl}">${btnText}</a></td>
-                </tr>`;
-        }).join('');
-    } catch (err) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="5" class="text-center p-4 small">
-                    <div class="alert-custom alert-custom-warning d-inline-block">Error loading roster: ${escapeHtml(err.message)}</div>
-                </td>
-            </tr>`;
-    }
+    // TODO: Team Member 3 - Retrieve student roster summaries filtered by tab parameters and render table rows.
+    alert("TODO: Team Member 3 - Implement renderMultiStudentRosterTable in app.js");
 }
-
-
-// Keeps the "Active Disputes" badge count fresh regardless of which sub-tab is showing.
-async function refreshDisputeBadgeCount() {
-    const badge = document.getElementById('subTabTicketBadgeCount');
-    if (!badge) return;
-
-    try {
-        const titleQuery = state.selectedQuizTitle ? `&quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
-        const res = await fetch(`${API_BASE}/instructor/roster?subTab=dispute${titleQuery}`);
-        if (!res.ok) return;
-
-        const disputes = await res.json();
-        const count = disputes ? disputes.length : 0;
-
-        if (count > 0) {
-            badge.style.display = 'inline-block';
-            badge.innerText = count > 9 ? '9+' : count;
-        } else {
-            badge.style.display = 'none';
-        }
-    } catch (_) {
-        /* Fail silently — badge just won't update this cycle */
-    }
-}
-
 
 
 
@@ -1239,6 +1520,7 @@ function addCustomQuestionField(type) {
     container.appendChild(card);
     updateQuestionCardNumbers();
 }
+
 
 function removeCustomQuestionField(qId) {
     const card = document.getElementById(`custom-question-node-${qId}`);
@@ -1605,19 +1887,41 @@ function renderTemplateBankForQuestion(qId, selectedTag = null) {
     group.innerHTML = "";
 
     state.errorTags.forEach((tag, idx) => {
+        const container = document.createElement('div');
+        container.className = "d-inline-flex align-items-center me-2 mb-2 p-1 border rounded bg-white shadow-sm error-tag-wrapper";
+        container.style.borderColor = "var(--border-color) !important";
+
         const btn = document.createElement('div');
-        btn.className = "error-tag-btn";
+        btn.className = "error-tag-btn border-0 m-0 py-1 px-2.5 small fw-semibold";
+        btn.style.cursor = "pointer";
+        btn.style.borderRadius = "4px";
         if (selectedTag === tag) {
             btn.classList.add('selected');
+            container.style.backgroundColor = "rgba(124, 58, 237, 0.08)";
+            container.style.borderColor = "var(--accent-purple) !important";
         }
         btn.innerText = tag;
-        btn.onclick = function() {
+        btn.onclick = function () {
             selectTemplateCardForQuestion(qId, btn, tag);
         };
-        group.appendChild(btn);
+
+        const editBtn = document.createElement('span');
+        editBtn.className = "ms-1 text-secondary px-1 text-center";
+        editBtn.style.cursor = "pointer";
+        editBtn.style.fontSize = "12px";
+        editBtn.style.opacity = "0.6";
+        editBtn.innerHTML = "✏️";
+        editBtn.title = "Rename/Merge this error card template";
+        editBtn.onclick = function (e) {
+            e.stopPropagation();
+            renameErrorTagPrompt(tag);
+        };
+
+        container.appendChild(btn);
+        container.appendChild(editBtn);
+        group.appendChild(container);
     });
 }
-
 function selectTemplateCardForQuestion(qId, element, tag) {
     const group = document.getElementById(`q-template-bank-${qId}`);
     if (!group) return;
@@ -1627,6 +1931,11 @@ function selectTemplateCardForQuestion(qId, element, tag) {
     // Deselect other buttons in this group
     group.querySelectorAll('.error-tag-btn').forEach(btn => {
         btn.classList.remove('selected');
+        const wrapper = btn.closest('.error-tag-wrapper');
+        if (wrapper) {
+            wrapper.style.backgroundColor = "white";
+            wrapper.style.borderColor = "var(--border-color) !important";
+        }
     });
 
     const label = document.getElementById(`selected-tag-label-${qId}`);
@@ -1638,9 +1947,46 @@ function selectTemplateCardForQuestion(qId, element, tag) {
         }
     } else {
         element.classList.add('selected');
+        const wrapper = element.closest('.error-tag-wrapper');
+        if (wrapper) {
+            wrapper.style.backgroundColor = "rgba(124, 58, 237, 0.08)";
+            wrapper.style.borderColor = "var(--accent-purple) !important";
+        }
         if (label) {
             label.innerText = tag;
         }
+    }
+}
+
+
+async function renameErrorTagPrompt(oldTag) {
+    const newTag = prompt(`Rename / Merge error tag template "${oldTag}" to:`, oldTag);
+    if (!newTag || newTag.trim() === oldTag) return;
+
+    try {
+        const res = await fetch(`${API_BASE}/instructor/rename-error-tag`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                oldTag: oldTag,
+                newTag: newTag.trim()
+            })
+        });
+
+        if (!res.ok) throw new Error("Failed to rename error tag template.");
+
+        alert("✔ Template successfully renamed and merged across database records.");
+
+        const titleQuery = state.selectedQuizTitle ? `?quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
+        const activeSubmissionsRes = await fetch(`${API_BASE}/student/mistake-bank/${state.activeGradingStudentID}${titleQuery}`);
+        if (activeSubmissionsRes.ok) {
+            const studentObj = await activeSubmissionsRes.json();
+            loadInstructorGrowCards(studentObj.answers);
+        } else {
+            loadInstructorGrowCards();
+        }
+    } catch (err) {
+        alert(err.message);
     }
 }
 
@@ -1652,6 +1998,129 @@ async function generateGrowCardActionForQuestion(qId) {
 async function instructorSubmitEvaluation() {
     // TODO: Team Member 4 - Compile allocated scores and feedback tags from grading panels, sending grades to commit endpoint.
     alert("TODO: Team Member 4 - Implement instructorSubmitEvaluation in app.js");
+}
+
+async function loadInstructorUnifiedDisputeChat(studentId) {
+    const streamContainer = document.getElementById('instructorUnifiedDisputeChatStream');
+    if (!streamContainer) return;
+
+    try {
+        const topic = `Dispute ${studentId} - ${state.selectedQuizTitle || state.activeTaskTitle}`;
+        const res = await fetch(`${API_BASE}/forum/dispute/${studentId}/${encodeURIComponent(topic)}`);
+        if (!res.ok) throw new Error();
+
+        const comments = await res.json();
+        streamContainer.innerHTML = comments.map(c => {
+            const isSelf = c.sender.includes("Instructor");
+            return `
+                <div class="comment-bubble ${isSelf ? 'self' : ''}">
+                    <span class="d-block small fw-bold" style="color: var(--accent-cyan); font-size: 11px;">${c.sender}</span>
+                    <span style="font-size: 12.5px;">${c.message}</span>
+                </div>`;
+        }).join('');
+
+        streamContainer.scrollTop = streamContainer.scrollHeight;
+    } catch (err) {
+        streamContainer.innerHTML = `<div class="text-center text-secondary small py-3">Error loading messages.</div>`;
+    }
+}
+
+async function sendInstructorUnifiedDisputeComment(studentId) {
+    const field = document.getElementById('inputInstructorUnifiedDisputeMessage');
+    if (!field || !field.value.trim()) return;
+
+    try {
+        const topic = `Dispute ${studentId} - ${state.selectedQuizTitle || state.activeTaskTitle}`;
+        const payload = {
+            isPrivate: true,
+            studentId: studentId,
+            topic: topic,
+            sender: "Dr. Ali Bayeh (Instructor)",
+            message: field.value.trim()
+        };
+
+        const res = await fetch(`${API_BASE}/forum/comment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error("Failed to send message.");
+
+        field.value = "";
+        await loadInstructorUnifiedDisputeChat(studentId);
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+async function resolveInstructorSubmissionDispute(studentId, isApproved) {
+    let grades = [];
+    let hasError = false;
+    const inputs = document.querySelectorAll('.grading-score-input');
+    inputs.forEach(inp => {
+        const qId = parseInt(inp.getAttribute('data-qid'));
+        const scoreVal = parseFloat(inp.value);
+        const maxScore = parseFloat(inp.getAttribute('max')) || 10.0;
+        if (isNaN(scoreVal) || scoreVal < 0 || scoreVal > maxScore) {
+            alert(`Please enter a valid score between 0 and ${maxScore} for Question.`);
+            hasError = true;
+            return;
+        }
+
+        const selectedBtn = document.querySelector(`#q-template-bank-${qId} .error-tag-btn.selected`);
+        const chosenTag = selectedBtn ? selectedBtn.innerText : null;
+
+        const feedbackField = document.getElementById(`feedback-note-${qId}`);
+        const feedbackVal = feedbackField ? feedbackField.value.trim() : null;
+
+        grades.push({
+            questionId: qId,
+            earnedScore: scoreVal,
+            chosenTag: chosenTag,
+            teacherFeedback: feedbackVal
+        });
+    });
+
+    if (hasError) return;
+
+    try {
+        // Save the updated grades first
+        const gradePayload = {
+            studentId: studentId,
+            quizTitle: state.selectedQuizTitle || state.activeTaskTitle,
+            grades: grades
+        };
+
+        const resGrade = await fetch(`${API_BASE}/instructor/grade`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(gradePayload)
+        });
+
+        if (!resGrade.ok) throw new Error("Failed to save updated grades.");
+
+        // Now resolve the dispute
+        const disputePayload = {
+            studentId: studentId,
+            quizTitle: state.selectedQuizTitle || state.activeTaskTitle,
+            isApproved: isApproved
+        };
+
+        const resDispute = await fetch(`${API_BASE}/instructor/resolve-submission-dispute`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(disputePayload)
+        });
+
+        if (!resDispute.ok) throw new Error("Failed to resolve dispute status.");
+
+        alert(isApproved ? "🟢 Dispute approved, grades saved, and override committed successfully!" : "❌ Dispute rejected and initial evaluation parameters sustained.");
+        const titleParam = state.selectedQuizTitle ? `?quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
+        window.location.href = "/Instructor/Dashboard" + titleParam;
+    } catch (err) {
+        alert(err.message);
+    }
 }
 
 async function renderInstructorPrivateTicketChatArea(studentId, answers) {
@@ -1750,6 +2219,84 @@ const STUDY_GUIDES = {
     "Conditionals": "📚 Unlocked Study Guide: Verify boolean operator logic, use of block braces, and proper nesting of if-else statements."
 };
 
+
+function parseLocalDateString(dateStr) {
+    if (!dateStr) return null;
+    try {
+        const clean = dateStr.replace(' ', 'T');
+        const withOffset = clean.includes('T') && !clean.includes('Z') && !clean.includes('-06:00')
+            ? `${clean}-06:00`
+            : clean;
+        const d = new Date(withOffset);
+        if (!isNaN(d.getTime())) {
+            return d;
+        }
+    } catch (_) { }
+    return null;
+}
+
+function formatLocalDateTime(dateStr) {
+    if (!dateStr) return "";
+    try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return "";
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/Regina',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+        const formatted = formatter.format(d);
+        const parts = formatted.split(', ');
+        const dateParts = parts[0].split('/');
+        const timeParts = parts[1].split(':');
+
+        const year = dateParts[2];
+        const month = dateParts[0];
+        const day = dateParts[1];
+        const hours = timeParts[0];
+        const minutes = timeParts[1];
+
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    } catch (_) { }
+    return dateStr ? dateStr.substring(0, 16) : "";
+}
+
+function formatInReginaTimezone(dateStr) {
+    if (!dateStr) return "";
+    try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return "";
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/Regina',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: 'numeric',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        });
+        return formatter.format(d);
+    } catch (_) { }
+    return dateStr;
+}
+
+function convertReginaToUtcIso(val) {
+    if (!val) return null;
+    try {
+        const dateStr = val.includes('T') && !val.includes('-06:00') ? `${val}-06:00` : val;
+        const d = new Date(dateStr);
+        if (!isNaN(d.getTime())) {
+            return d.toISOString();
+        }
+    } catch (_) { }
+    return val;
+}
+
 function getStudyGuideForTopic(topic) {
     if (!topic || topic === "General Discussion Hub") return null;
     
@@ -1768,63 +2315,199 @@ async function initializeForumPage() {
     alert("TODO: Team Member 5 - Implement initializeForumPage in app.js");
 }
 
-// Simple Q&A forum for MCQ-only quizzes (one room, no per-topic tabs)
-function renderSimpleQAForum(container, quizTitle, isInstructor) {
-    const headerText = isInstructor ? "Course Q&A Moderation" : "Course Q&A Forum";
-    const subText = isInstructor
-        ? "Students can post questions here for MCQ clarification. Answer them publicly."
-        : "Post questions about this MCQ quiz. The instructor will answer here.";
-    container.innerHTML = `
-        <div class="glass-panel">
-            <h4 class="fw-bold text-dark mb-1" style="font-family: var(--font-heading);">&#x1F4AC; ${headerText}</h4>
-            <p class="text-secondary small mb-1">${quizTitle}</p>
-            <p class="text-secondary small mb-4">${subText}</p>
-            <div id="forum-chat-viewport"></div>
-        </div>`;
-    renderUnifiedForumComponent('forum-chat-viewport', 'General Q&A');
+function onForumQuizDropdownChange(val) {
+    state.selectedQuizTitle = val;
+    const newUrl = window.location.pathname + '?quizTitle=' + encodeURIComponent(val);
+    window.history.pushState({ path: newUrl }, '', newUrl);
+    initializeForumPage();
 }
 
-function renderStudentForumInterface(topicsList, defaultTopic) {
+
+function renderStudentForumInterface(resources, selectorHTML = '') {
     const container = document.getElementById('student-forum-container-target');
     if (!container) return;
 
-    let accordionHTML = '';
-    topicsList.forEach((topic, idx) => {
-        const isOpen = topic === defaultTopic;
-        const icon = topic === 'General Q&A' ? '&#x1F4AC;' : '&#x26A0;&#xFE0F;';
-        const label = topic === 'General Q&A' ? 'General Q&A' : `Review Topic: ${topic}`;
-        const chatId = `forum-chat-${idx}`;
-        accordionHTML += `
-            <div class="forum-accordion-item" style="border:1px solid var(--border-color); border-radius:10px; margin-bottom:8px; overflow:hidden;">
-                <div class="forum-accordion-header d-flex align-items-center justify-content-between px-3 py-3"
-                     onclick="toggleForumAccordion(${idx}, '${topic.replace(/'/g, "\\'")}')"
-                     style="cursor:pointer; background:${isOpen ? 'rgba(99,102,241,0.07)' : '#fafafa'}; transition:background 0.2s;">
-                    <span class="fw-semibold small" style="color: var(--text-color);">${icon} ${label}</span>
-                    <svg id="accord-arrow-${idx}" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                         style="transition:transform 0.2s; transform:${isOpen ? 'rotate(180deg)' : 'rotate(0deg)'}; color:#94a3b8;">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                </div>
-                <div id="${chatId}" style="display:${isOpen ? 'block' : 'none'};">
-                    <!-- Chat loads here -->
-                </div>
-            </div>`;
-    });
+    let resourcesHTML = "";
+    if (resources.length > 0) {
+        resourcesHTML = `
+            <div class="glass-panel mb-4" style="border-color: var(--accent-indigo) !important; background-color: rgba(99, 102, 241, 0.02);">
+                <h5 class="fw-bold text-dark mb-2 d-flex align-items-center gap-1" style="font-family: var(--font-heading);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    🔓 Unlocked Study Materials for Your Mistakes
+                </h5>
+                <p class="text-secondary small mb-3">The instructor has posted review resources specifically targeting the defects identified in your submission.</p>
+                <div class="d-flex flex-column gap-3">`;
 
-    container.innerHTML = `
-        <div class="glass-panel">
-            <h4 class="fw-bold text-dark mb-1" style="font-family: var(--font-heading);">&#x1F4AC; Course Forums Workspace</h4>
-            <p class="text-secondary small mb-1">${state.activeTaskTitle}</p>
-            <p class="text-secondary small mb-4" style="font-size:12px;">You are routed to the specific topic threads for your failed questions. Click a section to expand the discussion.</p>
-            <div id="forum-accordion-container">${accordionHTML}</div>
-        </div>`;
+        resources.forEach(r => {
+            let materialsListHTML = "";
+            if (r.comments.length === 0) {
+                materialsListHTML = `<div class="text-secondary small italic ps-3">No study materials posted yet for this error tag.</div>`;
+            } else {
+                materialsListHTML = `<ul class="mb-0 ps-4 small text-dark">` + r.comments.map(c => {
+                    return `<li class="mb-1">${c.message}</li>`;
+                }).join('') + `</ul>`;
+            }
 
-    // Auto-load first topic
-    const firstIdx = topicsList.indexOf(defaultTopic);
-    if (firstIdx >= 0) {
-        renderUnifiedForumComponent(`forum-chat-${firstIdx}`, defaultTopic);
+            resourcesHTML += `
+                <div class="p-3 border rounded bg-white" style="border-color: var(--border-color) !important;">
+                    <strong class="text-rose small d-block mb-2">Tag: ${r.tag}</strong>
+                    ${materialsListHTML}
+                </div>`;
+        });
+
+        resourcesHTML += `</div></div>`;
+    }
+
+    container.innerHTML = selectorHTML + resourcesHTML + `
+        <div id="general-forum-chat-viewport"></div>`;
+
+    renderUnifiedForumComponent('general-forum-chat-viewport', 'General Q&A');
+}
+
+async function initializeInstructorDashboardForum() {
+    const container = document.getElementById('standalone-teacher-forum-container');
+    if (!container) return;
+
+    try {
+        const titleQuery = state.selectedQuizTitle ? `?quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
+        const resQ = await fetch(`${API_BASE}/questions${titleQuery}`);
+        if (!resQ.ok) throw new Error();
+        const dataQ = await resQ.json();
+
+        state.activeTaskTitle = dataQ.title;
+        state.isForumOpen = dataQ.isForumOpen ?? true;
+        state.quizMode = dataQ.quizMode ?? "Manual";
+        state.deadlineString = dataQ.deadlineString || dataQ.DeadlineString || null;
+
+        const resTags = await fetch(`${API_BASE}/instructor/error-tags`);
+        if (!resTags.ok) throw new Error();
+        const tags = await resTags.json();
+
+        await renderTeacherForumInterface(tags, 'standalone-teacher-forum-container');
+    } catch (err) {
+        container.innerHTML = `<div class="alert-custom alert-custom-warning small">Error loading forum rooms: ${err.message}</div>`;
     }
 }
+
+async function renderTeacherForumInterface(tags, targetContainerId = 'standalone-teacher-forum-container', selectorHTML = '') {
+    const container = document.getElementById(targetContainerId);
+    if (!container) return;
+
+    const resourcePromises = tags.map(async (tag) => {
+        const scopedTopic = `${state.activeTaskTitle} - Resource - ${tag}`;
+        const res = await fetch(`${API_BASE}/forum/${encodeURIComponent(scopedTopic)}`);
+        if (res.ok) {
+            const comments = await res.json();
+            return { tag, comments };
+        }
+        return { tag, comments: [] };
+    });
+    const resources = await Promise.all(resourcePromises);
+
+    const selectOptionsHTML = tags.map(tag => `<option value="${tag}">${tag}</option>`).join('');
+
+    let postedResourcesHTML = `<div class="d-flex flex-column gap-2 mt-3" style="max-height: 250px; overflow-y: auto;">`;
+    let hasResources = false;
+    resources.forEach(r => {
+        if (r.comments.length > 0) {
+            hasResources = true;
+            postedResourcesHTML += `
+                <div class="p-2 border rounded bg-white small shadow-sm" style="border-color: var(--border-color) !important;">
+                    <strong class="text-rose d-block mb-1">${r.tag}</strong>
+                    <ul class="mb-0 ps-3">
+                        ${r.comments.map(c => `<li>${c.message}</li>`).join('')}
+                    </ul>
+                </div>`;
+        }
+    });
+    if (!hasResources) {
+        postedResourcesHTML += `<div class="text-secondary small italic py-2">No study materials posted yet. Use the fields above to post.</div>`;
+    }
+    postedResourcesHTML += `</div>`;
+
+    container.innerHTML = selectorHTML + `
+        <div class="row g-4">
+            <!-- Left Column: Manage Study Materials -->
+            <div class="col-lg-5">
+                <div class="glass-panel h-100">
+                    <h5 class="fw-bold text-dark mb-3" style="font-family: var(--font-heading);">📎 Post Study Resource for Error Tag</h5>
+                    <p class="text-secondary small mb-3">Upload files/study materials targeted at students who received specific feedback tags.</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-semibold">Select Feedback Tag:</label>
+                        <select id="resourceFeedbackTagSelect" class="form-select form-select-sm bg-white text-dark">
+                            ${selectOptionsHTML}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-semibold">Resource Title:</label>
+                        <input type="text" id="resourceTitleInput" class="form-control form-control-sm bg-white text-dark" placeholder="e.g. Lecture 3: Logic flow guide">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-semibold">URL or Reference Link:</label>
+                        <input type="text" id="resourceUrlInput" class="form-control form-control-sm bg-white text-dark" placeholder="e.g. https://example.com/slides">
+                    </div>
+                    <button class="btn btn-sm btn-dark-custom w-100 fw-bold py-2" onclick="teacherSubmitResource()">Post Study Material</button>
+
+                    <hr class="my-4 border-secondary">
+
+                    <h6 class="fw-bold text-dark mb-2" style="font-size:13px; font-family: var(--font-heading);">Active Posted Resources</h6>
+                    ${postedResourcesHTML}
+                </div>
+            </div>
+            
+            <!-- Right Column: General Q&A Chat Room -->
+            <div class="col-lg-7">
+                <div id="general-forum-chat-viewport"></div>
+            </div>
+        </div>`;
+
+    renderUnifiedForumComponent('general-forum-chat-viewport', 'General Q&A');
+}
+
+async function teacherSubmitResource() {
+    const tag = document.getElementById('resourceFeedbackTagSelect').value;
+    const title = document.getElementById('resourceTitleInput').value.trim();
+    const url = document.getElementById('resourceUrlInput').value.trim();
+
+    if (!title || !url) {
+        return alert("Please fill in both the title and URL/description.");
+    }
+
+    const message = `&#x1F4CE; [Study Material] ${title} — ${url}`;
+    const scopedTopic = `${state.activeTaskTitle} - Resource - ${tag}`;
+
+    try {
+        const res = await fetch(`${API_BASE}/forum/comment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                isPrivate: false,
+                studentId: 'all',
+                topic: scopedTopic,
+                sender: `${state.user.name} (Instructor)`,
+                message: message
+            })
+        });
+
+        if (!res.ok) throw new Error("Failed to post resource.");
+
+        alert("✔ Study resource posted successfully for tag: " + tag);
+
+        document.getElementById('resourceTitleInput').value = '';
+        document.getElementById('resourceUrlInput').value = '';
+
+        const targetContainer = document.getElementById('student-forum-container-target');
+        if (targetContainer) {
+            await initializeForumPage();
+        } else {
+            await initializeInstructorDashboardForum();
+        }
+    } catch (err) {
+        alert("Error posting resource: " + err.message);
+    }
+}
+
 
 // Toggle accordion section and lazy-load chat
 function toggleForumAccordion(idx, topic) {
@@ -1939,17 +2622,50 @@ function renderTeacherForumInterface(topicsList, targetContainerId = 'student-fo
         renderUnifiedForumComponent('forum-chat-0', topicsList[0]);
     }
 }
+async function teacherSubmitResource() {
+    const tag = document.getElementById('resourceFeedbackTagSelect').value;
+    const title = document.getElementById('resourceTitleInput').value.trim();
+    const url = document.getElementById('resourceUrlInput').value.trim();
 
-function teacherToggleUpload(panelId) {
-    const panel = document.getElementById(panelId);
-    if (!panel) return;
-    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    if (!title || !url) {
+        return alert("Please fill in both the title and URL/description.");
+    }
+
+    const message = `&#x1F4CE; [Study Material] ${title} — ${url}`;
+    const scopedTopic = `${state.activeTaskTitle} - Resource - ${tag}`;
+
+    try {
+        const res = await fetch(`${API_BASE}/forum/comment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                isPrivate: false,
+                studentId: 'all',
+                topic: scopedTopic,
+                sender: `${state.user.name} (Instructor)`,
+                message: message
+            })
+        });
+
+        if (!res.ok) throw new Error("Failed to post resource.");
+
+        alert("✔ Study resource posted successfully for tag: " + tag);
+
+        document.getElementById('resourceTitleInput').value = '';
+        document.getElementById('resourceUrlInput').value = '';
+
+        const targetContainer = document.getElementById('student-forum-container-target');
+        if (targetContainer) {
+            await initializeForumPage();
+        } else {
+            await initializeInstructorDashboardForum();
+        }
+    } catch (err) {
+        alert("Error posting resource: " + err.message);
+    }
 }
 
-async function teacherSubmitMaterial(panelId, topic) {
-    // TODO: Team Member 5 - Post study guide hyperlinks to specific topic forums.
-    alert("TODO: Team Member 5 - Implement teacherSubmitMaterial in app.js");
-}
+
 
 function switchForumTopic(topic, tabId, viewportId) {
     const clickedTab = document.getElementById(tabId);
