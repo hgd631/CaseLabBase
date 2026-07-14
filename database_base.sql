@@ -49,6 +49,7 @@ CREATE TABLE dbo.Questions (
     Options NVARCHAR(MAX) NULL,
     CorrectKey NVARCHAR(MAX) NOT NULL,
     MaxScore DECIMAL(6,2) NOT NULL DEFAULT 0.00,
+    MarkingGuide NVARCHAR(MAX) NULL,
     CONSTRAINT FK_Questions_Quizzes FOREIGN KEY (QuizTitle) REFERENCES dbo.Quizzes(Title) ON DELETE CASCADE
 );
 
@@ -76,6 +77,7 @@ CREATE TABLE dbo.SubmissionAnswers (
     Difficulty NVARCHAR(50) NULL,
     CommentNote NVARCHAR(MAX) NULL,
     EarnedScore DECIMAL(6,2) NOT NULL DEFAULT 0.00,
+    TeacherFeedback NVARCHAR(MAX) NULL,
     PRIMARY KEY (SubmissionId, QuestionId),
     CONSTRAINT FK_SubmissionAnswers_Submissions FOREIGN KEY (SubmissionId) REFERENCES dbo.Submissions(Id) ON DELETE CASCADE,
     CONSTRAINT FK_SubmissionAnswers_Questions FOREIGN KEY (QuestionId) REFERENCES dbo.Questions(Id) ON DELETE NO ACTION
