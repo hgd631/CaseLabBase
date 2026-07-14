@@ -170,5 +170,48 @@ namespace CaseLabBase.BLL.Services
             await _forumRepository.AddCommentAsync(startComment);
             
 }
+
+
+
+        public async Task InitiateSubmissionDisputeAsync(string studentId, string quizTitle, string reason)
+        {
+            var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, quizTitle);
+            var studentUser = await _userRepository.GetByIdAsync(studentId);
+            if (submission == null || studentUser == null) return;
+
+            // 1. Mutate dispute status
+            submission.DisputeStatus = "PendingReview";
+            await _submissionRepository.SaveSubmissionAsync(submission);
+
+            // 2. Open dispute ticket mapping to first question (to satisfy schema FK)
+            var questions = await _questionRepository.GetByQuizTitleAsync(quizTitle);
+            var firstQuestion = questions.FirstOrDefault();
+            int questionId = firstQuestion?.Id ?? 0;
+
+            if (questionId > 0)
+            {
+                var ticket = new Ticket
+                {
+                    StudentId = studentId,
+                    QuestionId = questionId,
+                    Msg = reason,
+                    Status = "Pending"
+                };
+                await _forumRepository.SaveTicketAsync(ticket);
+            }
+
+            // 3. Log private thread starting comment
+            var startComment = new Comment
+            {
+                IsPrivate = true,
+                StudentId = studentId,
+                Topic = "Dispute " + studentId + " - " + quizTitle,
+                Sender = $"{studentUser.Name} (Student)",
+                Message = "🚨 [Submission Dispute Opened]: " + reason,
+                Timestamp = System.DateTime.Now
+            };
+            await _forumRepository.AddCommentAsync(startComment);
+        }
+
     }
 }

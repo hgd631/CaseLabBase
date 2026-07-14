@@ -31,6 +31,7 @@ namespace CaseLabBase.BLL.DTOs
         public List<string>? Options { get; set; } // Deserialized list
         public string CorrectKey { get; set; } = null!;
         public decimal MaxScore { get; set; } = 0.00m;
+        public string? MarkingGuide { get; set; }
     }
 
     public class SubmissionAnswerDTO
@@ -46,6 +47,8 @@ namespace CaseLabBase.BLL.DTOs
         public string? CommentNote { get; set; }
         public decimal MaxScore { get; set; } = 0.00m;
         public decimal EarnedScore { get; set; } = 0.00m;
+        public string? MarkingGuide { get; set; }
+        public string? TeacherFeedback { get; set; }
 
         // Diagnostic rates based on student reflections for this quiz
         public decimal EasyRate { get; set; }
@@ -153,6 +156,7 @@ namespace CaseLabBase.BLL.DTOs
         public int QuestionId { get; set; }
         public decimal EarnedScore { get; set; }
         public string? ChosenTag { get; set; }
+        public string? TeacherFeedback { get; set; }
     }
 
     public class ResolveDisputeRequest
@@ -164,6 +168,17 @@ namespace CaseLabBase.BLL.DTOs
         public decimal ManualOverrideScore { get; set; }
     }
 
+    public class UpdateQuestionRequest
+    {
+        public int Id { get; set; }
+        public string Prompt { get; set; } = null!;
+        public string Topic { get; set; } = null!;
+        public List<string>? Options { get; set; }
+        public string CorrectKey { get; set; } = null!;
+        public decimal MaxScore { get; set; }
+        public string? MarkingGuide { get; set; }
+    }
+
     public class ClassAnalyticsDTO
     {
         public string ActiveTaskTitle { get; set; } = null!;
@@ -171,5 +186,28 @@ namespace CaseLabBase.BLL.DTOs
         public int GradedCount { get; set; }
         public decimal FailureRatePercentage { get; set; }
         public decimal ClassAverageScore { get; set; }
+    }
+
+    public class UpdateQuizSettingsRequest
+    {
+        public string Title { get; set; } = null!;
+        public int TimeLimitMinutes { get; set; }
+        public bool IsQuizOpen { get; set; }
+        public bool IsForumOpen { get; set; }
+        public string? DeadlineString { get; set; }
+    }
+
+    public class InitiateSubmissionDisputeRequest
+    {
+        public string StudentId { get; set; } = null!;
+        public string QuizTitle { get; set; } = null!;
+        public string Message { get; set; } = null!;
+    }
+
+    public class ResolveSubmissionDisputeRequest
+    {
+        public string StudentId { get; set; } = null!;
+        public string QuizTitle { get; set; } = null!;
+        public bool IsApproved { get; set; }
     }
 }

@@ -10,6 +10,7 @@ namespace CaseLabBase.DAL.Entities
         public string? Options { get; set; } // JSON formatted string for MCQ options
         public string CorrectKey { get; set; } = null!;
         public decimal MaxScore { get; set; } = 0.00m;
+        public string? MarkingGuide { get; set; }
 
         // Navigation properties
         public virtual Quiz Quiz { get; set; } = null!;
