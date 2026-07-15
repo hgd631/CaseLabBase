@@ -727,13 +727,80 @@ async function initiateStudentDisputeTicket(qId) {
 
 
 async function renderStudentEmbeddedPrivateChatArea(answers) {
-    // TODO: Team Member 5 - Load and render private dispute comments streams and audit buttons inside student logs.
-    alert("TODO: Team Member 5 - Implement renderStudentEmbeddedPrivateChatArea in app.js");
+    for (const q of answers) {
+        const area = document.getElementById(`studentEmbeddedPrivateChatZoneArea-${q.questionId}`);
+        if (!area) continue;
+
+        try {
+            const res = await fetch(`${API_BASE}/forum/dispute/${state.user.id}/Dispute Q${q.questionId}`);
+            if (!res.ok) continue;
+
+            const comments = await res.json();
+
+            const chatStream = comments.map(c => {
+                const isSelf = c.sender.includes(state.user.name);
+                return `<div class="comment-bubble ${isSelf ? 'self' : ''}">
+                    <span class="d-block small fw-bold" style="color: var(--accent-cyan); font-size: 11px;">${c.sender}</span>
+                    <span style="font-size: 12.5px;">${c.message}</span>
+                </div>`;
+            }).join('');
+
+            let disputeStatusText = `<span class="badge-custom badge-custom-amber">Awaiting Instructor Audit</span>`;
+
+            const resScore = await fetch(`${API_BASE}/student/mistake-bank/${state.user.id}`);
+            if (resScore.ok) {
+                const sData = await resScore.json();
+                if (sData.disputeStatus === "Resolved_Accepted") {
+                    disputeStatusText = `<span class="badge-custom badge-custom-emerald">Dispute Approved: Overridden Score Active</span>`;
+                } else if (sData.disputeStatus === "Resolved_Rejected") {
+                    disputeStatusText = `<span class="badge-custom badge-custom-rose">Dispute Denied</span>`;
+                }
+            }
+
+            area.innerHTML = `
+                <div class="chat-window p-3 mt-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3 text-secondary border-bottom border-secondary pb-2 small">
+                        <strong>🔒 Private Dispute Room</strong>
+                        ${disputeStatusText}
+                    </div>
+                    <div class="chat-message-stream mb-3">${chatStream}</div>
+                    ${disputeStatusText.includes('Audit') ? `
+                    <div class="input-group input-group-sm">
+                        <input type="text" id="inputStudentEmbeddedComment-${q.questionId}" class="form-control" placeholder="Type reply...">
+                        <button class="btn btn-dark-custom btn-sm" onclick="dispatchStudentEmbeddedChat(${q.questionId})">Send</button>
+                    </div>` : ''}
+                </div>`;
+        } catch (err) {
+            console.error(err);
+        }
+    }
 }
 
 async function dispatchStudentEmbeddedChat(qId) {
-    // TODO: Team Member 5 - Send message from student inside embedded private chat channel.
-    alert("TODO: Team Member 5 - Implement dispatchStudentEmbeddedChat in app.js");
+    const val = document.getElementById(`inputStudentEmbeddedComment-${qId}`).value;
+    if (!val) return;
+
+    try {
+        const payload = {
+            isPrivate: true,
+            studentId: state.user.id,
+            topic: "Dispute Q" + qId,
+            sender: `${state.user.name} (Student)`,
+            message: val
+        };
+
+        const res = await fetch(`${API_BASE}/forum/comment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error("Failed to send message.");
+
+        openStudentMistakeBankWithReload();
+    } catch (err) {
+        alert(err.message);
+    }
 }
 
 

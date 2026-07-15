@@ -50,8 +50,21 @@ namespace CaseLabBase.BLL.Services
         
         public async Task<List<QuestionDTO>> GetActiveQuestionsAsync(string quizTitle)
         {
-    throw new System.NotImplementedException("TODO: Team Member 2 - Implement GetActiveQuestionsAsync in QuestionService.cs");
-}
+            var list = await _questionRepository.GetByQuizTitleAsync(quizTitle);
+            return list.Select(q => new QuestionDTO
+            {
+                Id = q.Id,
+                Type = q.Type,
+                Topic = q.Topic,
+                Prompt = q.Prompt,
+                Options = !string.IsNullOrEmpty(q.Options)
+                    ? JsonSerializer.Deserialize<List<string>>(q.Options)
+                    : null,
+                CorrectKey = q.CorrectKey,
+                MaxScore = q.MaxScore,
+                MarkingGuide = q.MarkingGuide
+            }).ToList();
+        }
 
 
 
