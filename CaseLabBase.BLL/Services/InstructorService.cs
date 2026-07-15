@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -70,123 +70,59 @@ namespace CaseLabBase.BLL.Services
             throw new System.NotImplementedException("TODO: Team Member 3 - Implement GetRosterSubTabAsync in InstructorService.cs");
         }
 
-        //Team Member 5 - Ethan - Implement of instructor dispute resolution and manual score override processing
-        public async Task ResolveDisputeAsync(string studentId, string quizTitle, int questionId, bool isApproved, decimal manualOverrideScore)
+        public async Task GradeSubmissionAsync(string studentId, string quizTitle, List<GradeQuestionItem> grades)
         {
-            // FIXED: Fully qualified with 'System.' to avoid namespace errors if 'using System;' is missing
-            // Validate the required dispute information.
-            if (string.IsNullOrWhiteSpace(studentId))
-            {
-                throw new System.ArgumentException("Student ID is required.", nameof(studentId));
-            }
+            // TODO: Team Member 4 - Implement GradeSubmissionAsync in InstructorService.cs
+            if (string.IsNullOrWhiteSpace(studentId) || string.IsNullOrWhiteSpace(quizTitle) || grades == null)
+                return;
 
-            if (string.IsNullOrWhiteSpace(quizTitle))
-            {
-                throw new System.ArgumentException("Quiz title is required.", nameof(quizTitle));
-            }
-
-            if (questionId <= 0)
-            {
-                throw new System.ArgumentException(
-                    "A valid question ID is required.",
-                    nameof(questionId)
-                );
-            }
-
-            if (manualOverrideScore < 0)
-            {
-                throw new System.ArgumentException(
-                    "The manual override score cannot be negative.",
-                    nameof(manualOverrideScore)
-                );
-            }
-
-            // Retrieve the student's submission and its associated answers.
+            // 1) Load existing submission (including answers)
             var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, quizTitle);
 
-            // FIXED: Fetch the corresponding dispute ticket from database to update its status
-            var ticket = await _forumRepository.GetTicketAsync(studentId, questionId);
-
-            if (submission == null || ticket == null)
+            // FIXED: If student has not submitted the exam, we cannot grade it. Return directly.
+            if (submission == null)
             {
-                // FIXED: Using return instead of throwing raw exception to match standard CaseLab controller fallback
                 return;
             }
-
-            // Locate the answer associated with the disputed question.
-            var disputedAnswer = submission.Answers.FirstOrDefault(answer => answer.QuestionId == questionId);
-
-            if (disputedAnswer == null)
+            foreach (var g in grades)
             {
-                throw new System.InvalidOperationException(
-                    $"Question '{questionId}' was not found in the student's submission."
-                );
-            }
-
-            if (isApproved)
-            {
-                // Apply the score selected by the instructor.
-                disputedAnswer.EarnedScore = manualOverrideScore;
-
-                // FIXED: Update answer correctness and tag based on the 80% maximum score threshold
-                if (manualOverrideScore >= 0.80m * disputedAnswer.Question.MaxScore)
+                if (g == null) continue;
+                // Find matching answer if present
+                var ans = submission.Answers.FirstOrDefault(a => a.QuestionId == g.QuestionId);
+                if (ans != null)
                 {
-                    disputedAnswer.IsCorrect = true;
-                    disputedAnswer.TeacherTag = "Passed Framework Checklist via Manual Override Revision";
+                    ans.EarnedScore = g.EarnedScore;
+
+                    // FIXED: Save the manual teacher feedback text entered on the grading desk
+                    ans.TeacherFeedback = g.TeacherFeedback;
+                    // FIXED: Implement automatic evaluation status for Essay questions based on selected error tags
+                    if (ans.Question.Type == "Essay")
+                    {
+                        if (!string.IsNullOrEmpty(g.ChosenTag))
+                        {
+                            ans.IsCorrect = false;
+                            ans.TeacherTag = g.ChosenTag;
+                        }
+                        else
+                        {
+                            ans.IsCorrect = true;
+                            ans.TeacherTag = "Passed Evaluation Checklist";
+                        }
+                    }
+                    await _submissionRepository.SaveSubmissionAnswerAsync(ans);
                 }
-                else
-                {
-                    disputedAnswer.TeacherTag = $"Partial Credit Granted: Adjusted to {manualOverrideScore} pts";
-                }
-
-                await _submissionRepository.SaveSubmissionAnswerAsync(disputedAnswer);
-
-                // Recalculate the overall submission score after the override.
-                submission.FinalScore = submission.Answers.Sum(answer => answer.EarnedScore);
-
-                // FIXED: Set DisputeStatus to "Resolved_Accepted" (instead of "Approved") to match UI filters & database constraints
-                submission.DisputeStatus = "Resolved_Accepted";
-                ticket.Status = "Accepted";
-
-                // FIXED: Log system comment in the private dispute chat thread
-                var comment = new Comment
-                {
-                    IsPrivate = true,
-                    StudentId = studentId,
-                    Topic = "Dispute Q" + questionId,
-                    Sender = "Dr. Ali Bayeh (Instructor)",
-                    Message = $"🟢 [Dispute Resolved]: Evaluation audited manually. Variable point score overridden at: {manualOverrideScore} / {disputedAnswer.Question.MaxScore} pts.",
-                    Timestamp = System.DateTime.Now
-                };
-                await _forumRepository.AddCommentAsync(comment);
-            }
-            else
-            {
-                // FIXED: Set DisputeStatus to "Resolved_Rejected" (instead of "Rejected") to match UI filters
-                submission.DisputeStatus = "Resolved_Rejected";
-                ticket.Status = "Rejected";
-
-                // FIXED: Log system comment in the private dispute chat thread for rejection
-                var comment = new Comment
-                {
-                    IsPrivate = true,
-                    StudentId = studentId,
-                    Topic = "Dispute Q" + questionId,
-                    Sender = "Dr. Ali Bayeh (Instructor)",
-                    Message = "❌ [Dispute Concluding]: Initial evaluation parameters sustained.",
-                    Timestamp = System.DateTime.Now
-                };
-                await _forumRepository.AddCommentAsync(comment);
             }
 
+            // Recalculate and update the submission state
+            submission.FinalScore = submission.Answers.Sum(a => a.EarnedScore);
+            submission.Status = "Graded";
             await _submissionRepository.SaveSubmissionAsync(submission);
-
-            // FIXED: Save the resolved ticket state back to database (otherwise it will remain 'Pending' on UI dashboard)
-            await _forumRepository.SaveTicketAsync(ticket);
         }
 
-
-
+        public async Task ResolveDisputeAsync(string studentId, string quizTitle, int questionId, bool isApproved, decimal manualOverrideScore)
+        {
+            throw new System.NotImplementedException("TODO: Team Member 5 - Implement ResolveDisputeAsync in InstructorService.cs");
+        }
 
         // Han  - Implement GetErrorTagsAsync in InstructorService
         public async Task<List<string>> GetErrorTagsAsync()
