@@ -1010,146 +1010,17 @@ async function inlineModifyAnswerKey(qId, val) {
 }
 
 
-// Member Hitesh - Utility function to escape HTML special characters to prevent XSS attacks in dynamic content rendering.
 
-function escapeHtml(str) {
-    if (str === null || str === undefined) return "";
-    return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-}
 
 async function switchRosterSubTab(subTab) {
-    state.activeRosterSubTab = subTab;
-
-    // 1. Update sub-tab button active states
-    ['pending', 'graded', 'dispute'].forEach(tab => {
-        const btn = document.getElementById(`sub-btn-${tab}`);
-        if (btn) btn.classList.toggle('active', tab === subTab);
-    });
-
-    // 2. Update the panel heading + column header to match the selected sub-tab
-    const heading = document.getElementById('rosterBlockHeadingTitle');
-    const noteHeader = document.getElementById('dynamicRosterNoteColumnHeader');
-    if (subTab === 'pending') {
-        if (heading) heading.innerText = "📥 Ungraded Student Submissions Queue";
-        if (noteHeader) noteHeader.innerText = "Stated Survey Pain Point";
-    } else if (subTab === 'graded') {
-        if (heading) heading.innerText = "🟢 Graded Submission Logs";
-        if (noteHeader) noteHeader.innerText = "Stated Survey Pain Point";
-    } else if (subTab === 'dispute') {
-        if (heading) heading.innerText = " 🚨Active Dispute Tickets";
-        if (noteHeader) noteHeader.innerText = "Dispute Status";
-    }
-
-    // 3. Load the table for the selected sub-tab
-    await renderMultiStudentRosterTable();
-
-    // 4. Refresh the dispute badge count independently, so it stays visible even when
-    //    the instructor is looking at a different sub-tab (e.g. "Pending").
-    await refreshDisputeBadgeCount();
+    // TODO: Team Member 3 - Mutate active sub-tab view contexts and initiate roster table content refresh.
+    alert("TODO: Team Member 3 - Implement switchRosterSubTab in app.js");
 }
 
-// Hitesh - Load and render the multi-student roster table based on the currently selected sub-tab and quiz title.
 async function renderMultiStudentRosterTable() {
-    const tbody = document.getElementById('multiStudentRosterTableBody');
-    if (!tbody) return;
-
-    tbody.innerHTML = `
-        <tr>
-            <td colspan="5" class="text-center text-secondary p-4 small">
-                <div class="spinner-border spinner-border-sm text-cyan me-2" role="status"></div>
-                Loading student roster datasets...
-            </td>
-        </tr>`;
-
-    try {
-        const titleQuery = state.selectedQuizTitle ? `&quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
-        const res = await fetch(`${API_BASE}/instructor/roster?subTab=${state.activeRosterSubTab}${titleQuery}`);
-        if (!res.ok) throw new Error("Failed to fetch roster.");
-
-        const submissions = await res.json();
-
-        if (!submissions || submissions.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="5" class="text-center text-secondary p-4 small">
-                        No submissions found for this view.
-                    </td>
-                </tr>`;
-            return;
-        }
-
-        tbody.innerHTML = submissions.map(sub => {
-            // FIXED: Restore dynamic action button styles and labels based on the active sub-tab
-            let btnText = "Grade Form";
-            let btnClass = "btn-dark-custom";
-
-            if (state.activeRosterSubTab === "graded") {
-                btnText = "Review Paper Workspace";
-                btnClass = "btn-outline-custom";
-            } else if (state.activeRosterSubTab === "dispute") {
-                btnText = "🚨 Audit Dispute";
-                btnClass = "btn-dark-custom bg-danger border-danger";
-            }
-            // FIXED: Render the actual survey note/dispute message instead of a status badge
-            const noteCellContent = `<span class="text-secondary small italic">${escapeHtml(sub.surveyPainPoint) || 'No notes.'}</span>`;
-            // FIXED: Restore cyan bold monospace score style from original layout
-            const scoreCellContent = sub.status === 'Graded'
-                ? `${sub.finalScore} pts`
-                : '--';
-
-
-            // Action button routes to the grading desk for this student + quiz
-            const gradingUrl = `/Instructor/Grading?studentId=${encodeURIComponent(sub.studentId)}&quizTitle=${encodeURIComponent(state.selectedQuizTitle || '')}`;
-            // FIXED: Column 2 restored to "Submission_Stream_[studentId].json" to match the column header
-            return `
-                <tr>
-                    <td><strong>${escapeHtml(sub.studentName)}</strong></td>
-                    <td class="text-secondary font-monospace" style="font-size:12px;">Submission_Stream_${escapeHtml(sub.studentId)}.json</td>
-                    <td class="text-center">${noteCellContent}</td>
-                    <td class="text-center fw-bold font-monospace text-cyan small">${scoreCellContent}</td>
-                    <td><a class="btn btn-sm ${btnClass} py-1 px-3" style="font-size:12px;" href="${gradingUrl}">${btnText}</a></td>
-                </tr>`;
-        }).join('');
-    } catch (err) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="5" class="text-center p-4 small">
-                    <div class="alert-custom alert-custom-warning d-inline-block">Error loading roster: ${escapeHtml(err.message)}</div>
-                </td>
-            </tr>`;
-    }
+    // TODO: Team Member 3 - Retrieve student roster summaries filtered by tab parameters and render table rows.
+    alert("TODO: Team Member 3 - Implement renderMultiStudentRosterTable in app.js");
 }
-
-
-// Keeps the "Active Disputes" badge count fresh regardless of which sub-tab is showing.
-async function refreshDisputeBadgeCount() {
-    const badge = document.getElementById('subTabTicketBadgeCount');
-    if (!badge) return;
-
-    try {
-        const titleQuery = state.selectedQuizTitle ? `&quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
-        const res = await fetch(`${API_BASE}/instructor/roster?subTab=dispute${titleQuery}`);
-        if (!res.ok) return;
-
-        const disputes = await res.json();
-        const count = disputes ? disputes.length : 0;
-
-        if (count > 0) {
-            badge.style.display = 'inline-block';
-            badge.innerText = count > 9 ? '9+' : count;
-        } else {
-            badge.style.display = 'none';
-        }
-    } catch (_) {
-        /* Fail silently — badge just won't update this cycle */
-    }
-}
-
 
 
 
@@ -2135,15 +2006,148 @@ async function renderInstructorPrivateTicketChatArea(studentId, answers) {
     }
 }
 
+// Team Member 5 - Ethan - Implementation of instructor dispute feedback function
 async function dispatchInstructorEmbeddedChat(studentId, qId) {
-    // TODO: Team Member 5 - Send message from teacher inside private dispute chat workspace.
-    alert("TODO: Team Member 5 - Implement dispatchInstructorEmbeddedChat in app.js");
+
+    // FIXED: Changed DOM Input element ID to match the actual ID in the view template
+    const input = document.getElementById(
+        `inputInstructorEmbeddedChatText-${qId}`
+    );
+
+
+    if(!input)
+        return;
+
+    const message = input.value.trim();
+
+    if(!message)
+        return;
+
+    // FIXED: Reconstructed payload to match CommentDTO expected by POST /api/forum/comment
+    const payload = {
+        isPrivate: true,
+        studentId: studentId,
+        topic: "Dispute Q" + qId,
+        sender: "Dr. Ali Bayeh (Instructor)",
+        message: message
+    };
+    try { 
+        //Submit the instructor's dispute messaggee to the API
+        // FIXED: Changed API endpoint target from instructor/dispute-message (non-existent) to forum/comment
+        const res = await fetch(`${API_BASE}/forum/comment`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok){
+            throw new Error("Failed to send instructor message.")
+        }
+
+        input.value = "";
+
+        // FIXED: Call routeTargetStudentToEvaluationDesk to refresh evaluation logs and reload chat messages sync
+        routeTargetStudentToEvaluationDesk(studentId);
+
+
+     } catch (err){
+        console.error(err);
+        alert(`Error sending message: ${err.message}`);
+    }
 }
 
-async function executeInstructorManualScoreOverride(studentId, qId, isApproved) {
-    // TODO: Team Member 5 - Submit dispute audits and score override points registries.
-    alert("TODO: Team Member 5 - Implement executeInstructorManualScoreOverride in app.js");
+//Team member 5 - Ethan - Implementation of score override by instructor function
+async function executeInstructorManualScoreOverride(studentId, qId, isApproved, manualOverrideScore = null) {
+    //Prevent invalid requests
+    if(!studentId || !qId || typeof isApproved !== "boolean"){
+        console.error("Invalid dispute resolution arguments.", {
+            studentId,
+            qId,
+            isApproved, 
+            manualOverrideScore
+        });
+
+        alert("Unable to process the dispute because required information is missing.");
+        return;
+    }
+
+    // FIXED: Read the manual override score value directly from DOM input element when approved
+    let overrideScoreVal = 0;
+    if (isApproved) {
+        const scoreInput = document.getElementById(`inputManualOverrideScore-${qId}`);
+        if (scoreInput) {
+            overrideScoreVal = parseFloat(scoreInput.value);
+            const maxAttr = parseFloat(scoreInput.getAttribute('max')) || 10.0;
+            // Validate score boundaries to prevent negative points or score overflow
+            if (isNaN(overrideScoreVal) || overrideScoreVal < 0 || overrideScoreVal > maxAttr) {
+                return alert(`Invalid override score value. Must be between 0 and ${maxAttr}.`);
+            }
+        } else {
+            return alert("Dispute score input element not found in DOM.");
+        }
+    }
+    const actionText = isApproved ? "approve" : "reject";
+    // Confirm the instructor intended to perform the action
+    const confirmed = confirm(
+        `Are you sure you want to ${actionText} this student's dispute?`
+    );
+    if (!confirmed)
+        return;
+    // FIXED: Bind quizTitle from 'state.selectedQuizTitle' to match instructor context schema
+    const payload = {
+        studentId: studentId,
+        quizTitle: state.selectedQuizTitle || state.activeTaskTitle,
+        questionId: qId,
+        isApproved: isApproved,
+        manualOverrideScore: overrideScoreVal // FIXED: Pass the validated score read from DOM
+    };
+
+    try {
+        //Submit the instructor's dispute decision to API
+        const res = await fetch(
+            `${API_BASE}/instructor/resolve-dispute`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            }
+        );
+
+        if(!res.ok) {
+            const errorText = await res.text();
+
+            throw new Error(
+                errorText || `Failed to ${actionText} the dispute.`
+            );
+        }
+
+        const result = await res.json().catch(() => null);
+
+        alert(
+            result?.message ??
+            (
+            isApproved
+            ? "Dispute approved. The students score has been updated."
+            : "Dispute rejected. The students original score has been retained."
+            )
+        );
+
+        // FIXED: Redirect and reload page context to recalculate Class Average and refresh graphs on Dashboard
+        const titleParam = state.selectedQuizTitle ? `?quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
+        window.location.href = "/Instructor/Dashboard" + titleParam;
+        } catch(err){
+            console.error("Dispute resolution error:", err);
+
+            alert(
+                `Error processing the dispute: ${err.message}`
+            );
+        }
 }
+
 
 // ================= COURSE FORUM SYSTEM =================
 
@@ -2172,9 +2176,35 @@ function getStudyGuideForTopic(topic) {
 }
 
 async function initializeForumPage() {
-    // TODO: Team Member 5 - Load current forum active channels list and configure topic categories.
-    alert("TODO: Team Member 5 - Implement initializeForumPage in app.js");
+ 
+    const topicSelect = document.getElementById("forum-topic-select");
+
+    try {
+        if (topicSelect) {
+            topicSelect.innerHTML = "";
+
+            forumTopics.forEach(topic => {
+                const option = document.createElement("option");
+                option.value = topic;
+                option.textContent = topic;
+                topicSelect.appendChild(option);
+            });
+
+            topicSelect.addEventListener("change", async event => {
+                await loadForumTopic(event.target.value);
+            });
+        }
+
+        const defaultTopic = forumTopics[0];
+
+        if (defaultTopic) {
+            await loadForumTopic(defaultTopic);
+        }
+    } catch (error) {
+        console.error("Failed to initialize forum page:", error);
+    }
 }
+
 
 // Simple Q&A forum for MCQ-only quizzes (one room, no per-topic tabs)
 function renderSimpleQAForum(container, quizTitle, isInstructor) {
@@ -2354,10 +2384,78 @@ function teacherToggleUpload(panelId) {
     panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
 }
 
+// Team member 5 - Ethan - Implementation of teacher material submission function
 async function teacherSubmitMaterial(panelId, topic) {
-    // TODO: Team Member 5 - Post study guide hyperlinks to specific topic forums.
-    alert("TODO: Team Member 5 - Implement teacherSubmitMaterial in app.js");
+
+    const panel = document.getElementById(panelId);
+
+    if (!panel) {
+        console.error(`Material panel not found: ${panelId}`);
+        return;
+    }
+
+    const materialInput = panel.querySelector(
+        'input[type="url"], input[name="materialUrl"], input[name="studyGuideUrl"]'
+    );
+
+    if (!materialInput) {
+        console.error(`No material URL input found inside panel: ${panelId}`);
+        return;
+    }
+
+    const materialUrl = materialInput.value.trim();
+
+    if (!materialUrl) {
+        alert("Please enter a study guide link.");
+        return;
+    }
+
+    try {
+        new URL(materialUrl);
+    } catch {
+        alert("Please enter a valid hyperlink.");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/forum/comment`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                isPrivate: false,
+                // FIXED: Set studentId to "all" to match API database schema standard
+                studentId: "all",
+                topic: topic,
+                // FIXED: Include instructor's actual name in the sender field
+                sender: `${state.user.name} (Instructor)`,
+                message: materialUrl
+            })
+        });
+
+        if (!response.ok) {
+            const errorMessage = await response.text();
+            throw new Error(errorMessage || "Failed to post study material.");
+        }
+
+        materialInput.value = "";
+
+        alert("Study material posted successfully.");
+
+        //FIXED: Replace non-existent function loadForumComments() with standard CaseLab reload checks
+        const targetContainer = document.getElementById('student-forum-container-target');
+        if (targetContainer) {
+            await initializeForumPage();
+        } else {
+            await initializeInstructorDashboardForum();
+        }
+    } catch (error) {
+        console.error("Error posting study material:", error);
+        alert(`Unable to post study material: ${error.message}`);
+    }
 }
+
 
 function switchForumTopic(topic, tabId, viewportId) {
     const clickedTab = document.getElementById(tabId);
@@ -2374,15 +2472,167 @@ function switchForumTopic(topic, tabId, viewportId) {
     renderUnifiedForumComponent(viewportId, topic);
 }
 
+// Team Member 5 - Ethan - Implementing function to fetch and dsiplay forum comments
 async function renderUnifiedForumComponent(targetContainerID, filterTopic) {
-    // TODO: Team Member 5 - Query forum comments for specific topics and render scroll streams.
-    alert("TODO: Team Member 5 - Implement renderUnifiedForumComponent in app.js");
+   
+    const container = document.getElementById(targetContainerID);
+
+    if (!container) {
+        console.error(`Forum container "${targetContainerID}" was not found.`);
+        return;
+    }
+
+    if (!filterTopic || !filterTopic.trim()) {
+        container.innerHTML = `
+            <p class="forum-error">A forum topic is required.</p>
+        `;
+        return;
+    }
+
+    container.innerHTML = `
+        <p class="forum-loading">Loading comments...</p>
+    `;
+
+    try {
+        // FIXED: Prefix topic with the active task title to query the correct database records
+        const scopedTopic = `${state.activeTaskTitle} - ${filterTopic}`;
+
+        const response = await fetch(
+            `${API_BASE}/forum/${encodeURIComponent(scopedTopic)}`
+        );
+        if (!response.ok) {
+            const errorMessage = await response.text();
+            throw new Error(
+                errorMessage ||
+                `Unable to load forum comments. Status: ${response.status}`
+            );
+        }
+        const comments = await response.json();
+        // FIXED: Sort comments chronologically by timestamp
+        comments.sort(
+            (firstComment, secondComment) =>
+                new Date(firstComment.timestamp) -
+                new Date(secondComment.timestamp)
+        );
+        // FIXED: Generate HTML stream for comments, checking if comment is sent by self
+        const commentsHTMLStream = comments.map(c => {
+            const isSelf = c.sender.includes(state.user.name);
+            return `
+                <div class="comment-bubble ${isSelf ? 'self' : ''}">
+                    <span class="d-block small fw-bold" style="color: var(--accent-cyan); font-size: 11px;">${c.sender}</span>
+                    <span style="font-size: 12.5px;">${c.message}</span>
+                </div>`;
+        }).join('');
+        // FIXED: Check if the discussion hub is locked due to deadline expiry
+        let isPastDeadline = false;
+        if (state.deadlineString) {
+            const deadline = parseLocalDateString(state.deadlineString);
+            if (deadline && new Date() > deadline) {
+                isPastDeadline = true;
+            }
+        }
+        const isForumActive = (state.isForumOpen ?? true) && !isPastDeadline;
+        // FIXED: Render the full Chat Window (Header, Message Stream, and Input Area) matching the CaseLab layout design
+        container.innerHTML = `
+            <div class="glass-panel p-3">
+                <h5 class="fw-bold text-dark border-bottom border-secondary pb-2 mb-3">💬 Course Forum Hub Room: ${filterTopic} for ${state.activeTaskTitle}</h5>
+                <div class="chat-window">
+                    <div class="chat-header">Active Public Discussion Stream</div>
+                    <div class="p-3">
+                        <div id="comments-stream-container-${targetContainerID}" class="chat-message-stream mb-3" style="height: 280px; overflow-y: auto;">
+                            ${commentsHTMLStream || '<p class="text-secondary small text-center py-4">No comments have been posted for this topic yet.</p>'}
+                        </div>
+                        ${isForumActive ? `
+                        <div class="input-group">
+                            <input type="text" id="inputLiveCommentTextString-${targetContainerID}" class="form-control" placeholder="Post a query peer comment...">
+                            <button class="btn btn-dark-custom" onclick="dispatchLiveCommentSubmission('${targetContainerID}', '${filterTopic}')">Comment</button>
+                        </div>` : `
+                        <div class="alert-custom alert-custom-warning small text-center">
+                            🔒 This discussion room is locked ${isPastDeadline ? '(Due Date has passed)' : 'by the instructor'}.
+                        </div>`}
+                    </div>
+                </div>
+            </div>`;
+        // FIXED: Scroll to the bottom of the stream automatically
+        const stream = document.getElementById(`comments-stream-container-${targetContainerID}`);
+        if (stream) {
+            stream.scrollTop = stream.scrollHeight;
+        }
+
+    } catch (error) {
+        console.error("Unable to render forum comments:", error);
+
+        container.innerHTML = `
+            <p class="forum-error">
+                Unable to load the forum comments right now.
+            </p>
+        `;
+    }
 }
 
+//Team member 5 - Ethan - Implementation of dispatching forum comments for immediate viewing
 async function dispatchLiveCommentSubmission(targetContainerID, filterTopic) {
-    // TODO: Team Member 5 - Post new comments to forum streams and update layouts.
-    alert("TODO: Team Member 5 - Implement dispatchLiveCommentSubmission in app.js");
+    
+
+    // FIXED: Changed input element ID to match the ID rendered by renderUnifiedForumComponent
+    const input = document.getElementById(`inputLiveCommentTextString-${targetContainerID}`);
+
+    if (!input) {
+        console.error("Forum input field not found.");
+        return;
+    }
+
+    const message = input.value.trim();
+
+    if (!message) {
+        alert("Please enter a comment before submitting.");
+        return;
+    }
+
+    // FIXED: Access user session details directly from global 'state.user' object instead of raw localStorage
+    const currentUser = state.user;
+
+    if (!currentUser){
+        alert("No logged in user found.");
+        return;
+    }
+
+    // FIXED: Prefix topic with the active task title, and format sender/studentId properties for API database compatibility
+    const scopedTopic = `${state.activeTaskTitle} - ${filterTopic}`;
+    const comment = {
+        topic: filterTopic,
+        sender: `${currentUser.name} (${currentUser.role === 'student' ? 'Student' : 'Instructor'})`,
+        studentId: "all", // Public forum comments are accessible by "all"
+        message: message, 
+        isPrivate: false
+    };
+
+    try {
+        const response = await fetch(`${API_BASE}/forum/comment`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(comment)
+        });
+
+        if (!response.ok) {
+            throw new Error(await response.text());
+        }
+
+        input.value = "";
+
+        await renderUnifiedForumComponent(
+            targetContainerID,
+            filterTopic
+        );
+    }
+    catch (error) {
+        console.error("Unable to submit forum comment:", error);
+        alert("Failed to post your comment.");
+    }
 }
+
 
 // Page-based router initialization on DOM Load
 window.addEventListener('DOMContentLoaded', async () => {

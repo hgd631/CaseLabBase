@@ -1,11 +1,11 @@
-using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
-using System.Linq;
+using CaseLabBase.DAL.Repositories;
 using CaseLabBase.BLL.DTOs;
 using CaseLabBase.BLL.Services;
-using CaseLabBase.DAL.Repositories;
+using Microsoft.AspNetCore.Mvc;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace CaseLabBase.API.Controllers
+namespace CaseLab.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -46,7 +46,7 @@ namespace CaseLabBase.API.Controllers
         public async Task<IActionResult> GetRoster([FromQuery] string subTab, [FromQuery] string? quizTitle)
         {
             if (string.IsNullOrWhiteSpace(subTab)) subTab = "pending";
-            
+
             var title = await GetDefaultQuizTitleAsync(quizTitle);
             if (string.IsNullOrEmpty(title))
             {
@@ -102,6 +102,24 @@ namespace CaseLabBase.API.Controllers
             return Ok(new { Message = "Dispute resolved and status updated." });
         }
 
+        [HttpPost("resolve-submission-dispute")]
+        public async Task<IActionResult> ResolveSubmissionDispute([FromBody] ResolveSubmissionDisputeRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.StudentId))
+            {
+                return BadRequest("Invalid dispute resolution request.");
+            }
+
+            var title = await GetDefaultQuizTitleAsync(request.QuizTitle);
+            if (string.IsNullOrEmpty(title))
+            {
+                return BadRequest("No active quiz title context.");
+            }
+
+            await _instructorService.ResolveSubmissionDisputeAsync(request.StudentId, title, request.IsApproved);
+            return Ok(new { Message = "Submission dispute status resolved successfully." });
+        }
+
         [HttpGet("error-tags")]
         public async Task<IActionResult> GetErrorTags()
         {
@@ -124,11 +142,28 @@ namespace CaseLabBase.API.Controllers
             await _instructorService.UpdateAnswerKeyAsync(request.QuestionId, request.CorrectKey);
             return Ok(new { Message = "Answer key mutated and classroom re-graded." });
         }
+
+        [HttpPost("rename-error-tag")]
+        public async Task<IActionResult> RenameErrorTag([FromBody] RenameErrorTagRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.OldTag) || string.IsNullOrWhiteSpace(request.NewTag))
+            {
+                return BadRequest("Invalid rename request.");
+            }
+            await _instructorService.RenameErrorTagAsync(request.OldTag, request.NewTag);
+            return Ok(new { Message = "Error tag successfully renamed and merged across database records." });
+        }
     }
 
     public class UpdateAnswerKeyRequest
     {
         public int QuestionId { get; set; }
         public string CorrectKey { get; set; } = null!;
+    }
+
+    public class RenameErrorTagRequest
+    {
+        public string OldTag { get; set; } = null!;
+        public string NewTag { get; set; } = null!;
     }
 }

@@ -12,6 +12,7 @@ namespace CaseLabBase.DAL.Entities
         public string? PdfBase64 { get; set; }
         public string QuizMode { get; set; } = "Manual";
         public decimal TotalScore { get; set; } = 10.00m;
+        public System.DateTime CreatedAt { get; set; } = System.DateTime.UtcNow;
 
         // Navigation properties
         public virtual ICollection<Question> Questions { get; set; } = new List<Question>();

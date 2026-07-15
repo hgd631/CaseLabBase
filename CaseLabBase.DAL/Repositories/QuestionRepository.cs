@@ -52,7 +52,7 @@ namespace CaseLabBase.DAL.Repositories
         // Quiz operations
         public async Task<List<Quiz>> GetQuizzesAsync()
         {
-            return await _context.Quizzes.ToListAsync();
+            return await _context.Quizzes.OrderByDescending(q => q.CreatedAt).ToListAsync();
         }
 
         public async Task<Quiz?> GetQuizByTitleAsync(string title)
@@ -63,6 +63,12 @@ namespace CaseLabBase.DAL.Repositories
         public async Task AddQuizAsync(Quiz quiz)
         {
             await _context.Quizzes.AddAsync(quiz);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateQuizAsync(Quiz quiz)
+        {
+            _context.Quizzes.Update(quiz);
             await _context.SaveChangesAsync();
         }
     }
