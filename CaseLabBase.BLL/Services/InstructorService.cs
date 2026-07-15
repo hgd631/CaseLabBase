@@ -79,56 +79,42 @@ namespace CaseLabBase.BLL.Services
             // 1) Load existing submission (including answers)
             var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, quizTitle);
 
-            // If no submission exists
+            // FIXED: If student has not submitted the exam, we cannot grade it. Return directly.
             if (submission == null)
             {
-                submission = new Submission
-                {
-                    StudentId = studentId,
-                    QuizTitle = quizTitle,
-                    Status = "Graded",
-                    FinalScore = 0.00m,
-                    DisputeStatus = "None",
-                    SurveyPainPoint = submission?.SurveyPainPoint
-                };
-                await _submissionRepository.SaveSubmissionAsync(submission);
+                return;
             }
-
-            decimal total = 0.00m;
-
             foreach (var g in grades)
             {
                 if (g == null) continue;
-
                 // Find matching answer if present
                 var ans = submission.Answers.FirstOrDefault(a => a.QuestionId == g.QuestionId);
-
-                if (ans == null)
-                {
-                    // Create a new answer record when missing
-                    ans = new SubmissionAnswer
-                    {
-                        SubmissionId = submission.Id,
-                        QuestionId = g.QuestionId,
-                        StudentAnswer = null,
-                        IsCorrect = null,
-                        TeacherTag = g.ChosenTag,
-                        CommentNote = null,
-                        EarnedScore = g.EarnedScore
-                    };
-                    await _submissionRepository.SaveSubmissionAnswerAsync(ans);
-                }
-                else
+                if (ans != null)
                 {
                     ans.EarnedScore = g.EarnedScore;
-                    ans.TeacherTag = g.ChosenTag;
+
+                    // FIXED: Save the manual teacher feedback text entered on the grading desk
+                    ans.TeacherFeedback = g.TeacherFeedback;
+                    // FIXED: Implement automatic evaluation status for Essay questions based on selected error tags
+                    if (ans.Question.Type == "Essay")
+                    {
+                        if (!string.IsNullOrEmpty(g.ChosenTag))
+                        {
+                            ans.IsCorrect = false;
+                            ans.TeacherTag = g.ChosenTag;
+                        }
+                        else
+                        {
+                            ans.IsCorrect = true;
+                            ans.TeacherTag = "Passed Evaluation Checklist";
+                        }
+                    }
                     await _submissionRepository.SaveSubmissionAnswerAsync(ans);
                 }
-
-                total += ans.EarnedScore;
             }
 
-            submission.FinalScore = total;
+            // Recalculate and update the submission state
+            submission.FinalScore = submission.Answers.Sum(a => a.EarnedScore);
             submission.Status = "Graded";
             await _submissionRepository.SaveSubmissionAsync(submission);
         }
