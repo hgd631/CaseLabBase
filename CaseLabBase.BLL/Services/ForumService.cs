@@ -16,21 +16,23 @@ namespace CaseLabBase.BLL.Services
             _forumRepository = forumRepository;
         }
 
+        //Ethan - Implement GetForumTopicCommentsAsync in ForumService.cs
         public async Task<List<CommentDTO>> GetForumTopicCommentsAsync(string topic)
         {
-            //Validate the requested forum topic.
+            // Validate the requested forum topic.
             if (string.IsNullOrWhiteSpace(topic))
             {
-                throw new ArgumentException(
-                "A forum topic is required.",
-                nameof(topic)
+                // FIXED: Fully qualified with 'System.' to prevent compilation errors if 'using System;' is missing at the top of the file
+                throw new System.ArgumentException(
+                    "A forum topic is required.",
+                    nameof(topic)
                 );
             }
 
-            //Retrieve all public comments associated with the requested topic.
+            // Retrieve all public comments associated with the requested topic.
             var comments = await _forumRepository.GetPublicCommentsByTopicAsync(topic);
 
-            //Convert the database comment entities into DTOs for the API response.
+            // Convert the database comment entities into DTOs for the API response.
             return comments.Select(comment => new CommentDTO
             {
                 Id = comment.Id,
@@ -42,7 +44,6 @@ namespace CaseLabBase.BLL.Services
                 Timestamp = comment.Timestamp
             }).ToList();
         }
-
 
 
 

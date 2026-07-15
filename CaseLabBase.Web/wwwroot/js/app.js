@@ -1601,9 +1601,11 @@ async function renderInstructorPrivateTicketChatArea(studentId, answers) {
 // Team Member 5 - Ethan - Implementation of instructor dispute feedback function
 async function dispatchInstructorEmbeddedChat(studentId, qId) {
 
+    // FIXED: Changed DOM Input element ID to match the actual ID in the view template
     const input = document.getElementById(
-        `instructor-chat-input-${studentId}-${qId}`
+        `inputInstructorEmbeddedChatText-${qId}`
     );
+
 
     if(!input)
         return;
@@ -1613,15 +1615,18 @@ async function dispatchInstructorEmbeddedChat(studentId, qId) {
     if(!message)
         return;
 
+    // FIXED: Reconstructed payload to match CommentDTO expected by POST /api/forum/comment
     const payload = {
+        isPrivate: true,
         studentId: studentId,
-        questionID: qId,
+        topic: "Dispute Q" + qId,
+        sender: "Dr. Ali Bayeh (Instructor)",
         message: message
     };
-
     try { 
         //Submit the instructor's dispute messaggee to the API
-        const res = await fetch(`${API_BASE}/instructor/dispute-message`, {
+        // FIXED: Changed API endpoint target from instructor/dispute-message (non-existent) to forum/comment
+        const res = await fetch(`${API_BASE}/forum/comment`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -1635,11 +1640,9 @@ async function dispatchInstructorEmbeddedChat(studentId, qId) {
 
         input.value = "";
 
-        //Refresh the private dispute chat so the new message is displayed
-        await renderInstructorEmbeddedPrivateChatArea(
-            studentId,
-            qId
-        )
+        // FIXED: Call routeTargetStudentToEvaluationDesk to refresh evaluation logs and reload chat messages sync
+        routeTargetStudentToEvaluationDesk(studentId);
+
 
      } catch (err){
         console.error(err);
@@ -1662,22 +1665,35 @@ async function executeInstructorManualScoreOverride(studentId, qId, isApproved, 
         return;
     }
 
+    // FIXED: Read the manual override score value directly from DOM input element when approved
+    let overrideScoreVal = 0;
+    if (isApproved) {
+        const scoreInput = document.getElementById(`inputManualOverrideScore-${qId}`);
+        if (scoreInput) {
+            overrideScoreVal = parseFloat(scoreInput.value);
+            const maxAttr = parseFloat(scoreInput.getAttribute('max')) || 10.0;
+            // Validate score boundaries to prevent negative points or score overflow
+            if (isNaN(overrideScoreVal) || overrideScoreVal < 0 || overrideScoreVal > maxAttr) {
+                return alert(`Invalid override score value. Must be between 0 and ${maxAttr}.`);
+            }
+        } else {
+            return alert("Dispute score input element not found in DOM.");
+        }
+    }
     const actionText = isApproved ? "approve" : "reject";
-
-    //confirm the instructor intended to perform the action
+    // Confirm the instructor intended to perform the action
     const confirmed = confirm(
-        `Are you sure you want to ${actionText} this students dispute?`
+        `Are you sure you want to ${actionText} this student's dispute?`
     );
-
-    if(!confirmed)
+    if (!confirmed)
         return;
-
+    // FIXED: Bind quizTitle from 'state.selectedQuizTitle' to match instructor context schema
     const payload = {
-        studentId,
-        quizTitle: state.activeQuizTitle ?? null,
+        studentId: studentId,
+        quizTitle: state.selectedQuizTitle || state.activeTaskTitle,
         questionId: qId,
-        isApproved,
-        manualOverrideScore
+        isApproved: isApproved,
+        manualOverrideScore: overrideScoreVal // FIXED: Pass the validated score read from DOM
     };
 
     try {
@@ -1712,9 +1728,9 @@ async function executeInstructorManualScoreOverride(studentId, qId, isApproved, 
             )
         );
 
-        //Refresh the instructor dispute workspace
-        await switchRosterSubTab(state.activeRosterSubTab);
-
+        // FIXED: Redirect and reload page context to recalculate Class Average and refresh graphs on Dashboard
+        const titleParam = state.selectedQuizTitle ? `?quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
+        window.location.href = "/Instructor/Dashboard" + titleParam;
         } catch(err){
             console.error("Dispute resolution error:", err);
 
@@ -2001,9 +2017,11 @@ async function teacherSubmitMaterial(panelId, topic) {
             },
             body: JSON.stringify({
                 isPrivate: false,
-                studentId: null,
+                // FIXED: Set studentId to "all" to match API database schema standard
+                studentId: "all",
                 topic: topic,
-                sender: "Instructor",
+                // FIXED: Include instructor's actual name in the sender field
+                sender: `${state.user.name} (Instructor)`,
                 message: materialUrl
             })
         });
@@ -2017,9 +2035,13 @@ async function teacherSubmitMaterial(panelId, topic) {
 
         alert("Study material posted successfully.");
 
-        // Reload the topic's public forum comments.
-        // Replace this with the actual forum-rendering function in app.js.
-        await loadForumComments(topic);
+        //FIXED: Replace non-existent function loadForumComments() with standard CaseLab reload checks
+        const targetContainer = document.getElementById('student-forum-container-target');
+        if (targetContainer) {
+            await initializeForumPage();
+        } else {
+            await initializeInstructorDashboardForum();
+        }
     } catch (error) {
         console.error("Error posting study material:", error);
         alert(`Unable to post study material: ${error.message}`);
@@ -2064,61 +2086,71 @@ async function renderUnifiedForumComponent(targetContainerID, filterTopic) {
     `;
 
     try {
-        const response = await fetch(
-            `${API_BASE}/forum/${encodeURIComponent(filterTopic)}`
-        );
+        // FIXED: Prefix topic with the active task title to query the correct database records
+        const scopedTopic = `${state.activeTaskTitle} - ${filterTopic}`;
 
+        const response = await fetch(
+            `${API_BASE}/forum/${encodeURIComponent(scopedTopic)}`
+        );
         if (!response.ok) {
             const errorMessage = await response.text();
-
             throw new Error(
                 errorMessage ||
                 `Unable to load forum comments. Status: ${response.status}`
             );
         }
-
         const comments = await response.json();
-
-        container.innerHTML = "";
-
-        if (!Array.isArray(comments) || comments.length === 0) {
-            container.innerHTML = `
-                <p class="forum-empty">
-                    No comments have been posted for this topic yet.
-                </p>
-            `;
-            return;
+        // FIXED: Sort comments chronologically by timestamp
+        comments.sort(
+            (firstComment, secondComment) =>
+                new Date(firstComment.timestamp) -
+                new Date(secondComment.timestamp)
+        );
+        // FIXED: Generate HTML stream for comments, checking if comment is sent by self
+        const commentsHTMLStream = comments.map(c => {
+            const isSelf = c.sender.includes(state.user.name);
+            return `
+                <div class="comment-bubble ${isSelf ? 'self' : ''}">
+                    <span class="d-block small fw-bold" style="color: var(--accent-cyan); font-size: 11px;">${c.sender}</span>
+                    <span style="font-size: 12.5px;">${c.message}</span>
+                </div>`;
+        }).join('');
+        // FIXED: Check if the discussion hub is locked due to deadline expiry
+        let isPastDeadline = false;
+        if (state.deadlineString) {
+            const deadline = parseLocalDateString(state.deadlineString);
+            if (deadline && new Date() > deadline) {
+                isPastDeadline = true;
+            }
+        }
+        const isForumActive = (state.isForumOpen ?? true) && !isPastDeadline;
+        // FIXED: Render the full Chat Window (Header, Message Stream, and Input Area) matching the CaseLab layout design
+        container.innerHTML = `
+            <div class="glass-panel p-3">
+                <h5 class="fw-bold text-dark border-bottom border-secondary pb-2 mb-3">💬 Course Forum Hub Room: ${filterTopic} for ${state.activeTaskTitle}</h5>
+                <div class="chat-window">
+                    <div class="chat-header">Active Public Discussion Stream</div>
+                    <div class="p-3">
+                        <div id="comments-stream-container-${targetContainerID}" class="chat-message-stream mb-3" style="height: 280px; overflow-y: auto;">
+                            ${commentsHTMLStream || '<p class="text-secondary small text-center py-4">No comments have been posted for this topic yet.</p>'}
+                        </div>
+                        ${isForumActive ? `
+                        <div class="input-group">
+                            <input type="text" id="inputLiveCommentTextString-${targetContainerID}" class="form-control" placeholder="Post a query peer comment...">
+                            <button class="btn btn-dark-custom" onclick="dispatchLiveCommentSubmission('${targetContainerID}', '${filterTopic}')">Comment</button>
+                        </div>` : `
+                        <div class="alert-custom alert-custom-warning small text-center">
+                            🔒 This discussion room is locked ${isPastDeadline ? '(Due Date has passed)' : 'by the instructor'}.
+                        </div>`}
+                    </div>
+                </div>
+            </div>`;
+        // FIXED: Scroll to the bottom of the stream automatically
+        const stream = document.getElementById(`comments-stream-container-${targetContainerID}`);
+        if (stream) {
+            stream.scrollTop = stream.scrollHeight;
         }
 
-        comments
-            .sort(
-                (firstComment, secondComment) =>
-                    new Date(firstComment.timestamp) -
-                    new Date(secondComment.timestamp)
-            )
-            .forEach(comment => {
-                const commentElement = document.createElement("div");
-                commentElement.classList.add("forum-comment");
-
-                const sender = escapeHtml(comment.sender || "Unknown");
-                const message = escapeHtml(comment.message || "");
-                const timestamp = formatForumTimestamp(comment.timestamp);
-
-                commentElement.innerHTML = `
-                    <div class="forum-comment-header">
-                        <strong class="forum-comment-sender">${sender}</strong>
-                        <span class="forum-comment-time">${timestamp}</span>
-                    </div>
-
-                    <div class="forum-comment-message">
-                        ${message}
-                    </div>
-                `;
-
-                container.appendChild(commentElement);
-            });
-
-        container.scrollTop = container.scrollHeight;
     } catch (error) {
         console.error("Unable to render forum comments:", error);
 
@@ -2133,7 +2165,9 @@ async function renderUnifiedForumComponent(targetContainerID, filterTopic) {
 //Team member 5 - Ethan - Implementation of dispatching forum comments for immediate viewing
 async function dispatchLiveCommentSubmission(targetContainerID, filterTopic) {
     
-    const input = document.getElementById(`${targetContainerID}-input`);
+
+    // FIXED: Changed input element ID to match the ID rendered by renderUnifiedForumComponent
+    const input = document.getElementById(`inputLiveCommentTextString-${targetContainerID}`);
 
     if (!input) {
         console.error("Forum input field not found.");
@@ -2147,17 +2181,20 @@ async function dispatchLiveCommentSubmission(targetContainerID, filterTopic) {
         return;
     }
 
-    const currentUser = JSON.parse(localStorage.getItem("caselab_user"));
+    // FIXED: Access user session details directly from global 'state.user' object instead of raw localStorage
+    const currentUser = state.user;
 
     if (!currentUser){
         alert("No logged in user found.");
         return;
     }
 
+    // FIXED: Prefix topic with the active task title, and format sender/studentId properties for API database compatibility
+    const scopedTopic = `${state.activeTaskTitle} - ${filterTopic}`;
     const comment = {
         topic: filterTopic,
-        sender: currentUser.name,
-        studentId: currentUser.studentId,
+        sender: `${currentUser.name} (${currentUser.role === 'student' ? 'Student' : 'Instructor'})`,
+        studentId: "all", // Public forum comments are accessible by "all"
         message: message, 
         isPrivate: false
     };
