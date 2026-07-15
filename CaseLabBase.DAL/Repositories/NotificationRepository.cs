@@ -51,6 +51,17 @@ namespace CaseLabBase.DAL.Repositories
             await _context.SaveChangesAsync();
         }
 
+        /// <summary>Mark a single notification as read.</summary>
+        public async Task MarkSingleReadAsync(int id)
+        {
+            var n = await _context.Notifications.FindAsync(id);
+            if (n != null)
+            {
+                n.IsRead = true;
+                await _context.SaveChangesAsync();
+            }
+        }
+
         /// <summary>Create a single notification.</summary>
         public async Task CreateAsync(Notification notification)
         {

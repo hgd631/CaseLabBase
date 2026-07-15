@@ -103,6 +103,7 @@ namespace CaseLabBase.DAL.Repositories
                 existing.Difficulty = answer.Difficulty;
                 existing.CommentNote = answer.CommentNote;
                 existing.EarnedScore = answer.EarnedScore;
+                existing.TeacherFeedback = answer.TeacherFeedback;
                 await _context.SaveChangesAsync();
             }
         }
@@ -123,6 +124,44 @@ namespace CaseLabBase.DAL.Repositories
         public async Task AddErrorTagAsync(ErrorTag tag)
         {
             await _context.ErrorTags.AddAsync(tag);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task RenameErrorTagAsync(string oldTag, string newTag)
+        {
+            if (string.IsNullOrWhiteSpace(oldTag) || string.IsNullOrWhiteSpace(newTag) || oldTag == newTag) return;
+
+            var tagEntity = await _context.ErrorTags.FirstOrDefaultAsync(t => t.Tag == oldTag);
+            if (tagEntity != null)
+            {
+                var newTagEntity = await _context.ErrorTags.FirstOrDefaultAsync(t => t.Tag == newTag);
+                if (newTagEntity != null)
+                {
+                    _context.ErrorTags.Remove(tagEntity);
+                }
+                else
+                {
+                    tagEntity.Tag = newTag;
+                }
+            }
+
+            var answers = await _context.SubmissionAnswers.Where(a => a.TeacherTag == oldTag).ToListAsync();
+            foreach (var answer in answers)
+            {
+                answer.TeacherTag = newTag;
+            }
+
+            var oldTopicSuffix = " - Resource - " + oldTag;
+            var newTopicSuffix = " - Resource - " + newTag;
+            var comments = await _context.Comments.Where(c => c.Topic.EndsWith(oldTopicSuffix)).ToListAsync();
+            foreach (var comment in comments)
+            {
+                if (comment.Topic.EndsWith(oldTopicSuffix))
+                {
+                    comment.Topic = comment.Topic.Substring(0, comment.Topic.Length - oldTopicSuffix.Length) + newTopicSuffix;
+                }
+            }
+
             await _context.SaveChangesAsync();
         }
     }

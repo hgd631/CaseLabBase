@@ -92,5 +92,58 @@ namespace CaseLabBase.BLL.Services
             }
             
 }
+        public async Task UpdateQuestionAsync(UpdateQuestionRequest request)
+        {
+            var q = await _questionRepository.GetByIdAsync(request.Id);
+            if (q == null) return;
+
+            string? oldCorrectKey = q.CorrectKey;
+            string? optionsJson = request.Options != null ? JsonSerializer.Serialize(request.Options) : null;
+
+            q.Prompt = request.Prompt;
+            q.Topic = request.Topic;
+            q.Options = optionsJson;
+            q.CorrectKey = request.CorrectKey ?? "";
+            q.MaxScore = request.MaxScore;
+            q.MarkingGuide = request.MarkingGuide;
+
+            await _questionRepository.UpdateAsync(q);
+
+            // If MCQ and key changed, trigger re-grading
+            if (q.Type == "MCQ" && oldCorrectKey != request.CorrectKey)
+            {
+                // Re-grade submissions for this MCQ in this specific quiz
+                var submissions = await _submissionRepository.GetSubmissionsByQuizWithAnswersAsync(q.QuizTitle);
+                foreach (var s in submissions)
+                {
+                    var mcqAnswer = s.Answers.FirstOrDefault(a => a.QuestionId == q.Id);
+                    if (mcqAnswer != null)
+                    {
+                        mcqAnswer.IsCorrect = (mcqAnswer.StudentAnswer == request.CorrectKey);
+                        mcqAnswer.EarnedScore = mcqAnswer.IsCorrect == true ? q.MaxScore : 0.00m;
+                        await _submissionRepository.SaveSubmissionAnswerAsync(mcqAnswer);
+
+                        // Re-calculate final score based on new correctness
+                        s.FinalScore = s.Answers.Sum(a => a.EarnedScore);
+                        await _submissionRepository.SaveSubmissionAsync(s);
+                    }
+                }
+            }
+        }
+
+        public async Task UpdateQuizSettingsAsync(UpdateQuizSettingsRequest request)
+        {
+            var quiz = await _questionRepository.GetQuizByTitleAsync(request.Title);
+            if (quiz != null)
+            {
+                quiz.TimeLimitMinutes = request.TimeLimitMinutes;
+                quiz.IsQuizOpen = request.IsQuizOpen;
+                quiz.IsForumOpen = request.IsForumOpen;
+                quiz.DeadlineString = request.DeadlineString;
+                await _questionRepository.UpdateQuizAsync(quiz);
+            }
+        }
+
+
     }
 }
