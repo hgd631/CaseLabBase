@@ -595,8 +595,70 @@ function updateCharCount(input, qId) {
 }
 
 async function completeSurveyPipeline() {
-    // TODO: Team Member 2 - Collect exam answer responses and reflections, submitting payloads to exam & survey endpoints.
-    alert("TODO: Team Member 2 - Implement completeSurveyPipeline in app.js");
+    //Team Member 2: Kelly- Collect exam answer responses and reflections, submitting payloads to exam & survey endpoints.
+
+    // FIXED: Collect reflections from UI inputs into state before preparing the payload
+    state.questions.forEach(q => {
+        const noteNode = document.getElementById(`survey-note-node-${q.id}`);
+        if (noteNode && state.studentSurvey[q.id]) {
+            state.studentSurvey[q.id].note = noteNode.value || "";
+        }
+    });
+    try {
+        const answers = state.questions.map(q => ({
+            questionId: q.id,
+            studentAnswer: state.studentAnswers[q.id] ?? ""
+        }));
+
+        //submit exam 
+        const examRes = await fetch(`${API_BASE}/student/submit-exam`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                studentId: state.user.id,
+                quizTitle: state.activeTaskTitle,
+                answers: answers
+            })
+        });
+
+        if (!examRes.ok) {
+            throw new Error(await examRes.text());
+        }
+
+        //build survey payload 
+        const reflections = Object.entries(state.studentSurvey).map(([questionId, survey]) => ({
+            // FIXED: Corrected spelling typo 'questioId' -> 'questionId' to align with C# DTO
+            questionId: Number(questionId),
+            difficulty: survey.difficulty,
+            commentNote: survey.note
+        }));
+
+       
+        //submit survey
+        const surveyRes = await fetch(`${API_BASE}/student/submit-survey`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                studentId: state.user.id,
+                quizTitle: state.activeTaskTitle,
+                reflections: reflections
+            })
+        });
+
+        if (!surveyRes.ok) {
+            throw new Error(await surveyRes.text());
+        }
+        alert("Assessment and survey submitted successfully! You may now view your mistake bank for feedback.");
+        window.location.href = "/Student/Dashboard";
+    }
+    catch (err) {
+        console.error(err);
+        alert('Submission failed: ' + err.message); 
+    }
 }
 
 // ================= STUDENT MISTAKE BANK =================
@@ -610,8 +672,58 @@ function onMistakeQuizDropdownChange(val) {
 
 
 async function openStudentMistakeBankWithReload() {
-    // TODO: Team Member 2 - Query student evaluation logs for active mistake checks, compiling correct/incorrect answer states.
-    alert("TODO: Team Member 2 - Implement openStudentMistakeBankWithReload in app.js");
+    // Team Member 2: Kelly- Query student evaluation logs for active mistake checks, compiling correct/incorrect answer states.
+
+    try {
+        // FIXED: Retrieve the selected quiz title from URL parameters or fallback to state.activeTaskTitle
+        const urlParams = new URLSearchParams(window.location.search);
+        const qTitle = urlParams.get('quizTitle') || state.activeTaskTitle;
+        const res = await fetch(`${API_BASE}/student/mistake-bank/${state.user.id}?quizTitle=${encodeURIComponent(qTitle)}`);
+        if (!res.ok) throw new Error("Failed to load mistake bank.");
+        const data = await res.json();
+
+        state.openStudentMistakeBankWithReload = data;
+        // FIXED: Target 'mistakeBankCoreContent' container ID to match MistakeBank.cshtml (preventing NullReferenceError)
+        const container = document.getElementById('mistakeBankCoreContent');
+        if (!container) return;
+
+        container.innerHTML = "";
+        // FIXED: Render quiz context header card at the top
+        container.innerHTML += `
+            <div class="mb-4 p-3 border rounded bg-light" style="border-color: var(--border-color) !important;">
+                <h5 class="fw-bold mb-1 text-dark" style="font-family: var(--font-heading);">${data.quizTitle}</h5>
+                <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
+                    <span class="text-secondary small">Submission Status: <span class="badge bg-success">${data.status}</span></span>
+                    <strong class="text-indigo font-monospace">Final Score: ${data.finalScore} pts</strong>
+                </div>
+            </div>`;
+        data.answers.forEach(answer => {
+            // FIXED: Removed invalid React fragment (<> and </>) tags which cause syntax errors in vanilla JS
+            // FIXED: Map JSON properties to correct camelCase properties returned by C# API ('QuestionTopic' -> 'questionTopic')
+            // FIXED: Map the correct prompt property name ('questionsPayload' -> 'questionPrompt')
+            container.innerHTML += `
+                <div class="glass-card mb-3 p-3 border rounded bg-white shadow-sm" style="border-color: var(--border-color) !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                        <span class="badge bg-indigo text-white small">Topic: ${answer.questionTopic}</span>
+                        <span class="badge ${answer.isCorrect ? 'bg-success' : 'bg-danger'}">
+                            ${answer.isCorrect ? '🟢 Correct' : '❌ Incorrect'}
+                        </span>
+                    </div>
+                    <h6 class="fw-bold text-dark mb-2">${answer.questionPrompt}</h6>
+                    <div class="small text-secondary mb-1">Your Submission Output:</div>
+                    <pre class="p-2 rounded small mb-2" style="background: #0f172a; color: #38bdf8; font-family: monospace;">${answer.studentAnswer || '[Empty Answer]'}</pre>
+                    ${answer.teacherFeedback ? `
+                    <div class="p-2 border border-warning rounded bg-warning-subtle text-dark small mt-2">
+                        <strong>👨‍🏫 Instructor Feedback:</strong> "${answer.teacherFeedback}"
+                    </div>` : ''}
+                </div>
+            `;
+        });
+    } catch (err) {
+        console.error(err);
+        alert("Error loading mistake bank: " + err.message); 
+    }
+
 }
 function switchMistakeBankSubTab(tab) {
     state.activeMistakeSubTab = tab;
