@@ -1675,23 +1675,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Kelly\\.nuget\\packages\\": {},
+    "C:\\Users\\handa\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Kelly\\source\\repos\\CaseLabBase\\CaseLabBase.DAL\\CaseLabBase.DAL.csproj",
+      "projectUniqueName": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.DAL\\CaseLabBase.DAL.csproj",
       "projectName": "CaseLabBase.DAL",
-      "projectPath": "C:\\Users\\Kelly\\source\\repos\\CaseLabBase\\CaseLabBase.DAL\\CaseLabBase.DAL.csproj",
-      "packagesPath": "C:\\Users\\Kelly\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Kelly\\source\\repos\\CaseLabBase\\CaseLabBase.DAL\\obj\\",
+      "projectPath": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.DAL\\CaseLabBase.DAL.csproj",
+      "packagesPath": "C:\\Users\\handa\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.DAL\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\Kelly\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\handa\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -1752,7 +1752,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.300/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.CSharp": "(,4.7.32767]",
           "Microsoft.VisualBasic": "(,10.4.32767]",

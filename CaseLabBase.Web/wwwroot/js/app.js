@@ -564,6 +564,14 @@ function updateCharCount(input, qId) {
 
 async function completeSurveyPipeline() {
     //Team Member 2: Kelly- Collect exam answer responses and reflections, submitting payloads to exam & survey endpoints.
+
+    // FIXED: Collect reflections from UI inputs into state before preparing the payload
+    state.questions.forEach(q => {
+        const noteNode = document.getElementById(`survey-note-node-${q.id}`);
+        if (noteNode && state.studentSurvey[q.id]) {
+            state.studentSurvey[q.id].note = noteNode.value || "";
+        }
+    });
     try {
         const answers = state.questions.map(q => ({
             questionId: q.id,
@@ -589,11 +597,13 @@ async function completeSurveyPipeline() {
 
         //build survey payload 
         const reflections = Object.entries(state.studentSurvey).map(([questionId, survey]) => ({
-            questioId: Number(questionId),
+            // FIXED: Corrected spelling typo 'questioId' -> 'questionId' to align with C# DTO
+            questionId: Number(questionId),
             difficulty: survey.difficulty,
             commentNote: survey.note
         }));
 
+       
         //submit survey
         const surveyRes = await fetch(`${API_BASE}/student/submit-survey`, {
             method: "POST",
@@ -623,25 +633,51 @@ async function completeSurveyPipeline() {
 
 async function openStudentMistakeBankWithReload() {
     // Team Member 2: Kelly- Query student evaluation logs for active mistake checks, compiling correct/incorrect answer states.
-    
-    try {
-        const res = await fetch(`${API_BASE}/student/mistake-bank/${state.user.id}?quizTitle=${encodeURIComponent(state.activeTaskTitle)}`);
 
+    try {
+        // FIXED: Retrieve the selected quiz title from URL parameters or fallback to state.activeTaskTitle
+        const urlParams = new URLSearchParams(window.location.search);
+        const qTitle = urlParams.get('quizTitle') || state.activeTaskTitle;
+        const res = await fetch(`${API_BASE}/student/mistake-bank/${state.user.id}?quizTitle=${encodeURIComponent(qTitle)}`);
         if (!res.ok) throw new Error("Failed to load mistake bank.");
         const data = await res.json();
-        state.openStudentMistakeBankWithReload = data;
-        const container = document.getElementById('studentMistakeBankContainer');
-        container.innerHTML = "";
-        data.answers.forEach(answer => {
-            container.innerHTML += `
-             <div class="mistake-card" >
-            <><h4> ${data.quizTitle}</h4>
-            <p>${answer.QuestionTopic}</p><p>Question: ${answer.questionsPayload}</p
-            ><p>Your Answer: ${answer.studentAnswer}</p>
-            <p>Result: ${answer.isCorrect ? "Correct" : "Incorrect"}</p></>
-            </div >
-                `;
 
+        state.openStudentMistakeBankWithReload = data;
+        // FIXED: Target 'mistakeBankCoreContent' container ID to match MistakeBank.cshtml (preventing NullReferenceError)
+        const container = document.getElementById('mistakeBankCoreContent');
+        if (!container) return;
+
+        container.innerHTML = "";
+        // FIXED: Render quiz context header card at the top
+        container.innerHTML += `
+            <div class="mb-4 p-3 border rounded bg-light" style="border-color: var(--border-color) !important;">
+                <h5 class="fw-bold mb-1 text-dark" style="font-family: var(--font-heading);">${data.quizTitle}</h5>
+                <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
+                    <span class="text-secondary small">Submission Status: <span class="badge bg-success">${data.status}</span></span>
+                    <strong class="text-indigo font-monospace">Final Score: ${data.finalScore} pts</strong>
+                </div>
+            </div>`;
+        data.answers.forEach(answer => {
+            // FIXED: Removed invalid React fragment (<> and </>) tags which cause syntax errors in vanilla JS
+            // FIXED: Map JSON properties to correct camelCase properties returned by C# API ('QuestionTopic' -> 'questionTopic')
+            // FIXED: Map the correct prompt property name ('questionsPayload' -> 'questionPrompt')
+            container.innerHTML += `
+                <div class="glass-card mb-3 p-3 border rounded bg-white shadow-sm" style="border-color: var(--border-color) !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                        <span class="badge bg-indigo text-white small">Topic: ${answer.questionTopic}</span>
+                        <span class="badge ${answer.isCorrect ? 'bg-success' : 'bg-danger'}">
+                            ${answer.isCorrect ? '🟢 Correct' : '❌ Incorrect'}
+                        </span>
+                    </div>
+                    <h6 class="fw-bold text-dark mb-2">${answer.questionPrompt}</h6>
+                    <div class="small text-secondary mb-1">Your Submission Output:</div>
+                    <pre class="p-2 rounded small mb-2" style="background: #0f172a; color: #38bdf8; font-family: monospace;">${answer.studentAnswer || '[Empty Answer]'}</pre>
+                    ${answer.teacherFeedback ? `
+                    <div class="p-2 border border-warning rounded bg-warning-subtle text-dark small mt-2">
+                        <strong>👨‍🏫 Instructor Feedback:</strong> "${answer.teacherFeedback}"
+                    </div>` : ''}
+                </div>
+            `;
         });
     } catch (err) {
         console.error(err);

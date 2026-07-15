@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CaseLabBase.BLL")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0068d042600da9bd4e9f9074e658225f8028a326")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+060e216a14f27fb919ab7c56a78d6b465e6add9f")]
 [assembly: System.Reflection.AssemblyProductAttribute("CaseLabBase.BLL")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CaseLabBase.BLL")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
