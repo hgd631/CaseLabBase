@@ -52,5 +52,14 @@ namespace CaseLabBase.API.Controllers
             await _repo.MarkAllReadAsync(userId, role);
             return Ok(new { Message = "All notifications marked as read." });
         }
+        //Mark a single notification as read by its ID.
+        [HttpPost("mark-single-read/{id}")]
+        public async Task<IActionResult> MarkSingleRead(int id)
+        {
+            await _repo.MarkSingleReadAsync(id);
+            return Ok(new { Message = "Notification marked as read." });
+        }
+
+
     }
 }

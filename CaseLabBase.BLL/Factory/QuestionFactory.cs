@@ -4,7 +4,7 @@ namespace CaseLabBase.BLL.Factory
 {
     
     // GoF Design Pattern: Simple Factory / Factory Method
-    // Purpose: Decouples the client (QuestionService) from concrete question creation logic.
+    // Decouples the client (QuestionService) from concrete question creation logic.
     // This abstract class defines the Creator interface for producing Question products.
     
     public abstract class QuestionCreator

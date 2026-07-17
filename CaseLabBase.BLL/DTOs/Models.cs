@@ -62,8 +62,10 @@ namespace CaseLabBase.BLL.DTOs
         public string StudentName { get; set; } = null!;
         public string Status { get; set; } = null!;
         public decimal FinalScore { get; set; }
+        public string? SurveyDifficulty { get; set; }
         public string? SurveyPainPoint { get; set; }
         public string DisputeStatus { get; set; } = null!;
+        public bool IsFlagged { get; set; }
         public List<SubmissionAnswerDTO> Answers { get; set; } = new();
     }
 
@@ -119,12 +121,6 @@ namespace CaseLabBase.BLL.DTOs
     {
         public string StudentId { get; set; } = null!;
         public string QuizTitle { get; set; } = null!;
-        public List<SubmitSurveyRequestItem> Reflections { get; set; } = new();
-    }
-
-    public class SubmitSurveyRequestItem
-    {
-        public int QuestionId { get; set; }
         public string Difficulty { get; set; } = null!; // "Easy", "Medium", "Hard"
         public string? CommentNote { get; set; }
     }

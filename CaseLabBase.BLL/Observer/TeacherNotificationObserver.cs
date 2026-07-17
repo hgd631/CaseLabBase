@@ -6,7 +6,7 @@ namespace CaseLabBase.BLL.Observer
 {
     
     // GoF Design Pattern: Concrete Observer
-    // Purpose: Decouples notification delivery from the core student submission flow.
+    // Decouples notification delivery from the core student submission flow.
     // When triggered by the Subject, this class generates and logs notifications in the database
     // to alert all teachers that a new student quiz submission requires grading.
     

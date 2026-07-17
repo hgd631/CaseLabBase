@@ -5,7 +5,7 @@ namespace CaseLabBase.BLL.Observer
 {
     
     // GoF Design Pattern: Observer (Subject)
-    // Purpose: Defines interface for registering, removing, and notifying observers.
+    //  Defines interface for registering, removing, and notifying observers.
     // This acts as the "Subject" contract in the Gang of Four design.
   
     public interface ISubmissionSubject

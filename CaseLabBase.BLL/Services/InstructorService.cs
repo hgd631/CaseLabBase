@@ -27,16 +27,16 @@ namespace CaseLabBase.BLL.Services
         // Han  - Implement GetClassAnalyticsAsync in InstructorService.cs
         public async Task<ClassAnalyticsDTO> GetClassAnalyticsAsync(string quizTitle)
         {
-            // 1. Fetch Submissions: Retrieve all student submissions along with their nested answers for this specific quiz
+            //Fetch Submissions: Retrieve all student submissions along with their nested answers for this specific quiz
             var submissions = await _submissionRepository.GetSubmissionsByQuizWithAnswersAsync(quizTitle);
             int total = submissions.Count;
             int graded = submissions.Count(s => s.Status == "Graded"); // Filter to count only fully evaluated papers
 
-            // 2. Fetch Quiz Metadata: Get the quiz structure to check the maximum achievable score (defaults to 10.00 if null)
+            // Fetch Quiz Metadata: Get the quiz structure to check the maximum achievable score (defaults to 10.00 if null)
             var quiz = await _questionRepository.GetQuizByTitleAsync(quizTitle);
             decimal totalScore = quiz?.TotalScore ?? 10.00m;
 
-            // 3. Defect/Failure Rate Calculation: Find the percentage of graded submissions that scored below an 80% threshold
+            //  Defect/Failure Rate Calculation: Find the percentage of graded submissions that scored below an 80% threshold
             decimal defectRate = 0;
             if (graded > 0)
             {
@@ -45,14 +45,14 @@ namespace CaseLabBase.BLL.Services
                 defectRate = ((decimal)failed / graded) * 100;
             }
 
-            // 4. Class Average Calculation: Compute the arithmetic mean of all final scores across the dataset
+            // Class Average Calculation: Compute the arithmetic mean of all final scores across the dataset
             decimal avg = 0;
             if (submissions.Count > 0)
             {
                 avg = submissions.Average(s => s.FinalScore);
             }
 
-            // 5. Data Transfer Object (DTO) Return: Package up the computed analytics metrics to ship cleanly to the frontend
+            // Data Transfer Object (DTO) Return: Package up the computed analytics metrics to ship cleanly to the frontend
             return new ClassAnalyticsDTO
             {
                 ActiveTaskTitle = quizTitle,
@@ -80,7 +80,7 @@ namespace CaseLabBase.BLL.Services
             throw new System.NotImplementedException("TODO: Team Member 5 - Implement ResolveDisputeAsync in InstructorService.cs");
         }
 
-        // Han - Implement ResolveSubmissionDisputeAsync in InstructorService.cs
+        // Han - Implement ResolveSubmissionDisputeAsync
         public async Task ResolveSubmissionDisputeAsync(string studentId, string quizTitle, bool isApproved)
         {
             var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, quizTitle);

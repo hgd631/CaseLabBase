@@ -50,13 +50,13 @@ namespace CaseLabBase.API.Controllers
         {
             if (request == null || string.IsNullOrWhiteSpace(request.StudentId) || string.IsNullOrWhiteSpace(request.QuizTitle))
             {
-                return BadRequest("Invalid survey submission data.");
+                return BadRequest("Invalid exam submission data.");
             }
 
             try
             {
                 await _studentService.SubmitSurveyAsync(request.StudentId, request.QuizTitle, request.Reflections ?? new());
-                return Ok(new { Message = "Survey reflections submitted successfully." });
+                return Ok(new { Message = "Survey submitted successfully." });
             }
             catch (Exception ex)
             {
@@ -100,5 +100,19 @@ namespace CaseLabBase.API.Controllers
             await _studentService.InitiateDisputeAsync(request.StudentId, request.QuestionId, request.Message);
             return Ok(new { Message = "Dispute ticket opened and private chat initialized." });
         }
+
+        [HttpPost("initiate-submission-dispute")]
+        public async Task<IActionResult> InitiateSubmissionDispute([FromBody] InitiateSubmissionDisputeRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.StudentId) || string.IsNullOrWhiteSpace(request.QuizTitle))
+            {
+                return BadRequest("Invalid dispute request data.");
+            }
+
+            await _studentService.InitiateSubmissionDisputeAsync(request.StudentId, request.QuizTitle, request.Message);
+            return Ok(new { Message = "Submission dispute opened and private chat initialized." });
+        }
+
+
     }
 }

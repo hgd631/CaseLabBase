@@ -90,5 +90,32 @@ namespace CaseLabBase.API.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpPost("update-question")]
+        public async Task<IActionResult> UpdateQuestion([FromBody] UpdateQuestionRequest request)
+        {
+            if (request == null || request.Id <= 0 || string.IsNullOrWhiteSpace(request.Prompt))
+            {
+                return BadRequest("Invalid question details.");
+            }
+
+            await _questionService.UpdateQuestionAsync(request);
+            return Ok(new { Message = "Question updated successfully." });
+        }
+
+        [HttpPost("update-settings")]
+        public async Task<IActionResult> UpdateQuizSettings([FromBody] UpdateQuizSettingsRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Title))
+            {
+                return BadRequest("Invalid settings request.");
+            }
+
+            await _questionService.UpdateQuizSettingsAsync(request);
+            return Ok(new { Message = "Quiz configurations updated successfully." });
+        }
+
+
+
     }
 }

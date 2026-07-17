@@ -5,7 +5,7 @@ namespace CaseLabBase.BLL.Observer
 {
    
     // GoF Design Pattern: Observer
-    // Purpose: Defines a standard interface for objects that should be notified
+    // Defines a standard interface for objects that should be notified
     // of changes or actions occurring on a Subject.
     // This acts as the "Observer" contract in the Gang of Four design.
     
