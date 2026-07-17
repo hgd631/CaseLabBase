@@ -1,10 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿
 using CaseLabBase.BLL.DTOs;
 using CaseLabBase.DAL.Entities;
 using CaseLabBase.DAL.Repositories;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace CaseLabBase.BLL.Services
 {
@@ -24,54 +25,143 @@ namespace CaseLabBase.BLL.Services
             _forumRepository = forumRepository;
         }
 
-        // Han  - Implement GetClassAnalyticsAsync in InstructorService.cs
+        // Member 1 - Han: Implement GetClassAnalyticsAsync
         public async Task<ClassAnalyticsDTO> GetClassAnalyticsAsync(string quizTitle)
         {
-            //Fetch Submissions: Retrieve all student submissions along with their nested answers for this specific quiz
             var submissions = await _submissionRepository.GetSubmissionsByQuizWithAnswersAsync(quizTitle);
             int total = submissions.Count;
-            int graded = submissions.Count(s => s.Status == "Graded"); // Filter to count only fully evaluated papers
+            int graded = submissions.Count(s => s.Status == "Graded");
 
-            // Fetch Quiz Metadata: Get the quiz structure to check the maximum achievable score (defaults to 10.00 if null)
             var quiz = await _questionRepository.GetQuizByTitleAsync(quizTitle);
             decimal totalScore = quiz?.TotalScore ?? 10.00m;
 
-            //  Defect/Failure Rate Calculation: Find the percentage of graded submissions that scored below an 80% threshold
+            // Calculate defect rate (score < 80% of total score)
             decimal defectRate = 0;
             if (graded > 0)
             {
-                // Count how many students scored lower than 80% of the total available points
                 int failed = submissions.Count(s => s.Status == "Graded" && s.FinalScore < 0.80m * totalScore);
                 defectRate = ((decimal)failed / graded) * 100;
             }
 
-            // Class Average Calculation: Compute the arithmetic mean of all final scores across the dataset
             decimal avg = 0;
             if (submissions.Count > 0)
             {
                 avg = submissions.Average(s => s.FinalScore);
             }
 
-            // Data Transfer Object (DTO) Return: Package up the computed analytics metrics to ship cleanly to the frontend
             return new ClassAnalyticsDTO
             {
                 ActiveTaskTitle = quizTitle,
                 TotalSubmissionsCount = total,
                 GradedCount = graded,
-                FailureRatePercentage = Math.Round(defectRate, 1), // Round to 1 decimal place for UI presentation
+                FailureRatePercentage = Math.Round(defectRate, 1),
                 ClassAverageScore = Math.Round(avg, 1)
             };
         }
 
-
-
+        // Team Member 3 - Implement GetRosterSubTabAsync in InstructorService.cs
         public async Task<List<SubmissionDTO>> GetRosterSubTabAsync(string subTab, string quizTitle)
         {
-            throw new System.NotImplementedException("TODO: Team Member 3 - Implement GetRosterSubTabAsync in InstructorService.cs");
+            var all = await _submissionRepository.GetSubmissionsByQuizWithAnswersAsync(quizTitle);
+            IEnumerable<Submission> filtered = all;
+
+            if (subTab == "pending")
+            {
+                filtered = all.Where(s => s.Status == "Pending" && s.DisputeStatus != "PendingReview");
+            }
+            else if (subTab == "graded")
+            {
+                filtered = all.Where(s => s.Status == "Graded" && s.DisputeStatus != "PendingReview");
+            }
+            else if (subTab == "dispute")
+            {
+                filtered = all.Where(s => s.DisputeStatus == "PendingReview");
+            }
+
+            var tickets = await _forumRepository.GetAllTicketsAsync();
+
+            // Calculate difficulty statistics for each question based on ALL submissions for this quiz
+            var allAnswersForQuiz = all.SelectMany(s => s.Answers).ToList();
+            var questionStats = allAnswersForQuiz
+                .GroupBy(a => a.QuestionId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => {
+                        var answersWithDifficulty = g.Where(a => !string.IsNullOrEmpty(a.Difficulty)).ToList();
+                        int total = answersWithDifficulty.Count;
+                        int easy = answersWithDifficulty.Count(a => a.Difficulty == "Easy");
+                        int medium = answersWithDifficulty.Count(a => a.Difficulty == "Medium");
+                        int hard = answersWithDifficulty.Count(a => a.Difficulty == "Hard");
+
+                        decimal easyRate = total > 0 ? ((decimal)easy / total) * 100m : 0m;
+                        decimal mediumRate = total > 0 ? ((decimal)medium / total) * 100m : 0m;
+                        decimal hardRate = total > 0 ? ((decimal)hard / total) * 100m : 0m;
+
+                        return new
+                        {
+                            EasyRate = Math.Round(easyRate, 1),
+                            MediumRate = Math.Round(mediumRate, 1),
+                            HardRate = Math.Round(hardRate, 1)
+                        };
+                    }
+                );
+
+            var quiz = await _questionRepository.GetQuizByTitleAsync(quizTitle);
+            decimal totalScore = quiz?.TotalScore ?? 10.00m;
+
+            return filtered.Select(s => {
+                var dto = new SubmissionDTO
+                {
+                    StudentId = s.StudentId,
+                    StudentName = s.Student.Name,
+                    Status = s.Status,
+                    FinalScore = s.FinalScore,
+                    SurveyDifficulty = s.SurveyDifficulty,
+                    SurveyPainPoint = s.SurveyPainPoint,
+                    DisputeStatus = s.DisputeStatus,
+                    IsFlagged = (s.SurveyDifficulty == "Hard" && s.FinalScore >= 0.80m * totalScore),
+                    Answers = s.Answers.Select(a => {
+                        var stats = questionStats.ContainsKey(a.QuestionId)
+                            ? questionStats[a.QuestionId]
+                            : new { EasyRate = 0m, MediumRate = 0m, HardRate = 0m };
+
+                        return new SubmissionAnswerDTO
+                        {
+                            QuestionId = a.QuestionId,
+                            QuestionPrompt = a.Question.Prompt,
+                            QuestionTopic = a.Question.Topic,
+                            QuestionType = a.Question.Type,
+                            StudentAnswer = a.StudentAnswer,
+                            IsCorrect = a.IsCorrect,
+                            TeacherTag = a.TeacherTag,
+                            Difficulty = a.Difficulty,
+                            CommentNote = a.CommentNote,
+                            MaxScore = a.Question.MaxScore,
+                            EarnedScore = a.EarnedScore,
+                            EasyRate = stats.EasyRate,
+                            MediumRate = stats.MediumRate,
+                            HardRate = stats.HardRate,
+                            MarkingGuide = a.Question.MarkingGuide,
+                            TeacherFeedback = a.TeacherFeedback
+                        };
+                    }).ToList()
+                };
+
+                // For dispute tab, override SurveyPainPoint display text with live ticket reason
+                if (subTab == "dispute")
+                {
+                    var ticket = tickets.FirstOrDefault(t => t.StudentId == s.StudentId && t.Status == "Pending" && s.Answers.Any(a => a.QuestionId == t.QuestionId));
+                    if (ticket != null)
+                    {
+                        dto.SurveyPainPoint = $"\"{ticket.Msg}\"";
+                    }
+                }
+
+                return dto;
+            }).ToList();
         }
 
-
-
+        // Team Member 4 - FIXED Implementation of GradeSubmissionAsync
         public async Task GradeSubmissionAsync(string studentId, string quizTitle, List<GradeQuestionItem> grades)
         {
             var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, quizTitle);
@@ -108,104 +198,52 @@ namespace CaseLabBase.BLL.Services
             await _submissionRepository.SaveSubmissionAsync(submission);
         }
 
-
-        //Team Member 5 - Ethan - Implement of instructor dispute resolution and manual score override processing
+        // Team Member 5 - Ethan: Implement individual question dispute resolution
         public async Task ResolveDisputeAsync(string studentId, string quizTitle, int questionId, bool isApproved, decimal manualOverrideScore)
         {
-            // FIXED: Fully qualified with 'System.' to avoid namespace errors if 'using System;' is missing
-            // Validate the required dispute information.
-            if (string.IsNullOrWhiteSpace(studentId))
-            {
-                throw new System.ArgumentException("Student ID is required.", nameof(studentId));
-            }
-
-            if (string.IsNullOrWhiteSpace(quizTitle))
-            {
-                throw new System.ArgumentException("Quiz title is required.", nameof(quizTitle));
-            }
-
-            if (questionId <= 0)
-            {
-                throw new System.ArgumentException(
-                    "A valid question ID is required.",
-                    nameof(questionId)
-                );
-            }
-
-            if (manualOverrideScore < 0)
-            {
-                throw new System.ArgumentException(
-                    "The manual override score cannot be negative.",
-                    nameof(manualOverrideScore)
-                );
-            }
-
-            // Retrieve the student's submission and its associated answers.
             var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, quizTitle);
-
-            // FIXED: Fetch the corresponding dispute ticket from database to update its status
             var ticket = await _forumRepository.GetTicketAsync(studentId, questionId);
+            if (submission == null || ticket == null) return;
 
-            if (submission == null || ticket == null)
-            {
-                // FIXED: Using return instead of throwing raw exception to match standard CaseLab controller fallback
-                return;
-            }
-
-            // Locate the answer associated with the disputed question.
-            var disputedAnswer = submission.Answers.FirstOrDefault(answer => answer.QuestionId == questionId);
-
-            if (disputedAnswer == null)
-            {
-                throw new System.InvalidOperationException(
-                    $"Question '{questionId}' was not found in the student's submission."
-                );
-            }
+            var essayAnswer = submission.Answers.FirstOrDefault(a => a.QuestionId == questionId);
 
             if (isApproved)
             {
-                // Apply the score selected by the instructor.
-                disputedAnswer.EarnedScore = manualOverrideScore;
-
-                // FIXED: Update answer correctness and tag based on the 80% maximum score threshold
-                if (manualOverrideScore >= 0.80m * disputedAnswer.Question.MaxScore)
+                if (essayAnswer != null)
                 {
-                    disputedAnswer.IsCorrect = true;
-                    disputedAnswer.TeacherTag = "Passed Framework Checklist via Manual Override Revision";
+                    essayAnswer.EarnedScore = manualOverrideScore;
+                    if (manualOverrideScore >= 0.80m * essayAnswer.Question.MaxScore)
+                    {
+                        essayAnswer.IsCorrect = true;
+                        essayAnswer.TeacherTag = "Passed Framework Checklist via Manual Override Revision";
+                    }
+                    else
+                    {
+                        essayAnswer.TeacherTag = $"Partial Credit Granted: Adjusted to {manualOverrideScore} pts";
+                    }
+                    await _submissionRepository.SaveSubmissionAnswerAsync(essayAnswer);
                 }
-                else
-                {
-                    disputedAnswer.TeacherTag = $"Partial Credit Granted: Adjusted to {manualOverrideScore} pts";
-                }
 
-                await _submissionRepository.SaveSubmissionAnswerAsync(disputedAnswer);
-
-                // Recalculate the overall submission score after the override.
-                submission.FinalScore = submission.Answers.Sum(answer => answer.EarnedScore);
-
-                // FIXED: Set DisputeStatus to "Resolved_Accepted" (instead of "Approved") to match UI filters & database constraints
+                submission.FinalScore = submission.Answers.Sum(a => a.EarnedScore);
                 submission.DisputeStatus = "Resolved_Accepted";
                 ticket.Status = "Accepted";
 
-                // FIXED: Log system comment in the private dispute chat thread
                 var comment = new Comment
                 {
                     IsPrivate = true,
                     StudentId = studentId,
                     Topic = "Dispute Q" + questionId,
                     Sender = "Dr. Ali Bayeh (Instructor)",
-                    Message = $"🟢 [Dispute Resolved]: Evaluation audited manually. Variable point score overridden at: {manualOverrideScore} / {disputedAnswer.Question.MaxScore} pts.",
-                    Timestamp = System.DateTime.Now
+                    Message = $"🟢 [Dispute Resolved]: Evaluation audited manually. Variable point score overridden at: {manualOverrideScore} / {(essayAnswer?.Question.MaxScore ?? 0.00m)} pts.",
+                    Timestamp = DateTime.Now
                 };
                 await _forumRepository.AddCommentAsync(comment);
             }
             else
             {
-                // FIXED: Set DisputeStatus to "Resolved_Rejected" (instead of "Rejected") to match UI filters
                 submission.DisputeStatus = "Resolved_Rejected";
                 ticket.Status = "Rejected";
 
-                // FIXED: Log system comment in the private dispute chat thread for rejection
                 var comment = new Comment
                 {
                     IsPrivate = true,
@@ -213,19 +251,16 @@ namespace CaseLabBase.BLL.Services
                     Topic = "Dispute Q" + questionId,
                     Sender = "Dr. Ali Bayeh (Instructor)",
                     Message = "❌ [Dispute Concluding]: Initial evaluation parameters sustained.",
-                    Timestamp = System.DateTime.Now
+                    Timestamp = DateTime.Now
                 };
                 await _forumRepository.AddCommentAsync(comment);
             }
 
             await _submissionRepository.SaveSubmissionAsync(submission);
-
-            // FIXED: Save the resolved ticket state back to database (otherwise it will remain 'Pending' on UI dashboard)
             await _forumRepository.SaveTicketAsync(ticket);
         }
 
-
-        // Han - Implement ResolveSubmissionDisputeAsync
+        // Han - Implement ResolveSubmissionDisputeAsync for the entire submission context
         public async Task ResolveSubmissionDisputeAsync(string studentId, string quizTitle, bool isApproved)
         {
             var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, quizTitle);
@@ -257,23 +292,20 @@ namespace CaseLabBase.BLL.Services
             await _forumRepository.AddCommentAsync(comment);
         }
 
-
-
-        // Han  - Implement GetErrorTagsAsync in InstructorService
+        // Han - Implement GetErrorTagsAsync
         public async Task<List<string>> GetErrorTagsAsync()
         {
             var list = await _submissionRepository.GetErrorTagsAsync();
             return list.Select(t => t.Tag).ToList();
         }
 
-        // Han  - Implement AddErrorTagAsync in InstructorService
+        // Han - Implement AddErrorTagAsync
         public async Task AddErrorTagAsync(string tag)
         {
             await _submissionRepository.AddErrorTagAsync(new ErrorTag { Tag = tag });
         }
 
-
-        // Member Han  - Implement UpdateAnswerKeyAsync in InstructorService
+        // Member Han - Implement UpdateAnswerKeyAsync with class-wide re-grading
         public async Task UpdateAnswerKeyAsync(int questionId, string correctKey)
         {
             var q = await _questionRepository.GetByIdAsync(questionId);
@@ -311,6 +343,5 @@ namespace CaseLabBase.BLL.Services
         {
             await _submissionRepository.RenameErrorTagAsync(oldTag, newTag);
         }
-
     }
 }
