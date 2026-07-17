@@ -71,5 +71,11 @@ namespace CaseLabBase.DAL.Repositories
             _context.Quizzes.Update(quiz);
             await _context.SaveChangesAsync();
         }
+
+        public async Task DeleteQuizAsync(Quiz quiz)
+        {
+            _context.Quizzes.Remove(quiz);
+            await _context.SaveChangesAsync();
+        }
     }
 }

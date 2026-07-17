@@ -26,7 +26,6 @@ C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\rjsmrazo
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\rjsmcshtml.dswa.cache.json
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\scopedcss\bundle\CaseLabBase.Web.styles.css
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\9ufwhtjs64-{0}-rjdbzjbjp9-rjdbzjbjp9.gz
-C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\xxafrsm3ut-{0}-g7n4s1vejf-g7n4s1vejf.gz
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\staticwebassets.build.json
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\staticwebassets.build.json.cache
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\staticwebassets.development.json
@@ -39,3 +38,4 @@ C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\refint\C
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\CaseLabBase.Web.pdb
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\CaseLabBase.Web.genruntimeconfig.cache
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\ref\CaseLabBase.Web.dll
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\xxafrsm3ut-{0}-eg5xmo01ya-eg5xmo01ya.gz

@@ -47,20 +47,30 @@ namespace CaseLabBase.BLL.Services
         }
 
         //-------------------------------------------------------------------
-        
+
+        // Implement GetActiveQuestionsAsync in QuestionService
         public async Task<List<QuestionDTO>> GetActiveQuestionsAsync(string quizTitle)
         {
-    throw new System.NotImplementedException("TODO: Team Member 2 - Implement GetActiveQuestionsAsync in QuestionService.cs");
-}
-
+            var list = await _questionRepository.GetByQuizTitleAsync(quizTitle);
+            return list.Select(q => new QuestionDTO
+            {
+                Id = q.Id,
+                Type = q.Type,
+                Topic = q.Topic,
+                Prompt = q.Prompt,
+                Options = q.Options != null ? System.Text.Json.JsonSerializer.Deserialize<List<string>>(q.Options) : null,
+                CorrectKey = q.CorrectKey,
+                MaxScore = q.MaxScore,
+                MarkingGuide = q.MarkingGuide
+            }).ToList();
+        }
 
 
 
         //------------------------------------------------------------------
-        //Member 1- Han: Implement PublishNewTaskAsync in QuestionService
+        // Member 1- Han: Implement PublishNewTaskAsync in QuestionService
         public async Task PublishNewTaskAsync(PublishTaskRequest request)
         {
-            
             // 1. Validate: sum of question weights must equal total score
             decimal sumOfWeights = request.Questions.Sum(q => q.MaxScore);
             if (sumOfWeights != request.TotalScore)
@@ -68,7 +78,16 @@ namespace CaseLabBase.BLL.Services
                 throw new System.ArgumentException($"The sum of question scores ({sumOfWeights:0.00}) must equal the quiz total score ({request.TotalScore:0.00}).");
             }
 
-            // 2. Create and add Quiz entity (will overwrite if exists)
+            // Overwrite: If a quiz with the same title exists, clear submissions first
+            // to avoid foreign key violations in SubmissionAnswers, then delete the quiz
+            var existingQuiz = await _questionRepository.GetQuizByTitleAsync(request.Title);
+            if (existingQuiz != null)
+            {
+                await _submissionRepository.DeleteSubmissionsByQuizTitleAsync(request.Title);
+                await _questionRepository.DeleteQuizAsync(existingQuiz);
+            }
+
+            // 2. Create and add new Quiz entity
             var quizEntity = new Quiz
             {
                 Title = request.Title,
@@ -90,8 +109,9 @@ namespace CaseLabBase.BLL.Services
                 var questionEntity = Factory.QuestionFactory.Create(q.Type, request.Title, q.Prompt, q.Topic, optionsJson, q.CorrectKey ?? "", q.MaxScore);
                 await _questionRepository.AddAsync(questionEntity);
             }
-            
-}
+        }
+
+
         public async Task UpdateQuestionAsync(UpdateQuestionRequest request)
         {
             var q = await _questionRepository.GetByIdAsync(request.Id);

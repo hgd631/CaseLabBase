@@ -164,5 +164,12 @@ namespace CaseLabBase.DAL.Repositories
 
             await _context.SaveChangesAsync();
         }
+
+        public async Task DeleteSubmissionsByQuizTitleAsync(string quizTitle)
+        {
+            var list = await _context.Submissions.Where(s => s.QuizTitle == quizTitle).ToListAsync();
+            _context.Submissions.RemoveRange(list);
+            await _context.SaveChangesAsync();
+        }
     }
 }

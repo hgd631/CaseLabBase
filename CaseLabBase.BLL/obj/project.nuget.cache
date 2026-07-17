@@ -43,15 +43,5 @@
     "C:\\Users\\handa\\.nuget\\packages\\system.security.cryptography.pkcs\\9.0.4\\system.security.cryptography.pkcs.9.0.4.nupkg.sha512",
     "C:\\Users\\handa\\.nuget\\packages\\system.security.cryptography.protecteddata\\9.0.4\\system.security.cryptography.protecteddata.9.0.4.nupkg.sha512"
   ],
-  "logs": [
-    {
-      "code": "Undefined",
-      "level": "Warning",
-      "message": "Problem reading the cache file C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.BLL\\obj\\project.nuget.cache : '<' is an invalid start of a property name. Expected a '\"'. Path: $ | LineNumber: 2 | BytePositionInLine: 0.",
-      "projectPath": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.BLL\\CaseLabBase.BLL.csproj",
-      "warningLevel": 1,
-      "filePath": "C:\\Users\\handa\\source\\uni\\CaseLabBase\\CaseLabBase.BLL\\CaseLabBase.BLL.csproj",
-      "targetGraphs": []
-    }
-  ]
+  "logs": []
 }

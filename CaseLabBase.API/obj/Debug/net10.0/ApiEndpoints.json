@@ -79,7 +79,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "CaseLab.API.Controllers.InstructorController",
+    "ContainingType": "CaseLabBase.API.Controllers.InstructorController",
     "Method": "GetAnalytics",
     "RelativePath": "api/Instructor/analytics",
     "HttpMethod": "GET",
@@ -95,7 +95,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "CaseLab.API.Controllers.InstructorController",
+    "ContainingType": "CaseLabBase.API.Controllers.InstructorController",
     "Method": "GetErrorTags",
     "RelativePath": "api/Instructor/error-tags",
     "HttpMethod": "GET",
@@ -105,7 +105,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "CaseLab.API.Controllers.InstructorController",
+    "ContainingType": "CaseLabBase.API.Controllers.InstructorController",
     "Method": "AddErrorTag",
     "RelativePath": "api/Instructor/error-tags",
     "HttpMethod": "POST",
@@ -121,7 +121,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "CaseLab.API.Controllers.InstructorController",
+    "ContainingType": "CaseLabBase.API.Controllers.InstructorController",
     "Method": "GradeSubmission",
     "RelativePath": "api/Instructor/grade",
     "HttpMethod": "POST",
@@ -137,7 +137,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "CaseLab.API.Controllers.InstructorController",
+    "ContainingType": "CaseLabBase.API.Controllers.InstructorController",
     "Method": "RenameErrorTag",
     "RelativePath": "api/Instructor/rename-error-tag",
     "HttpMethod": "POST",
@@ -146,14 +146,14 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "CaseLab.API.Controllers.RenameErrorTagRequest",
+        "Type": "CaseLabBase.API.Controllers.RenameErrorTagRequest",
         "IsRequired": true
       }
     ],
     "ReturnTypes": []
   },
   {
-    "ContainingType": "CaseLab.API.Controllers.InstructorController",
+    "ContainingType": "CaseLabBase.API.Controllers.InstructorController",
     "Method": "ResolveDispute",
     "RelativePath": "api/Instructor/resolve-dispute",
     "HttpMethod": "POST",
@@ -169,7 +169,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "CaseLab.API.Controllers.InstructorController",
+    "ContainingType": "CaseLabBase.API.Controllers.InstructorController",
     "Method": "ResolveSubmissionDispute",
     "RelativePath": "api/Instructor/resolve-submission-dispute",
     "HttpMethod": "POST",
@@ -185,7 +185,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "CaseLab.API.Controllers.InstructorController",
+    "ContainingType": "CaseLabBase.API.Controllers.InstructorController",
     "Method": "GetRoster",
     "RelativePath": "api/Instructor/roster",
     "HttpMethod": "GET",
@@ -206,7 +206,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "CaseLab.API.Controllers.InstructorController",
+    "ContainingType": "CaseLabBase.API.Controllers.InstructorController",
     "Method": "UpdateAnswerKey",
     "RelativePath": "api/Instructor/update-answer-key",
     "HttpMethod": "POST",
@@ -215,7 +215,7 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "CaseLab.API.Controllers.UpdateAnswerKeyRequest",
+        "Type": "CaseLabBase.API.Controllers.UpdateAnswerKeyRequest",
         "IsRequired": true
       }
     ],

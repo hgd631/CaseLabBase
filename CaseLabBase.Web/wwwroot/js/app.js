@@ -84,7 +84,7 @@ async function loginAsRole(userId) {
         if (!res.ok) throw new Error("Could not log in user.");
 
         state.user = await res.json();
-        localStorage.setItem('caselab_user', JSON.stringify(state.user));
+        SafeStorage.setItem('caselab_user', JSON.stringify(state.user));
 
         if (state.user.role === 'student') {
             window.location.href = "/Student/Dashboard";
@@ -101,7 +101,7 @@ async function loginAsRole(userId) {
 
 function logoutSystem() {
     state.user = null;
-    localStorage.removeItem('caselab_user');
+    SafeStorage.removeItem('caselab_user');
     clearInterval(state.examTimerInterval);
     clearInterval(state._notifPollInterval);
     window.location.href = "/";
@@ -546,63 +546,50 @@ function lockExamAndOpenSurvey() {
 
     const surveyContainer = document.getElementById('studentSurveyQuestionsRepetitionArea');
     if (!surveyContainer) return;
-    surveyContainer.innerHTML = "";
 
-    state.questions.forEach((q, idx) => {
-        const studentAns = state.studentAnswers[q.id] || "No response recorded.";
-
-        let blockHTML = `
-            <div class="glass-card mb-4" style="background-color: #ffffff; border: 1px solid var(--border-color);">`;
-        if (state.quizMode === "PDF") {
-            blockHTML += `<h5 class="fw-bold text-dark mb-3">Question #${idx + 1} (${q.type})</h5>`;
-        } else {
-            blockHTML += `<h5 class="fw-bold text-dark mb-3">Question #${idx + 1}: ${q.prompt}</h5>`;
-        }
-        blockHTML += `
-                <div class="p-2 border rounded font-monospace small mb-3" style="border-color: var(--border-color) !important; color: var(--accent-indigo) !important; background-color: #f8fafc;">
-                    <strong>[Student Output Data]:</strong> ${studentAns}
-                </div>
-                <div class="mt-3">
-                    <label class="form-label small fw-bold text-dark d-block">Rate cognitive complexity/difficulty for Question #${idx + 1}:</label>
-                    <div class="survey-emoji-group">
-                        <div class="emoji-btn" id="emoji-easy-${q.id}" data-val="Easy" onclick="selectSurveyDifficulty(${q.id}, 'Easy')">
-                            😊 <span>Easy</span>
-                        </div>
-                        <div class="emoji-btn selected" id="emoji-medium-${q.id}" data-val="Medium" onclick="selectSurveyDifficulty(${q.id}, 'Medium')">
-                            😐 <span>Medium</span>
-                        </div>
-                        <div class="emoji-btn" id="emoji-hard-${q.id}" data-val="Hard" onclick="selectSurveyDifficulty(${q.id}, 'Hard')">
-                            🤯 <span>Hard</span>
-                        </div>
+    
+    surveyContainer.innerHTML = `
+        <div class="glass-card mb-4" style="background-color: #ffffff; border: 1px solid var(--border-color);">
+            <h5 class="fw-bold text-dark mb-3">Overall Quiz Survey & Feedback</h5>
+            <p class="text-secondary small">Please provide your feedback on the overall difficulty and any challenges you faced during this assessment.</p>
+            
+            <div class="mt-3">
+                <label class="form-label small fw-bold text-dark d-block">Rate the overall difficulty of this quiz:</label>
+                <div class="survey-emoji-group">
+                    <div class="emoji-btn" id="emoji-easy-overall" data-val="Easy" onclick="selectSurveyDifficultyOverall('Easy')">
+                        😊 <span>Easy</span>
                     </div>
-                    <div class="mt-3">
-                        <label class="form-label small fw-bold text-dark d-block">Explain any pain points or roadblocks:</label>
-                        <input type="text" class="form-control form-control-sm" id="survey-note-node-${q.id}" placeholder="e.g. Struggled mapping text abstraction layers..." oninput="updateCharCount(this, ${q.id})">
-                        <div class="text-end text-secondary small mt-1" style="font-size: 11px;"><span id="survey-char-count-${q.id}">0</span>/200 chars</div>
+                    <div class="emoji-btn selected" id="emoji-medium-overall" data-val="Medium" onclick="selectSurveyDifficultyOverall('Medium')">
+                        😐 <span>Medium</span>
+                    </div>
+                    <div class="emoji-btn" id="emoji-hard-overall" data-val="Hard" onclick="selectSurveyDifficultyOverall('Hard')">
+                        🤯 <span>Hard</span>
                     </div>
                 </div>
-            </div>`;
+            </div>
+            
+            <div class="mt-4">
+                <label class="form-label small fw-bold text-dark d-block">Explain any pain points, roadblocks, or feedback:</label>
+                <textarea class="form-control text-dark bg-white" id="survey-note-overall" rows="4" placeholder="e.g. I struggled with time management or the MCQ choices were tricky..."></textarea>
+            </div>
+        </div>
+    `;
 
-        state.studentSurvey[q.id] = { difficulty: "Medium", note: "" };
-        surveyContainer.innerHTML += blockHTML;
-    });
+   
+    state.studentSurvey = { difficulty: "Medium", note: "" };
 }
-
-function selectSurveyDifficulty(qId, level) {
+function selectSurveyDifficultyOverall(level) {
     const opts = ['Easy', 'Medium', 'Hard'];
     opts.forEach(o => {
-        const btn = document.getElementById(`emoji-${o.toLowerCase()}-${qId}`);
+        const btn = document.getElementById(`emoji-${o.toLowerCase()}-overall`);
         if (btn) btn.classList.remove('selected');
     });
 
-    const selectedBtn = document.getElementById(`emoji-${level.toLowerCase()}-${qId}`);
+    const selectedBtn = document.getElementById(`emoji-${level.toLowerCase()}-overall`);
     if (selectedBtn) selectedBtn.classList.add('selected');
 
-    if (!state.studentSurvey[qId]) state.studentSurvey[qId] = {};
-    state.studentSurvey[qId].difficulty = level;
+    state.studentSurvey.difficulty = level;
 }
-
-
 
 function updateCharCount(input, qId) {
     if (input.value.length > 200) {
@@ -615,12 +602,10 @@ async function completeSurveyPipeline() {
     //Team Member 2: Kelly- Collect exam answer responses and reflections, submitting payloads to exam & survey endpoints.
 
     // FIXED: Collect reflections from UI inputs into state before preparing the payload
-    state.questions.forEach(q => {
-        const noteNode = document.getElementById(`survey-note-node-${q.id}`);
-        if (noteNode && state.studentSurvey[q.id]) {
-            state.studentSurvey[q.id].note = noteNode.value || "";
-        }
-    });
+    const noteNode = document.getElementById('survey-note-overall');
+    const commentNote = noteNode ? noteNode.value.trim() : "";
+    const difficulty = state.studentSurvey.difficulty || "Medium";
+
     try {
         const answers = state.questions.map(q => ({
             questionId: q.id,
@@ -644,15 +629,6 @@ async function completeSurveyPipeline() {
             throw new Error(await examRes.text());
         }
 
-        //build survey payload 
-        const reflections = Object.entries(state.studentSurvey).map(([questionId, survey]) => ({
-            // FIXED: Corrected spelling typo 'questioId' -> 'questionId' to align with C# DTO
-            questionId: Number(questionId),
-            difficulty: survey.difficulty,
-            commentNote: survey.note
-        }));
-
-       
         //submit survey
         const surveyRes = await fetch(`${API_BASE}/student/submit-survey`, {
             method: "POST",
@@ -662,7 +638,8 @@ async function completeSurveyPipeline() {
             body: JSON.stringify({
                 studentId: state.user.id,
                 quizTitle: state.activeTaskTitle,
-                reflections: reflections
+                difficulty: difficulty,
+                commentNote: commentNote
             })
         });
 
@@ -674,7 +651,7 @@ async function completeSurveyPipeline() {
     }
     catch (err) {
         console.error(err);
-        alert('Submission failed: ' + err.message); 
+        alert('Submission failed: ' + err.message);
     }
 }
 
@@ -1006,20 +983,39 @@ function enterCreateQuizMode() {
     const createContainer = document.getElementById('quizCreateViewContainer');
     if (createContainer) createContainer.classList.remove('d-none');
 
-    // Reset create form inputs to blank
-    document.getElementById('inputTaskTitle').value = "";
-    document.getElementById('inputQuizTimeLimit').value = 40;
-    document.getElementById('inputQuizTotalScore').value = 10.0;
-    document.getElementById('inputQuizDeadline').value = "";
-    document.getElementById('inputIsQuizOpen').checked = true;
-    document.getElementById('inputIsForumOpen').checked = true;
-    document.getElementById('inputQuizMode').value = "Manual";
-    document.getElementById('pdfUploadWrapper').classList.add('d-none');
-    document.getElementById('quizPdfStatusLabel').innerText = "No PDF document attached.";
+    // Reset create form inputs to blank with safe null-checks
+    const inputTitle = document.getElementById('inputTaskTitle');
+    if (inputTitle) inputTitle.value = "";
+
+    const inputTimeLimit = document.getElementById('inputQuizTimeLimit');
+    if (inputTimeLimit) inputTimeLimit.value = 40;
+
+    const inputTotalScore = document.getElementById('inputQuizTotalScore');
+    if (inputTotalScore) inputTotalScore.value = 10.0;
+
+    const inputDeadline = document.getElementById('inputQuizDeadline');
+    if (inputDeadline) inputDeadline.value = "";
+
+    const inputIsOpen = document.getElementById('inputIsQuizOpen');
+    if (inputIsOpen) inputIsOpen.checked = true;
+
+    const inputIsForumOpen = document.getElementById('inputIsForumOpen');
+    if (inputIsForumOpen) inputIsForumOpen.checked = true;
+
+    const inputQuizMode = document.getElementById('inputQuizMode');
+    if (inputQuizMode) inputQuizMode.value = "Manual";
+
+    const pdfWrapper = document.getElementById('pdfUploadWrapper');
+    if (pdfWrapper) pdfWrapper.classList.add('d-none');
+
+    const pdfLabel = document.getElementById('quizPdfStatusLabel');
+    if (pdfLabel) pdfLabel.innerText = "No PDF document attached.";
 
     const container = document.getElementById('custom-questions-list-container');
     if (container) container.innerHTML = "";
 }
+
+
 async function switchQuizSubTab(subTab) {
     state.activeQuizSubTab = subTab;
     document.querySelectorAll('#quizSubTabs .nav-link-custom').forEach(l => l.classList.remove('active'));
@@ -1272,141 +1268,143 @@ async function switchTeacherTab(tab) {
         }
     }
     if (tab === 'forum') {
-        initializeInstructorDashboardForum();
+        if (typeof initializeInstructorDashboardForum === 'function') {
+            initializeInstructorDashboardForum();
+        }
     }
 }
-async function loadInstructorAnalytics() {
-    try {
-        const titleQuery = state.selectedQuizTitle ? `?quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
-        const res = await fetch(`${API_BASE}/instructor/analytics${titleQuery}`);
-        if (!res.ok) throw new Error("Failed to load analytics.");
+    async function loadInstructorAnalytics() {
+        try {
+            const titleQuery = state.selectedQuizTitle ? `?quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
+            const res = await fetch(`${API_BASE}/instructor/analytics${titleQuery}`);
+            if (!res.ok) throw new Error("Failed to load analytics.");
 
-        const data = await res.json();
-        const titleEl = document.getElementById('analyticsTaskTitle');
-        if (titleEl) titleEl.innerText = data.activeTaskTitle;
+            const data = await res.json();
+            const titleEl = document.getElementById('analyticsTaskTitle');
+            if (titleEl) titleEl.innerText = data.activeTaskTitle;
 
-        document.getElementById('analyticsSubmissionCount').innerText = `${data.totalSubmissionsCount} / 60 Students`;
+            document.getElementById('analyticsSubmissionCount').innerText = `${data.totalSubmissionsCount} / 60 Students`;
 
-        const failBadge = document.getElementById('analyticsFailureRate');
-        failBadge.innerText = `${data.failureRatePercentage}% Failure Rate`;
-        if (data.failureRatePercentage > 40) {
-            failBadge.className = "badge-custom badge-custom-rose";
-        } else {
-            failBadge.className = "badge-custom badge-custom-emerald";
-        }
-
-        document.getElementById('classAvgLabelField').innerText = `Class Avg: ${data.classAverageScore} / ${state.totalScore}`;
-
-        // Fetch active questions for the selected quiz to update state.questions
-        const resQ = await fetch(`${API_BASE}/questions${titleQuery}`);
-        if (resQ.ok) {
-            const dataQ = await resQ.json();
-            state.questions = dataQ.questions;
-        }
-
-        const inlineEditSec = document.getElementById('instructorPerQuestionInlineEditSection');
-        if (inlineEditSec) {
-            if (data.totalSubmissionsCount > 0) {
-                renderInlineQuestionEditSection();
+            const failBadge = document.getElementById('analyticsFailureRate');
+            failBadge.innerText = `${data.failureRatePercentage}% Failure Rate`;
+            if (data.failureRatePercentage > 40) {
+                failBadge.className = "badge-custom badge-custom-rose";
             } else {
-                inlineEditSec.style.display = "none";
+                failBadge.className = "badge-custom badge-custom-emerald";
             }
-        }
 
-        await loadQuestionDiagnostics();
-    } catch (err) {
-        console.error(err);
-    }
-}
-async function saveActiveQuizSettings() {
-    const deadlineRaw = document.getElementById('edit-quiz-deadline').value;
-    const deadlineVal = deadlineRaw ? convertReginaToUtcIso(deadlineRaw) : null;
-    const timeLimitVal = parseInt(document.getElementById('edit-quiz-timelimit').value) || 40;
-    const isQuizOpenVal = document.getElementById('edit-quiz-isopen').checked;
-    const isForumOpenVal = document.getElementById('edit-quiz-isforumopen').checked;
+            document.getElementById('classAvgLabelField').innerText = `Class Avg: ${data.classAverageScore} / ${state.totalScore}`;
 
-    try {
-        const payload = {
-            title: state.selectedQuizTitle || state.activeTaskTitle,
-            timeLimitMinutes: timeLimitVal,
-            isQuizOpen: isQuizOpenVal,
-            isForumOpen: isForumOpenVal,
-            deadlineString: deadlineVal
-        };
+            // Fetch active questions for the selected quiz to update state.questions
+            const resQ = await fetch(`${API_BASE}/questions${titleQuery}`);
+            if (resQ.ok) {
+                const dataQ = await resQ.json();
+                state.questions = dataQ.questions;
+            }
 
-        const res = await fetch(`${API_BASE}/questions/update-settings`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) throw new Error("Failed to save quiz settings.");
-
-        alert("✔ Quiz settings updated successfully.");
-        await switchQuizSubTab('view');
-    } catch (err) {
-        alert(err.message);
-    }
-}
-
-
-// Member Han  - Load question diagnostics for the active quiz,
-//compiling student feedback difficulty counts and flagging potential anomaly rating discrepancies.
-
-async function loadQuestionDiagnostics() {
-    const container = document.getElementById('analyticsQuestionDiagnosticsContainer');
-    if (!container) return;
-
-    try {
-        const titleQuery = state.selectedQuizTitle ? `&quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
-        const resSub = await fetch(`${API_BASE}/instructor/roster?subTab=all${titleQuery}`);
-        if (!resSub.ok) throw new Error();
-        const submissions = await resSub.json();
-
-        if (!state.questions || state.questions.length === 0) {
-            container.innerHTML = `<div class="text-center text-secondary py-3 small">No questions have been published.</div>`;
-            return;
-        }
-
-        let html = "";
-        state.questions.forEach((q, qIdx) => {
-            let totalAnswers = 0;
-            let correctAnswers = 0;
-            let easyCount = 0;
-            let mediumCount = 0;
-            let hardCount = 0;
-            let anomalies = [];
-
-            submissions.forEach(sub => {
-                const ans = sub.answers.find(a => a.questionId === q.id);
-                if (ans && ans.studentAnswer) {
-                    totalAnswers++;
-                    if (ans.isCorrect === true) {
-                        correctAnswers++;
-                    }
-                    if (ans.difficulty === 'Easy') easyCount++;
-                    else if (ans.difficulty === 'Medium') mediumCount++;
-                    else if (ans.difficulty === 'Hard') hardCount++;
-
-                    // Flag rating anomalies: scored high but rated "Hard"
-                    if (ans.isCorrect === true && ans.difficulty === 'Hard') {
-                        anomalies.push({
-                            studentName: sub.studentName,
-                            studentId: sub.studentId,
-                            note: ans.commentNote || "No reflection notes logged."
-                        });
-                    }
+            const inlineEditSec = document.getElementById('instructorPerQuestionInlineEditSection');
+            if (inlineEditSec) {
+                if (data.totalSubmissionsCount > 0) {
+                    renderInlineQuestionEditSection();
+                } else {
+                    inlineEditSec.style.display = "none";
                 }
+            }
+
+            await loadQuestionDiagnostics();
+        } catch (err) {
+            console.error(err);
+        }
+    }
+    async function saveActiveQuizSettings() {
+        const deadlineRaw = document.getElementById('edit-quiz-deadline').value;
+        const deadlineVal = deadlineRaw ? convertReginaToUtcIso(deadlineRaw) : null;
+        const timeLimitVal = parseInt(document.getElementById('edit-quiz-timelimit').value) || 40;
+        const isQuizOpenVal = document.getElementById('edit-quiz-isopen').checked;
+        const isForumOpenVal = document.getElementById('edit-quiz-isforumopen').checked;
+
+        try {
+            const payload = {
+                title: state.selectedQuizTitle || state.activeTaskTitle,
+                timeLimitMinutes: timeLimitVal,
+                isQuizOpen: isQuizOpenVal,
+                isForumOpen: isForumOpenVal,
+                deadlineString: deadlineVal
+            };
+
+            const res = await fetch(`${API_BASE}/questions/update-settings`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
             });
 
-            const successRate = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
-            const easyPct = totalAnswers > 0 ? Math.round((easyCount / totalAnswers) * 100) : 0;
-            const medPct = totalAnswers > 0 ? Math.round((mediumCount / totalAnswers) * 100) : 0;
-            const hardPct = totalAnswers > 0 ? Math.round((hardCount / totalAnswers) * 100) : 0;
+            if (!res.ok) throw new Error("Failed to save quiz settings.");
 
-            let anomaliesHTML = "";
-            if (anomalies.length > 0) {
-                anomaliesHTML += `
+            alert("✔ Quiz settings updated successfully.");
+            await switchQuizSubTab('view');
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+
+    // Member Han  - Load question diagnostics for the active quiz,
+    //compiling student feedback difficulty counts and flagging potential anomaly rating discrepancies.
+
+    async function loadQuestionDiagnostics() {
+        const container = document.getElementById('analyticsQuestionDiagnosticsContainer');
+        if (!container) return;
+
+        try {
+            const titleQuery = state.selectedQuizTitle ? `&quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
+            const resSub = await fetch(`${API_BASE}/instructor/roster?subTab=all${titleQuery}`);
+            if (!resSub.ok) throw new Error();
+            const submissions = await resSub.json();
+
+            if (!state.questions || state.questions.length === 0) {
+                container.innerHTML = `<div class="text-center text-secondary py-3 small">No questions have been published.</div>`;
+                return;
+            }
+
+            let html = "";
+            state.questions.forEach((q, qIdx) => {
+                let totalAnswers = 0;
+                let correctAnswers = 0;
+                let easyCount = 0;
+                let mediumCount = 0;
+                let hardCount = 0;
+                let anomalies = [];
+
+                submissions.forEach(sub => {
+                    const ans = sub.answers.find(a => a.questionId === q.id);
+                    if (ans && ans.studentAnswer) {
+                        totalAnswers++;
+                        if (ans.isCorrect === true) {
+                            correctAnswers++;
+                        }
+                        if (ans.difficulty === 'Easy') easyCount++;
+                        else if (ans.difficulty === 'Medium') mediumCount++;
+                        else if (ans.difficulty === 'Hard') hardCount++;
+
+                        // Flag rating anomalies: scored high but rated "Hard"
+                        if (ans.isCorrect === true && ans.difficulty === 'Hard') {
+                            anomalies.push({
+                                studentName: sub.studentName,
+                                studentId: sub.studentId,
+                                note: ans.commentNote || "No reflection notes logged."
+                            });
+                        }
+                    }
+                });
+
+                const successRate = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
+                const easyPct = totalAnswers > 0 ? Math.round((easyCount / totalAnswers) * 100) : 0;
+                const medPct = totalAnswers > 0 ? Math.round((mediumCount / totalAnswers) * 100) : 0;
+                const hardPct = totalAnswers > 0 ? Math.round((hardCount / totalAnswers) * 100) : 0;
+
+                let anomaliesHTML = "";
+                if (anomalies.length > 0) {
+                    anomaliesHTML += `
                     <div class="mt-3 p-3 border border-danger rounded bg-danger-subtle" style="background-color: rgba(239, 68, 68, 0.05); border-color: rgba(239, 68, 68, 0.25) !important;">
                         <h6 class="text-danger fw-bold small mb-2 d-flex align-items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
@@ -1420,15 +1418,15 @@ async function loadQuestionDiagnostics() {
                                 </li>`).join('')}
                         </ul>
                     </div>`;
-            } else {
-                anomaliesHTML += `
+                } else {
+                    anomaliesHTML += `
                     <div class="mt-3 p-2 border border-success rounded bg-success-subtle text-success small d-flex align-items-center gap-2" style="background-color: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.25) !important;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         No rating anomalies identified. All responses align with cognitive ratings.
                     </div>`;
-            }
+                }
 
-            html += `
+                html += `
                 <div class="p-3 border rounded bg-white mb-3" style="border-color: var(--border-color) !important;">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <div>
@@ -1464,39 +1462,39 @@ async function loadQuestionDiagnostics() {
 
                     ${anomaliesHTML}
                 </div>`;
-        });
+            });
 
-        container.innerHTML = html;
-    } catch (err) {
-        container.innerHTML = `<div class="alert-custom alert-custom-warning small">Error loading diagnostics dataset.</div>`;
+            container.innerHTML = html;
+        } catch (err) {
+            container.innerHTML = `<div class="alert-custom alert-custom-warning small">Error loading diagnostics dataset.</div>`;
+        }
     }
-}
 
 
-//Member 1-Han: Load question list for the active quiz, rendering inline edit cards with answer key mutation capabilities.
-async function renderInlineQuestionEditSection() {
-    // 1. DOM Check: Grab the UI section and container where the question management UI will render
-    const section = document.getElementById('instructorPerQuestionInlineEditSection');
-    const container = document.getElementById('inlineQuestionEditContainer');
-    if (!section || !container) return; // Guard clause: Abort if these elements do not exist on the current page
+    //Member 1-Han: Load question list for the active quiz, rendering inline edit cards with answer key mutation capabilities.
+    async function renderInlineQuestionEditSection() {
+        // 1. DOM Check: Grab the UI section and container where the question management UI will render
+        const section = document.getElementById('instructorPerQuestionInlineEditSection');
+        const container = document.getElementById('inlineQuestionEditContainer');
+        if (!section || !container) return; // Guard clause: Abort if these elements do not exist on the current page
 
-    try {
-        // 2. Fetch Data: Retrieve the list of quiz questions from the backend API
-        const res = await fetch(`${API_BASE}/questions`);
-        if (!res.ok) return; // Stop if the network response is an error status code
-        const data = await res.json();
+        try {
+            // 2. Fetch Data: Retrieve the list of quiz questions from the backend API
+            const res = await fetch(`${API_BASE}/questions`);
+            if (!res.ok) return; // Stop if the network response is an error status code
+            const data = await res.json();
 
-        // 3. UI Setup: Make the main section wrapper visible and clear out any stale HTML content
-        section.style.display = "block";
-        container.innerHTML = "";
+            // 3. UI Setup: Make the main section wrapper visible and clear out any stale HTML content
+            section.style.display = "block";
+            container.innerHTML = "";
 
-        // 4. Data Processing & Render: Loop through every retrieved question
-        data.questions.forEach(q => {
-            // Check if the question type is Multiple Choice Question (MCQ)
-            if (q.type === "MCQ") {
-                // Inject an inline edit tool that lets an instructor quickly swap the correct answer key
-                // Note: The conditional ternary operator (${q.correctKey === 'X' ? 'selected' : ''}) keeps the current correct option selected by default
-                container.innerHTML = `
+            // 4. Data Processing & Render: Loop through every retrieved question
+            data.questions.forEach(q => {
+                // Check if the question type is Multiple Choice Question (MCQ)
+                if (q.type === "MCQ") {
+                    // Inject an inline edit tool that lets an instructor quickly swap the correct answer key
+                    // Note: The conditional ternary operator (${q.correctKey === 'X' ? 'selected' : ''}) keeps the current correct option selected by default
+                    container.innerHTML = `
                     <div class="p-2 border rounded bg-dark-subtle d-flex align-items-center gap-2 small" style="border-color: var(--border-color) !important;">
                         <strong>Question ${q.id} (MCQ):</strong> Modify solution key target to:
                         <select class="form-select form-select-sm" style="width:140px; display:inline-block;" onchange="inlineModifyAnswerKey(${q.id}, this.value)">
@@ -1507,78 +1505,78 @@ async function renderInlineQuestionEditSection() {
                         </select>
                         <span class="text-secondary small italic">Changing key triggers automated classroom re-grading.</span>
                     </div>`;
-            }
-        });
-    } catch (err) {
-        // 5. Error Catching: Log any unexpected runtime/network errors directly to the developer console
-        console.error(err);
+                }
+            });
+        } catch (err) {
+            // 5. Error Catching: Log any unexpected runtime/network errors directly to the developer console
+            console.error(err);
+        }
     }
-}
 
 
 
 
 
-// Member Han  - Inline answer key mutation for MCQ questions, triggering class-wide auto-regrading.
-async function inlineModifyAnswerKey(qId, val) {
-    try {
-        // 1. Setup Payload: Package the target question ID and the newly selected correct answer option
-        const payload = { questionId: qId, correctKey: val };
+    // Member Han  - Inline answer key mutation for MCQ questions, triggering class-wide auto-regrading.
+    async function inlineModifyAnswerKey(qId, val) {
+        try {
+            // 1. Setup Payload: Package the target question ID and the newly selected correct answer option
+            const payload = { questionId: qId, correctKey: val };
 
-        // 2. HTTP Request: Send the updated key to the backend API endpoint using a POST method
-        const res = await fetch(`${API_BASE}/instructor/update-answer-key`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+            // 2. HTTP Request: Send the updated key to the backend API endpoint using a POST method
+            const res = await fetch(`${API_BASE}/instructor/update-answer-key`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
 
-        // 3. Error Checking: If the server returns an unstable response status, drop to the catch block
-        if (!res.ok) throw new Error("Could not update key.");
+            // 3. Error Checking: If the server returns an unstable response status, drop to the catch block
+            if (!res.ok) throw new Error("Could not update key.");
 
-        // 4. Success Alert: Notify the instructor that the core database record and student scoring balances are altered
-        alert(`Answer key successfully mutated in database. All student scores re-calculated.`);
+            // 4. Success Alert: Notify the instructor that the core database record and student scoring balances are altered
+            alert(`Answer key successfully mutated in database. All student scores re-calculated.`);
 
-        // 5. UI Synchronization: Trigger dashboard component reloads to display modified metrics instantly
-        loadInstructorAnalytics();
-        switchRosterSubTab(state.activeRosterSubTab);
+            // 5. UI Synchronization: Trigger dashboard component reloads to display modified metrics instantly
+            loadInstructorAnalytics();
+            switchRosterSubTab(state.activeRosterSubTab);
 
-    } catch (err) {
-        // 6. Exception Handling: Catch connection issues or system validation rejections smoothly
-        alert(err.message);
+        } catch (err) {
+            // 6. Exception Handling: Catch connection issues or system validation rejections smoothly
+            alert(err.message);
+        }
     }
-}
 
 
 
 
-async function switchRosterSubTab(subTab) {
-    // TODO: Team Member 3 - Mutate active sub-tab view contexts and initiate roster table content refresh.
-    alert("TODO: Team Member 3 - Implement switchRosterSubTab in app.js");
-}
+    async function switchRosterSubTab(subTab) {
+        // TODO: Team Member 3 - Mutate active sub-tab view contexts and initiate roster table content refresh.
+        alert("TODO: Team Member 3 - Implement switchRosterSubTab in app.js");
+    }
 
-async function renderMultiStudentRosterTable() {
-    // TODO: Team Member 3 - Retrieve student roster summaries filtered by tab parameters and render table rows.
-    alert("TODO: Team Member 3 - Implement renderMultiStudentRosterTable in app.js");
-}
+    async function renderMultiStudentRosterTable() {
+        // TODO: Team Member 3 - Retrieve student roster summaries filtered by tab parameters and render table rows.
+        alert("TODO: Team Member 3 - Implement renderMultiStudentRosterTable in app.js");
+    }
 
 
 
-// Assignment Factory creator dynamic views
-let customQuestionCounter = 0;
+    // Assignment Factory creator dynamic views
+    let customQuestionCounter = 0;
 
-function addCustomQuestionField(type) {
-    const container = document.getElementById('custom-questions-list-container');
-    if (!container) return;
+    function addCustomQuestionField(type) {
+        const container = document.getElementById('custom-questions-list-container');
+        if (!container) return;
 
-    customQuestionCounter++;
-    const qId = customQuestionCounter;
+        customQuestionCounter++;
+        const qId = customQuestionCounter;
 
-    const card = document.createElement('div');
-    card.className = "p-3 border rounded custom-question-card bg-light mb-2";
-    card.id = `custom-question-node-${qId}`;
-    card.setAttribute('data-type', type);
+        const card = document.createElement('div');
+        card.className = "p-3 border rounded custom-question-card bg-light mb-2";
+        card.id = `custom-question-node-${qId}`;
+        card.setAttribute('data-type', type);
 
-    let cardHTML = `
+        let cardHTML = `
         <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
             <h6 class="small fw-bold text-dark mb-0">Question #${container.children.length + 1} (${type})</h6>
             <button class="btn btn-sm btn-link text-danger p-0" type="button" onclick="removeCustomQuestionField(${qId})">Remove</button>
@@ -1592,17 +1590,17 @@ function addCustomQuestionField(type) {
             <input type="text" class="form-control form-control-sm custom-q-topic" placeholder="Type topic name (optional)...">
         </div>`;
 
-    if (state.quizMode !== "PDF") {
-        cardHTML += `
+        if (state.quizMode !== "PDF") {
+            cardHTML += `
             <div class="mb-2">
                 <label class="small text-secondary">Prompt / Question Content</label>
                 <input type="text" class="form-control form-control-sm custom-q-prompt" placeholder="Type prompt..." required>
             </div>`;
-    }
+        }
 
-    if (type === 'MCQ') {
-        if (state.quizMode !== "PDF") {
-            cardHTML += `
+        if (type === 'MCQ') {
+            if (state.quizMode !== "PDF") {
+                cardHTML += `
                 <div class="mb-3">
                     <label class="small text-secondary fw-semibold">MCQ Answer Options</label>
                     <div class="row g-2">
@@ -1632,8 +1630,8 @@ function addCustomQuestionField(type) {
                         </div>
                     </div>
                 </div>`;
-        }
-        cardHTML += `
+            }
+            cardHTML += `
             <div class="mb-2">
                 <label class="small text-secondary">Correct Key</label>
                 <select class="form-select form-select-sm custom-q-key" style="width: 120px;">
@@ -1643,119 +1641,119 @@ function addCustomQuestionField(type) {
                     <option value="D">Option D</option>
                 </select>
             </div>`;
-    }
+        }
 
-    card.innerHTML = cardHTML;
-    container.appendChild(card);
-    updateQuestionCardNumbers();
-}
-
-
-function removeCustomQuestionField(qId) {
-    const card = document.getElementById(`custom-question-node-${qId}`);
-    if (card) {
-        card.remove();
+        card.innerHTML = cardHTML;
+        container.appendChild(card);
         updateQuestionCardNumbers();
     }
-}
 
-function updateQuestionCardNumbers() {
-    const container = document.getElementById('custom-questions-list-container');
-    if (!container) return;
-    Array.from(container.children).forEach((card, idx) => {
-        const title = card.querySelector('h6');
-        const type = card.getAttribute('data-type');
-        if (title) {
-            title.innerText = `Question #${idx + 1} (${type})`;
+
+    function removeCustomQuestionField(qId) {
+        const card = document.getElementById(`custom-question-node-${qId}`);
+        if (card) {
+            card.remove();
+            updateQuestionCardNumbers();
         }
-    });
-}
-
-function clearUploadedPdfField() {
-    state.pdfBase64 = null;
-    const pdfInput = document.getElementById('inputQuizPdf');
-    if (pdfInput) pdfInput.value = "";
-    const statusLabel = document.getElementById('quizPdfStatusLabel');
-    if (statusLabel) {
-        statusLabel.innerText = "No PDF document attached.";
     }
-}
 
-function harvestBuilderQuestions() {
-    const container = document.getElementById('custom-questions-list-container');
-    if (!container) return [];
-    const harvested = [];
-    Array.from(container.children).forEach(card => {
-        const type = card.getAttribute('data-type');
-        
-        const topicInput = card.querySelector('.custom-q-topic');
-        const promptInput = card.querySelector('.custom-q-prompt');
-        const scoreInput = card.querySelector('.custom-q-score');
-        const optAInput = card.querySelector('.custom-q-optA');
-        const optBInput = card.querySelector('.custom-q-optB');
-        const optCInput = card.querySelector('.custom-q-optC');
-        const optDInput = card.querySelector('.custom-q-optD');
-        const keyInput = card.querySelector('.custom-q-key');
-
-        const topic = topicInput ? topicInput.value.trim() || "General" : "General";
-        const prompt = promptInput ? promptInput.value.trim() : "";
-        const maxScore = scoreInput ? parseFloat(scoreInput.value) || 0.0 : 0.0;
-        const optA = optAInput ? optAInput.value.trim() : "";
-        const optB = optBInput ? optBInput.value.trim() : "";
-        const optC = optCInput ? optCInput.value.trim() : "";
-        const optD = optDInput ? optDInput.value.trim() : "";
-        const key = keyInput ? keyInput.value : "A";
-
-        harvested.push({
-            type: type,
-            topic: topic,
-            prompt: prompt,
-            options: type === 'MCQ' ? [`A. ${optA}`, `B. ${optB}`, `C. ${optC}`, `D. ${optD}`] : null,
-            correctKey: key,
-            maxScore: maxScore
+    function updateQuestionCardNumbers() {
+        const container = document.getElementById('custom-questions-list-container');
+        if (!container) return;
+        Array.from(container.children).forEach((card, idx) => {
+            const title = card.querySelector('h6');
+            const type = card.getAttribute('data-type');
+            if (title) {
+                title.innerText = `Question #${idx + 1} (${type})`;
+            }
         });
-    });
-    return harvested;
-}
+    }
 
-function toggleQuizModeLayout() {
-    const selectEl = document.getElementById('inputQuizMode');
-    if (!selectEl) return;
-    
-    state.quizMode = selectEl.value;
-    
-    const wrapper = document.getElementById('pdfUploadWrapper');
-    if (wrapper) {
-        if (state.quizMode === "PDF") {
-            wrapper.classList.remove('d-none');
-        } else {
-            wrapper.classList.add('d-none');
+    function clearUploadedPdfField() {
+        state.pdfBase64 = null;
+        const pdfInput = document.getElementById('inputQuizPdf');
+        if (pdfInput) pdfInput.value = "";
+        const statusLabel = document.getElementById('quizPdfStatusLabel');
+        if (statusLabel) {
+            statusLabel.innerText = "No PDF document attached.";
         }
     }
 
-    // Refresh builder fields
-    const currentQs = harvestBuilderQuestions();
-    state.questions = currentQs;
-    populateQuestionBuilderFromState();
-}
+    function harvestBuilderQuestions() {
+        const container = document.getElementById('custom-questions-list-container');
+        if (!container) return [];
+        const harvested = [];
+        Array.from(container.children).forEach(card => {
+            const type = card.getAttribute('data-type');
 
-function populateQuestionBuilderFromState() {
-    const container = document.getElementById('custom-questions-list-container');
-    if (!container) return;
-    container.innerHTML = "";
-    customQuestionCounter = 0;
+            const topicInput = card.querySelector('.custom-q-topic');
+            const promptInput = card.querySelector('.custom-q-prompt');
+            const scoreInput = card.querySelector('.custom-q-score');
+            const optAInput = card.querySelector('.custom-q-optA');
+            const optBInput = card.querySelector('.custom-q-optB');
+            const optCInput = card.querySelector('.custom-q-optC');
+            const optDInput = card.querySelector('.custom-q-optD');
+            const keyInput = card.querySelector('.custom-q-key');
 
-    if (state.questions && state.questions.length > 0) {
-        state.questions.forEach(q => {
-            customQuestionCounter++;
-            const qId = customQuestionCounter;
+            const topic = topicInput ? topicInput.value.trim() || "General" : "General";
+            const prompt = promptInput ? promptInput.value.trim() : "";
+            const maxScore = scoreInput ? parseFloat(scoreInput.value) || 0.0 : 0.0;
+            const optA = optAInput ? optAInput.value.trim() : "";
+            const optB = optBInput ? optBInput.value.trim() : "";
+            const optC = optCInput ? optCInput.value.trim() : "";
+            const optD = optDInput ? optDInput.value.trim() : "";
+            const key = keyInput ? keyInput.value : "A";
 
-            const card = document.createElement('div');
-            card.className = "p-3 border rounded custom-question-card bg-light mb-2";
-            card.id = `custom-question-node-${qId}`;
-            card.setAttribute('data-type', q.type);
+            harvested.push({
+                type: type,
+                topic: topic,
+                prompt: prompt,
+                options: type === 'MCQ' ? [`A. ${optA}`, `B. ${optB}`, `C. ${optC}`, `D. ${optD}`] : null,
+                correctKey: key,
+                maxScore: maxScore
+            });
+        });
+        return harvested;
+    }
 
-            let cardHTML = `
+    function toggleQuizModeLayout() {
+        const selectEl = document.getElementById('inputQuizMode');
+        if (!selectEl) return;
+
+        state.quizMode = selectEl.value;
+
+        const wrapper = document.getElementById('pdfUploadWrapper');
+        if (wrapper) {
+            if (state.quizMode === "PDF") {
+                wrapper.classList.remove('d-none');
+            } else {
+                wrapper.classList.add('d-none');
+            }
+        }
+
+        // Refresh builder fields
+        const currentQs = harvestBuilderQuestions();
+        state.questions = currentQs;
+        populateQuestionBuilderFromState();
+    }
+
+    function populateQuestionBuilderFromState() {
+        const container = document.getElementById('custom-questions-list-container');
+        if (!container) return;
+        container.innerHTML = "";
+        customQuestionCounter = 0;
+
+        if (state.questions && state.questions.length > 0) {
+            state.questions.forEach(q => {
+                customQuestionCounter++;
+                const qId = customQuestionCounter;
+
+                const card = document.createElement('div');
+                card.className = "p-3 border rounded custom-question-card bg-light mb-2";
+                card.id = `custom-question-node-${qId}`;
+                card.setAttribute('data-type', q.type);
+
+                let cardHTML = `
                 <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
                     <h6 class="small fw-bold text-dark mb-0">Question #${container.children.length + 1} (${q.type})</h6>
                     <button class="btn btn-sm btn-link text-danger p-0" type="button" onclick="removeCustomQuestionField(${qId})">Remove</button>
@@ -1769,22 +1767,22 @@ function populateQuestionBuilderFromState() {
                     <input type="text" class="form-control form-control-sm custom-q-topic" value="${q.topic || ''}" placeholder="Type topic name (optional)...">
                 </div>`;
 
-            if (state.quizMode !== "PDF") {
-                cardHTML += `
+                if (state.quizMode !== "PDF") {
+                    cardHTML += `
                     <div class="mb-2">
                         <label class="small text-secondary">Prompt / Question Content</label>
                         <input type="text" class="form-control form-control-sm custom-q-prompt" value="${q.prompt || ''}" placeholder="Type prompt..." required>
                     </div>`;
-            }
+                }
 
-            if (q.type === 'MCQ') {
-                if (state.quizMode !== "PDF") {
-                    const optA = q.options && q.options[0] ? q.options[0].replace(/^A\.\s*/, '') : '';
-                    const optB = q.options && q.options[1] ? q.options[1].replace(/^B\.\s*/, '') : '';
-                    const optC = q.options && q.options[2] ? q.options[2].replace(/^C\.\s*/, '') : '';
-                    const optD = q.options && q.options[3] ? q.options[3].replace(/^D\.\s*/, '') : '';
+                if (q.type === 'MCQ') {
+                    if (state.quizMode !== "PDF") {
+                        const optA = q.options && q.options[0] ? q.options[0].replace(/^A\.\s*/, '') : '';
+                        const optB = q.options && q.options[1] ? q.options[1].replace(/^B\.\s*/, '') : '';
+                        const optC = q.options && q.options[2] ? q.options[2].replace(/^C\.\s*/, '') : '';
+                        const optD = q.options && q.options[3] ? q.options[3].replace(/^D\.\s*/, '') : '';
 
-                    cardHTML += `
+                        cardHTML += `
                         <div class="mb-3">
                             <label class="small text-secondary fw-semibold">MCQ Answer Options</label>
                             <div class="row g-2">
@@ -1814,8 +1812,8 @@ function populateQuestionBuilderFromState() {
                                 </div>
                             </div>
                         </div>`;
-                }
-                cardHTML += `
+                    }
+                    cardHTML += `
                     <div class="mb-2">
                         <label class="small text-secondary">Correct Key</label>
                         <select class="form-select form-select-sm custom-q-key" style="width: 120px;">
@@ -1825,469 +1823,469 @@ function populateQuestionBuilderFromState() {
                             <option value="D" ${q.correctKey === 'D' ? 'selected' : ''}>Option D</option>
                         </select>
                     </div>`;
-            }
-
-            card.innerHTML = cardHTML;
-            container.appendChild(card);
-        });
-        updateQuestionCardNumbers();
-    } else {
-        addCustomQuestionField('MCQ');
-    }
-}
-
-
-
-// Member 1-Han: Compile form builder inputs, validate question configurations, and submit new quiz task to server for publication.
-async function instructorPublishTask() {
-    // 1. Initial Validation: Check if Title is provided and Total Score is a positive number
-    const titleVal = document.getElementById('inputTaskTitle').value;
-    if (!titleVal) return alert("Assignment title is required.");
-
-    const totalScoreVal = parseFloat(document.getElementById('inputQuizTotalScore').value);
-    if (isNaN(totalScoreVal) || totalScoreVal <= 0) {
-        return alert("Total Score must be a positive number.");
-    }
-
-    // 2. Mode Check: If the instructor selected "PDF" exam mode, make sure a file was actually uploaded
-    if (state.quizMode === "PDF" && !state.pdfBase64) {
-        return alert("A PDF document must be uploaded in PDF Exam mode.");
-    }
-
-    // 3. Container Validation: Make sure the teacher has added at least one question card to the list
-    let questionsPayload = [];
-    const container = document.getElementById('custom-questions-list-container');
-    if (!container || container.children.length === 0) {
-        return alert("Please add at least one question to publish.");
-    }
-
-    let hasError = false;
-    let sumWeights = 0.0;
-
-    // 4. Processing Loop: Read each individual question card from the UI list
-    Array.from(container.children).forEach((card, idx) => {
-        const type = card.getAttribute('data-type'); // 'MCQ' or 'Essay'
-        const topic = card.querySelector('.custom-q-topic').value.trim() || "General";
-        const scoreInput = card.querySelector('.custom-q-score');
-        const maxScore = scoreInput ? parseFloat(scoreInput.value) || 0.0 : 0.0;
-        sumWeights += maxScore; // Keep a running total of question points
-
-        let prompt = "";
-
-        // Define prompt text depending on whether it's a structural PDF placeholder or manual entry
-        if (state.quizMode === "PDF") {
-            prompt = `Question #${idx + 1} (PDF Exam)`;
-        } else {
-            const promptInput = card.querySelector('.custom-q-prompt');
-            prompt = promptInput ? promptInput.value.trim() : "";
-        }
-
-        if (!prompt) {
-            hasError = true;
-            return;
-        }
-
-        // Process Multiple Choice Questions (MCQ)
-        if (type === 'MCQ') {
-            let optA = "Option A";
-            let optB = "Option B";
-            let optC = "Option C";
-            let optD = "Option D";
-            const key = card.querySelector('.custom-q-key').value;
-
-            // Gather values for options A-D if manually writing questions
-            if (state.quizMode === "Manual") {
-                optA = card.querySelector('.custom-q-optA').value.trim();
-                optB = card.querySelector('.custom-q-optB').value.trim();
-                optC = card.querySelector('.custom-q-optC').value.trim();
-                optD = card.querySelector('.custom-q-optD').value.trim();
-
-                if (!optA || !optB || !optC || !optD) {
-                    hasError = true;
-                    return;
                 }
+
+                card.innerHTML = cardHTML;
+                container.appendChild(card);
+            });
+            updateQuestionCardNumbers();
+        } else {
+            addCustomQuestionField('MCQ');
+        }
+    }
+
+
+
+    // Member 1-Han: Compile form builder inputs, validate question configurations, and submit new quiz task to server for publication.
+    async function instructorPublishTask() {
+        // 1. Initial Validation: Check if Title is provided and Total Score is a positive number
+        const titleVal = document.getElementById('inputTaskTitle').value;
+        if (!titleVal) return alert("Assignment title is required.");
+
+        const totalScoreVal = parseFloat(document.getElementById('inputQuizTotalScore').value);
+        if (isNaN(totalScoreVal) || totalScoreVal <= 0) {
+            return alert("Total Score must be a positive number.");
+        }
+
+        // 2. Mode Check: If the instructor selected "PDF" exam mode, make sure a file was actually uploaded
+        if (state.quizMode === "PDF" && !state.pdfBase64) {
+            return alert("A PDF document must be uploaded in PDF Exam mode.");
+        }
+
+        // 3. Container Validation: Make sure the teacher has added at least one question card to the list
+        let questionsPayload = [];
+        const container = document.getElementById('custom-questions-list-container');
+        if (!container || container.children.length === 0) {
+            return alert("Please add at least one question to publish.");
+        }
+
+        let hasError = false;
+        let sumWeights = 0.0;
+
+        // 4. Processing Loop: Read each individual question card from the UI list
+        Array.from(container.children).forEach((card, idx) => {
+            const type = card.getAttribute('data-type'); // 'MCQ' or 'Essay'
+            const topic = card.querySelector('.custom-q-topic').value.trim() || "General";
+            const scoreInput = card.querySelector('.custom-q-score');
+            const maxScore = scoreInput ? parseFloat(scoreInput.value) || 0.0 : 0.0;
+            sumWeights += maxScore; // Keep a running total of question points
+
+            let prompt = "";
+
+            // Define prompt text depending on whether it's a structural PDF placeholder or manual entry
+            if (state.quizMode === "PDF") {
+                prompt = `Question #${idx + 1} (PDF Exam)`;
+            } else {
+                const promptInput = card.querySelector('.custom-q-prompt');
+                prompt = promptInput ? promptInput.value.trim() : "";
             }
 
-            // Append structured MCQ data to our payload array
-            questionsPayload.push({
-                type: "MCQ",
-                topic: topic,
-                prompt: prompt,
-                options: [`A. ${optA}`, `B. ${optB}`, `C. ${optC}`, `D. ${optD}`],
-                correctKey: key,
-                maxScore: maxScore
-            });
-        } else {
-            // Process and append Essay questions to our payload array
-            questionsPayload.push({
-                type: "Essay",
-                topic: topic,
-                prompt: prompt,
-                correctKey: "Custom criteria validation",
-                maxScore: maxScore
-            });
-        }
-    });
+            if (!prompt) {
+                hasError = true;
+                return;
+            }
 
-    if (hasError) {
-        return alert("Please fill in all topic, prompt, and option fields for all questions.");
-    }
+            // Process Multiple Choice Questions (MCQ)
+            if (type === 'MCQ') {
+                let optA = "Option A";
+                let optB = "Option B";
+                let optC = "Option C";
+                let optD = "Option D";
+                const key = card.querySelector('.custom-q-key').value;
 
-    // 5. Data Integrity Validation: Ensure total score exactly equals sum of individual question values
-    // Uses Math.abs subtraction to safely handle small JavaScript decimal floating-point inaccuracies
-    if (Math.abs(sumWeights - totalScoreVal) > 0.001) {
-        return alert(`Validation Failure: The sum of question weights (${sumWeights.toFixed(1)}) must exactly equal the Total Score (${totalScoreVal.toFixed(1)}).`);
-    }
+                // Gather values for options A-D if manually writing questions
+                if (state.quizMode === "Manual") {
+                    optA = card.querySelector('.custom-q-optA').value.trim();
+                    optB = card.querySelector('.custom-q-optB').value.trim();
+                    optC = card.querySelector('.custom-q-optC').value.trim();
+                    optD = card.querySelector('.custom-q-optD').value.trim();
 
-    // 6. Metadata Gathering: Retrieve supporting configurations from the DOM
-    const timeLimitVal = parseInt(document.getElementById('inputQuizTimeLimit').value) || 40;
-    const deadlineVal = document.getElementById('inputQuizDeadline').value || null;
-    const isQuizOpenVal = document.getElementById('inputIsQuizOpen').checked;
-    const isForumOpenVal = document.getElementById('inputIsForumOpen').checked;
+                    if (!optA || !optB || !optC || !optD) {
+                        hasError = true;
+                        return;
+                    }
+                }
 
-    try {
-        // Construct complete database packaging payload
-        const payload = {
-            title: titleVal,
-            questions: questionsPayload,
-            timeLimitMinutes: timeLimitVal,
-            isQuizOpen: isQuizOpenVal,
-            isForumOpen: isForumOpenVal,
-            deadlineString: deadlineVal,
-            pdfBase64: state.pdfBase64,
-            quizMode: state.quizMode,
-            totalScore: totalScoreVal
-        };
-
-        // 7. Network Request: Send unified package to the backend API via HTTP POST
-        const res = await fetch(`${API_BASE}/questions/publish`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+                // Append structured MCQ data to our payload array
+                questionsPayload.push({
+                    type: "MCQ",
+                    topic: topic,
+                    prompt: prompt,
+                    options: [`A. ${optA}`, `B. ${optB}`, `C. ${optC}`, `D. ${optD}`],
+                    correctKey: key,
+                    maxScore: maxScore
+                });
+            } else {
+                // Process and append Essay questions to our payload array
+                questionsPayload.push({
+                    type: "Essay",
+                    topic: topic,
+                    prompt: prompt,
+                    correctKey: "Custom criteria validation",
+                    maxScore: maxScore
+                });
+            }
         });
 
-        if (!res.ok) throw new Error("Failed to publish assessment.");
-
-        alert("✔ New assessment successfully generated and active configurations updated!");
-
-        // 8. State Refresh: Fetch newly stored information back down to sync the application context
-        const resQ = await fetch(`${API_BASE}/questions`);
-        if (resQ.ok) {
-            const dataQ = await resQ.json();
-            state.activeTaskTitle = dataQ.title;
-            state.questions = dataQ.questions;
-            state.timeLimitMinutes = dataQ.timeLimitMinutes ?? 40;
-            state.isQuizOpen = dataQ.isQuizOpen ?? true;
-            state.isForumOpen = dataQ.isForumOpen ?? true;
-            state.deadlineString = dataQ.deadlineString ?? null;
-            state.pdfBase64 = dataQ.pdfBase64 ?? null;
-            state.quizMode = dataQ.quizMode ?? "Manual";
-            state.totalScore = dataQ.totalScore ?? 10.0;
+        if (hasError) {
+            return alert("Please fill in all topic, prompt, and option fields for all questions.");
         }
 
-        // 9. Redirect view tab to analytics view upon successful creation
-        switchTeacherTab('analytics');
-    } catch (err) {
-        alert(err.message);
-    }
-}
-
-
-
-
-
-
-// ================= INSTRUCTOR GRADING DESK FLOW =================
-
-async function routeTargetStudentToEvaluationDesk(studentId) {
-    // TODO: Team Member 4 - Load student submission and reflection logs, verifying automated crosscheck warnings.
-    alert("TODO: Team Member 4 - Implement routeTargetStudentToEvaluationDesk in app.js");
-}
-
-async function loadInstructorGrowCards(answers = null) {
-    // TODO: Team Member 4 - Fetch templates configuration and build select feedback buttons for grading cards.
-    alert("TODO: Team Member 4 - Implement loadInstructorGrowCards in app.js");
-}
-
-function renderTemplateBankForQuestion(qId, selectedTag = null) {
-    const group = document.getElementById(`q-template-bank-${qId}`);
-    if (!group) return;
-
-    group.innerHTML = "";
-
-    state.errorTags.forEach((tag, idx) => {
-        const container = document.createElement('div');
-        container.className = "d-inline-flex align-items-center me-2 mb-2 p-1 border rounded bg-white shadow-sm error-tag-wrapper";
-        container.style.borderColor = "var(--border-color) !important";
-
-        const btn = document.createElement('div');
-        btn.className = "error-tag-btn border-0 m-0 py-1 px-2.5 small fw-semibold";
-        btn.style.cursor = "pointer";
-        btn.style.borderRadius = "4px";
-        if (selectedTag === tag) {
-            btn.classList.add('selected');
-            container.style.backgroundColor = "rgba(124, 58, 237, 0.08)";
-            container.style.borderColor = "var(--accent-purple) !important";
-        }
-        btn.innerText = tag;
-        btn.onclick = function () {
-            selectTemplateCardForQuestion(qId, btn, tag);
-        };
-
-        const editBtn = document.createElement('span');
-        editBtn.className = "ms-1 text-secondary px-1 text-center";
-        editBtn.style.cursor = "pointer";
-        editBtn.style.fontSize = "12px";
-        editBtn.style.opacity = "0.6";
-        editBtn.innerHTML = "✏️";
-        editBtn.title = "Rename/Merge this error card template";
-        editBtn.onclick = function (e) {
-            e.stopPropagation();
-            renameErrorTagPrompt(tag);
-        };
-
-        container.appendChild(btn);
-        container.appendChild(editBtn);
-        group.appendChild(container);
-    });
-}
-function selectTemplateCardForQuestion(qId, element, tag) {
-    const group = document.getElementById(`q-template-bank-${qId}`);
-    if (!group) return;
-
-    const wasSelected = element.classList.contains('selected');
-
-    // Deselect other buttons in this group
-    group.querySelectorAll('.error-tag-btn').forEach(btn => {
-        btn.classList.remove('selected');
-        const wrapper = btn.closest('.error-tag-wrapper');
-        if (wrapper) {
-            wrapper.style.backgroundColor = "white";
-            wrapper.style.borderColor = "var(--border-color) !important";
-        }
-    });
-
-    const label = document.getElementById(`selected-tag-label-${qId}`);
-
-    if (wasSelected) {
-        element.classList.remove('selected');
-        if (label) {
-            label.innerText = "None (Evaluating Asset as Compliant)";
-        }
-    } else {
-        element.classList.add('selected');
-        const wrapper = element.closest('.error-tag-wrapper');
-        if (wrapper) {
-            wrapper.style.backgroundColor = "rgba(124, 58, 237, 0.08)";
-            wrapper.style.borderColor = "var(--accent-purple) !important";
-        }
-        if (label) {
-            label.innerText = tag;
-        }
-    }
-}
-
-
-async function renameErrorTagPrompt(oldTag) {
-    const newTag = prompt(`Rename / Merge error tag template "${oldTag}" to:`, oldTag);
-    if (!newTag || newTag.trim() === oldTag) return;
-
-    try {
-        const res = await fetch(`${API_BASE}/instructor/rename-error-tag`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                oldTag: oldTag,
-                newTag: newTag.trim()
-            })
-        });
-
-        if (!res.ok) throw new Error("Failed to rename error tag template.");
-
-        alert("✔ Template successfully renamed and merged across database records.");
-
-        const titleQuery = state.selectedQuizTitle ? `?quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
-        const activeSubmissionsRes = await fetch(`${API_BASE}/student/mistake-bank/${state.activeGradingStudentID}${titleQuery}`);
-        if (activeSubmissionsRes.ok) {
-            const studentObj = await activeSubmissionsRes.json();
-            loadInstructorGrowCards(studentObj.answers);
-        } else {
-            loadInstructorGrowCards();
-        }
-    } catch (err) {
-        alert(err.message);
-    }
-}
-
-async function generateGrowCardActionForQuestion(qId) {
-    // TODO: Team Member 4 - Post new custom feedback error tag template to database list and refresh banks.
-    alert("TODO: Team Member 4 - Implement generateGrowCardActionForQuestion in app.js");
-}
-
-async function instructorSubmitEvaluation() {
-    // TODO: Team Member 4 - Compile allocated scores and feedback tags from grading panels, sending grades to commit endpoint.
-    alert("TODO: Team Member 4 - Implement instructorSubmitEvaluation in app.js");
-}
-
-async function loadInstructorUnifiedDisputeChat(studentId) {
-    const streamContainer = document.getElementById('instructorUnifiedDisputeChatStream');
-    if (!streamContainer) return;
-
-    try {
-        const topic = `Dispute ${studentId} - ${state.selectedQuizTitle || state.activeTaskTitle}`;
-        const res = await fetch(`${API_BASE}/forum/dispute/${studentId}/${encodeURIComponent(topic)}`);
-        if (!res.ok) throw new Error();
-
-        const comments = await res.json();
-        streamContainer.innerHTML = comments.map(c => {
-            const isSelf = c.sender.includes("Instructor");
-            return `
-                <div class="comment-bubble ${isSelf ? 'self' : ''}">
-                    <span class="d-block small fw-bold" style="color: var(--accent-cyan); font-size: 11px;">${c.sender}</span>
-                    <span style="font-size: 12.5px;">${c.message}</span>
-                </div>`;
-        }).join('');
-
-        streamContainer.scrollTop = streamContainer.scrollHeight;
-    } catch (err) {
-        streamContainer.innerHTML = `<div class="text-center text-secondary small py-3">Error loading messages.</div>`;
-    }
-}
-
-async function sendInstructorUnifiedDisputeComment(studentId) {
-    const field = document.getElementById('inputInstructorUnifiedDisputeMessage');
-    if (!field || !field.value.trim()) return;
-
-    try {
-        const topic = `Dispute ${studentId} - ${state.selectedQuizTitle || state.activeTaskTitle}`;
-        const payload = {
-            isPrivate: true,
-            studentId: studentId,
-            topic: topic,
-            sender: "Dr. Ali Bayeh (Instructor)",
-            message: field.value.trim()
-        };
-
-        const res = await fetch(`${API_BASE}/forum/comment`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) throw new Error("Failed to send message.");
-
-        field.value = "";
-        await loadInstructorUnifiedDisputeChat(studentId);
-    } catch (err) {
-        alert(err.message);
-    }
-}
-
-async function resolveInstructorSubmissionDispute(studentId, isApproved) {
-    let grades = [];
-    let hasError = false;
-    const inputs = document.querySelectorAll('.grading-score-input');
-    inputs.forEach(inp => {
-        const qId = parseInt(inp.getAttribute('data-qid'));
-        const scoreVal = parseFloat(inp.value);
-        const maxScore = parseFloat(inp.getAttribute('max')) || 10.0;
-        if (isNaN(scoreVal) || scoreVal < 0 || scoreVal > maxScore) {
-            alert(`Please enter a valid score between 0 and ${maxScore} for Question.`);
-            hasError = true;
-            return;
+        // 5. Data Integrity Validation: Ensure total score exactly equals sum of individual question values
+        // Uses Math.abs subtraction to safely handle small JavaScript decimal floating-point inaccuracies
+        if (Math.abs(sumWeights - totalScoreVal) > 0.001) {
+            return alert(`Validation Failure: The sum of question weights (${sumWeights.toFixed(1)}) must exactly equal the Total Score (${totalScoreVal.toFixed(1)}).`);
         }
 
-        const selectedBtn = document.querySelector(`#q-template-bank-${qId} .error-tag-btn.selected`);
-        const chosenTag = selectedBtn ? selectedBtn.innerText : null;
+        // 6. Metadata Gathering: Retrieve supporting configurations from the DOM
+        const timeLimitVal = parseInt(document.getElementById('inputQuizTimeLimit').value) || 40;
+        const deadlineVal = document.getElementById('inputQuizDeadline').value || null;
+        const isQuizOpenVal = document.getElementById('inputIsQuizOpen').checked;
+        const isForumOpenVal = document.getElementById('inputIsForumOpen').checked;
 
-        const feedbackField = document.getElementById(`feedback-note-${qId}`);
-        const feedbackVal = feedbackField ? feedbackField.value.trim() : null;
-
-        grades.push({
-            questionId: qId,
-            earnedScore: scoreVal,
-            chosenTag: chosenTag,
-            teacherFeedback: feedbackVal
-        });
-    });
-
-    if (hasError) return;
-
-    try {
-        // Save the updated grades first
-        const gradePayload = {
-            studentId: studentId,
-            quizTitle: state.selectedQuizTitle || state.activeTaskTitle,
-            grades: grades
-        };
-
-        const resGrade = await fetch(`${API_BASE}/instructor/grade`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(gradePayload)
-        });
-
-        if (!resGrade.ok) throw new Error("Failed to save updated grades.");
-
-        // Now resolve the dispute
-        const disputePayload = {
-            studentId: studentId,
-            quizTitle: state.selectedQuizTitle || state.activeTaskTitle,
-            isApproved: isApproved
-        };
-
-        const resDispute = await fetch(`${API_BASE}/instructor/resolve-submission-dispute`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(disputePayload)
-        });
-
-        if (!resDispute.ok) throw new Error("Failed to resolve dispute status.");
-
-        alert(isApproved ? "🟢 Dispute approved, grades saved, and override committed successfully!" : "❌ Dispute rejected and initial evaluation parameters sustained.");
-        const titleParam = state.selectedQuizTitle ? `?quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
-        window.location.href = "/Instructor/Dashboard" + titleParam;
-    } catch (err) {
-        alert(err.message);
-    }
-}
-
-async function renderInstructorPrivateTicketChatArea(studentId, answers) {
-    const area = document.getElementById('instructorPrivateTicketChatAreaZone');
-    if (!area) return;
-
-    const essayAnswers = answers.filter(a => a.questionType === "Essay");
-    if (essayAnswers.length === 0) {
-        area.innerHTML = `<div class="text-center p-4 text-secondary small">No essay question found to evaluate.</div>`;
-        return;
-    }
-
-    area.innerHTML = "";
-    let disputeCount = 0;
-
-    for (const q of essayAnswers) {
         try {
-            const resChat = await fetch(`${API_BASE}/forum/dispute/${studentId}/Dispute Q${q.questionId}`);
-            if (!resChat.ok) continue;
+            // Construct complete database packaging payload
+            const payload = {
+                title: titleVal,
+                questions: questionsPayload,
+                timeLimitMinutes: timeLimitVal,
+                isQuizOpen: isQuizOpenVal,
+                isForumOpen: isForumOpenVal,
+                deadlineString: deadlineVal,
+                pdfBase64: state.pdfBase64,
+                quizMode: state.quizMode,
+                totalScore: totalScoreVal
+            };
 
-            const comments = await resChat.json();
-            if (comments.length === 0) continue; // No dispute opened for this question
+            // 7. Network Request: Send unified package to the backend API via HTTP POST
+            const res = await fetch(`${API_BASE}/questions/publish`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
 
-            disputeCount++;
+            if (!res.ok) throw new Error("Failed to publish assessment.");
 
-            const chatStream = comments.map(c => {
+            alert("✔ New assessment successfully generated and active configurations updated!");
+
+            // 8. State Refresh: Fetch newly stored information back down to sync the application context
+            const resQ = await fetch(`${API_BASE}/questions`);
+            if (resQ.ok) {
+                const dataQ = await resQ.json();
+                state.activeTaskTitle = dataQ.title;
+                state.questions = dataQ.questions;
+                state.timeLimitMinutes = dataQ.timeLimitMinutes ?? 40;
+                state.isQuizOpen = dataQ.isQuizOpen ?? true;
+                state.isForumOpen = dataQ.isForumOpen ?? true;
+                state.deadlineString = dataQ.deadlineString ?? null;
+                state.pdfBase64 = dataQ.pdfBase64 ?? null;
+                state.quizMode = dataQ.quizMode ?? "Manual";
+                state.totalScore = dataQ.totalScore ?? 10.0;
+            }
+
+            // 9. Redirect view tab to analytics view upon successful creation
+            switchTeacherTab('analytics');
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+
+
+
+
+
+    // ================= INSTRUCTOR GRADING DESK FLOW =================
+
+    async function routeTargetStudentToEvaluationDesk(studentId) {
+        // TODO: Team Member 4 - Load student submission and reflection logs, verifying automated crosscheck warnings.
+        alert("TODO: Team Member 4 - Implement routeTargetStudentToEvaluationDesk in app.js");
+    }
+
+    async function loadInstructorGrowCards(answers = null) {
+        // TODO: Team Member 4 - Fetch templates configuration and build select feedback buttons for grading cards.
+        alert("TODO: Team Member 4 - Implement loadInstructorGrowCards in app.js");
+    }
+
+    function renderTemplateBankForQuestion(qId, selectedTag = null) {
+        const group = document.getElementById(`q-template-bank-${qId}`);
+        if (!group) return;
+
+        group.innerHTML = "";
+
+        state.errorTags.forEach((tag, idx) => {
+            const container = document.createElement('div');
+            container.className = "d-inline-flex align-items-center me-2 mb-2 p-1 border rounded bg-white shadow-sm error-tag-wrapper";
+            container.style.borderColor = "var(--border-color) !important";
+
+            const btn = document.createElement('div');
+            btn.className = "error-tag-btn border-0 m-0 py-1 px-2.5 small fw-semibold";
+            btn.style.cursor = "pointer";
+            btn.style.borderRadius = "4px";
+            if (selectedTag === tag) {
+                btn.classList.add('selected');
+                container.style.backgroundColor = "rgba(124, 58, 237, 0.08)";
+                container.style.borderColor = "var(--accent-purple) !important";
+            }
+            btn.innerText = tag;
+            btn.onclick = function () {
+                selectTemplateCardForQuestion(qId, btn, tag);
+            };
+
+            const editBtn = document.createElement('span');
+            editBtn.className = "ms-1 text-secondary px-1 text-center";
+            editBtn.style.cursor = "pointer";
+            editBtn.style.fontSize = "12px";
+            editBtn.style.opacity = "0.6";
+            editBtn.innerHTML = "✏️";
+            editBtn.title = "Rename/Merge this error card template";
+            editBtn.onclick = function (e) {
+                e.stopPropagation();
+                renameErrorTagPrompt(tag);
+            };
+
+            container.appendChild(btn);
+            container.appendChild(editBtn);
+            group.appendChild(container);
+        });
+    }
+    function selectTemplateCardForQuestion(qId, element, tag) {
+        const group = document.getElementById(`q-template-bank-${qId}`);
+        if (!group) return;
+
+        const wasSelected = element.classList.contains('selected');
+
+        // Deselect other buttons in this group
+        group.querySelectorAll('.error-tag-btn').forEach(btn => {
+            btn.classList.remove('selected');
+            const wrapper = btn.closest('.error-tag-wrapper');
+            if (wrapper) {
+                wrapper.style.backgroundColor = "white";
+                wrapper.style.borderColor = "var(--border-color) !important";
+            }
+        });
+
+        const label = document.getElementById(`selected-tag-label-${qId}`);
+
+        if (wasSelected) {
+            element.classList.remove('selected');
+            if (label) {
+                label.innerText = "None (Evaluating Asset as Compliant)";
+            }
+        } else {
+            element.classList.add('selected');
+            const wrapper = element.closest('.error-tag-wrapper');
+            if (wrapper) {
+                wrapper.style.backgroundColor = "rgba(124, 58, 237, 0.08)";
+                wrapper.style.borderColor = "var(--accent-purple) !important";
+            }
+            if (label) {
+                label.innerText = tag;
+            }
+        }
+    }
+
+
+    async function renameErrorTagPrompt(oldTag) {
+        const newTag = prompt(`Rename / Merge error tag template "${oldTag}" to:`, oldTag);
+        if (!newTag || newTag.trim() === oldTag) return;
+
+        try {
+            const res = await fetch(`${API_BASE}/instructor/rename-error-tag`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    oldTag: oldTag,
+                    newTag: newTag.trim()
+                })
+            });
+
+            if (!res.ok) throw new Error("Failed to rename error tag template.");
+
+            alert("✔ Template successfully renamed and merged across database records.");
+
+            const titleQuery = state.selectedQuizTitle ? `?quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
+            const activeSubmissionsRes = await fetch(`${API_BASE}/student/mistake-bank/${state.activeGradingStudentID}${titleQuery}`);
+            if (activeSubmissionsRes.ok) {
+                const studentObj = await activeSubmissionsRes.json();
+                loadInstructorGrowCards(studentObj.answers);
+            } else {
+                loadInstructorGrowCards();
+            }
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    async function generateGrowCardActionForQuestion(qId) {
+        // TODO: Team Member 4 - Post new custom feedback error tag template to database list and refresh banks.
+        alert("TODO: Team Member 4 - Implement generateGrowCardActionForQuestion in app.js");
+    }
+
+    async function instructorSubmitEvaluation() {
+        // TODO: Team Member 4 - Compile allocated scores and feedback tags from grading panels, sending grades to commit endpoint.
+        alert("TODO: Team Member 4 - Implement instructorSubmitEvaluation in app.js");
+    }
+
+    async function loadInstructorUnifiedDisputeChat(studentId) {
+        const streamContainer = document.getElementById('instructorUnifiedDisputeChatStream');
+        if (!streamContainer) return;
+
+        try {
+            const topic = `Dispute ${studentId} - ${state.selectedQuizTitle || state.activeTaskTitle}`;
+            const res = await fetch(`${API_BASE}/forum/dispute/${studentId}/${encodeURIComponent(topic)}`);
+            if (!res.ok) throw new Error();
+
+            const comments = await res.json();
+            streamContainer.innerHTML = comments.map(c => {
                 const isSelf = c.sender.includes("Instructor");
-                return `<div class="comment-bubble ${isSelf ? 'self' : ''}">
+                return `
+                <div class="comment-bubble ${isSelf ? 'self' : ''}">
                     <span class="d-block small fw-bold" style="color: var(--accent-cyan); font-size: 11px;">${c.sender}</span>
                     <span style="font-size: 12.5px;">${c.message}</span>
                 </div>`;
             }).join('');
 
-            const disputeCard = document.createElement('div');
-            disputeCard.className = "mb-4 p-3 border rounded bg-light";
-            disputeCard.style.borderColor = "var(--border-color) !important";
+            streamContainer.scrollTop = streamContainer.scrollHeight;
+        } catch (err) {
+            streamContainer.innerHTML = `<div class="text-center text-secondary small py-3">Error loading messages.</div>`;
+        }
+    }
 
-            disputeCard.innerHTML = `
+    async function sendInstructorUnifiedDisputeComment(studentId) {
+        const field = document.getElementById('inputInstructorUnifiedDisputeMessage');
+        if (!field || !field.value.trim()) return;
+
+        try {
+            const topic = `Dispute ${studentId} - ${state.selectedQuizTitle || state.activeTaskTitle}`;
+            const payload = {
+                isPrivate: true,
+                studentId: studentId,
+                topic: topic,
+                sender: "Dr. Ali Bayeh (Instructor)",
+                message: field.value.trim()
+            };
+
+            const res = await fetch(`${API_BASE}/forum/comment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) throw new Error("Failed to send message.");
+
+            field.value = "";
+            await loadInstructorUnifiedDisputeChat(studentId);
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    async function resolveInstructorSubmissionDispute(studentId, isApproved) {
+        let grades = [];
+        let hasError = false;
+        const inputs = document.querySelectorAll('.grading-score-input');
+        inputs.forEach(inp => {
+            const qId = parseInt(inp.getAttribute('data-qid'));
+            const scoreVal = parseFloat(inp.value);
+            const maxScore = parseFloat(inp.getAttribute('max')) || 10.0;
+            if (isNaN(scoreVal) || scoreVal < 0 || scoreVal > maxScore) {
+                alert(`Please enter a valid score between 0 and ${maxScore} for Question.`);
+                hasError = true;
+                return;
+            }
+
+            const selectedBtn = document.querySelector(`#q-template-bank-${qId} .error-tag-btn.selected`);
+            const chosenTag = selectedBtn ? selectedBtn.innerText : null;
+
+            const feedbackField = document.getElementById(`feedback-note-${qId}`);
+            const feedbackVal = feedbackField ? feedbackField.value.trim() : null;
+
+            grades.push({
+                questionId: qId,
+                earnedScore: scoreVal,
+                chosenTag: chosenTag,
+                teacherFeedback: feedbackVal
+            });
+        });
+
+        if (hasError) return;
+
+        try {
+            // Save the updated grades first
+            const gradePayload = {
+                studentId: studentId,
+                quizTitle: state.selectedQuizTitle || state.activeTaskTitle,
+                grades: grades
+            };
+
+            const resGrade = await fetch(`${API_BASE}/instructor/grade`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(gradePayload)
+            });
+
+            if (!resGrade.ok) throw new Error("Failed to save updated grades.");
+
+            // Now resolve the dispute
+            const disputePayload = {
+                studentId: studentId,
+                quizTitle: state.selectedQuizTitle || state.activeTaskTitle,
+                isApproved: isApproved
+            };
+
+            const resDispute = await fetch(`${API_BASE}/instructor/resolve-submission-dispute`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(disputePayload)
+            });
+
+            if (!resDispute.ok) throw new Error("Failed to resolve dispute status.");
+
+            alert(isApproved ? "🟢 Dispute approved, grades saved, and override committed successfully!" : "❌ Dispute rejected and initial evaluation parameters sustained.");
+            const titleParam = state.selectedQuizTitle ? `?quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
+            window.location.href = "/Instructor/Dashboard" + titleParam;
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    async function renderInstructorPrivateTicketChatArea(studentId, answers) {
+        const area = document.getElementById('instructorPrivateTicketChatAreaZone');
+        if (!area) return;
+
+        const essayAnswers = answers.filter(a => a.questionType === "Essay");
+        if (essayAnswers.length === 0) {
+            area.innerHTML = `<div class="text-center p-4 text-secondary small">No essay question found to evaluate.</div>`;
+            return;
+        }
+
+        area.innerHTML = "";
+        let disputeCount = 0;
+
+        for (const q of essayAnswers) {
+            try {
+                const resChat = await fetch(`${API_BASE}/forum/dispute/${studentId}/Dispute Q${q.questionId}`);
+                if (!resChat.ok) continue;
+
+                const comments = await resChat.json();
+                if (comments.length === 0) continue; // No dispute opened for this question
+
+                disputeCount++;
+
+                const chatStream = comments.map(c => {
+                    const isSelf = c.sender.includes("Instructor");
+                    return `<div class="comment-bubble ${isSelf ? 'self' : ''}">
+                    <span class="d-block small fw-bold" style="color: var(--accent-cyan); font-size: 11px;">${c.sender}</span>
+                    <span style="font-size: 12.5px;">${c.message}</span>
+                </div>`;
+                }).join('');
+
+                const disputeCard = document.createElement('div');
+                disputeCard.className = "mb-4 p-3 border rounded bg-light";
+                disputeCard.style.borderColor = "var(--border-color) !important";
+
+                disputeCard.innerHTML = `
                 <div class="chat-window p-3">
                     <div class="d-flex justify-content-between align-items-center mb-3 text-secondary border-bottom border-secondary pb-2 small">
                         <strong>🔒 Private Dispute Room: Question ${q.questionId} (Topic: ${q.questionTopic})</strong>
@@ -2314,151 +2312,327 @@ async function renderInstructorPrivateTicketChatArea(studentId, answers) {
                     </div>
                 </div>
             `;
-            area.appendChild(disputeCard);
+                area.appendChild(disputeCard);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        if (disputeCount === 0) {
+            area.innerHTML = `<div class="text-center p-4 text-secondary border border-dashed rounded small" style="border-color: var(--border-color) !important;">No active dispute tickets found for this student.</div>`;
+        }
+    }
+
+    // Team Member 5 - Ethan - Implementation of instructor dispute feedback function
+    async function dispatchInstructorEmbeddedChat(studentId, qId) {
+
+        // FIXED: Changed DOM Input element ID to match the actual ID in the view template
+        const input = document.getElementById(
+            `inputInstructorEmbeddedChatText-${qId}`
+        );
+
+
+        if (!input)
+            return;
+
+        const message = input.value.trim();
+
+        if (!message)
+            return;
+
+        // FIXED: Reconstructed payload to match CommentDTO expected by POST /api/forum/comment
+        const payload = {
+            isPrivate: true,
+            studentId: studentId,
+            topic: "Dispute Q" + qId,
+            sender: "Dr. Ali Bayeh (Instructor)",
+            message: message
+        };
+        try {
+            //Submit the instructor's dispute messaggee to the API
+            // FIXED: Changed API endpoint target from instructor/dispute-message (non-existent) to forum/comment
+            const res = await fetch(`${API_BASE}/forum/comment`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                throw new Error("Failed to send instructor message.")
+            }
+
+            input.value = "";
+
+            // FIXED: Call routeTargetStudentToEvaluationDesk to refresh evaluation logs and reload chat messages sync
+            routeTargetStudentToEvaluationDesk(studentId);
+
+
         } catch (err) {
             console.error(err);
+            alert(`Error sending message: ${err.message}`);
         }
     }
 
-    if (disputeCount === 0) {
-        area.innerHTML = `<div class="text-center p-4 text-secondary border border-dashed rounded small" style="border-color: var(--border-color) !important;">No active dispute tickets found for this student.</div>`;
-    }
-}
+    //Team member 5 - Ethan - Implementation of score override by instructor function
+    async function executeInstructorManualScoreOverride(studentId, qId, isApproved, manualOverrideScore = null) {
+        //Prevent invalid requests
+        if (!studentId || !qId || typeof isApproved !== "boolean") {
+            console.error("Invalid dispute resolution arguments.", {
+                studentId,
+                qId,
+                isApproved,
+                manualOverrideScore
+            });
 
-async function dispatchInstructorEmbeddedChat(studentId, qId) {
-    // TODO: Team Member 5 - Send message from teacher inside private dispute chat workspace.
-    alert("TODO: Team Member 5 - Implement dispatchInstructorEmbeddedChat in app.js");
-}
-
-async function executeInstructorManualScoreOverride(studentId, qId, isApproved) {
-    // TODO: Team Member 5 - Submit dispute audits and score override points registries.
-    alert("TODO: Team Member 5 - Implement executeInstructorManualScoreOverride in app.js");
-}
-
-// ================= COURSE FORUM SYSTEM =================
-
-// ================= COURSE FORUM SYSTEM =================
-
-const STUDY_GUIDES = {
-    "Arrays": "📚 Unlocked Study Guide: Review index boundaries, off-by-one errors, array declarations, and length vs. index indexing logic.",
-    "Recursion": "📚 Unlocked Study Guide: Review your base cases to prevent infinite recursion and stack overflow errors. Trace values manually on a call stack.",
-    "Loops": "📚 Unlocked Study Guide: Watch out for infinite loops, variable updates inside the loop body, and correct boundary checking conditions.",
-    "Strings": "📚 Unlocked Study Guide: Remember that string indices are 0-based, strings are immutable in many languages, and pay attention to substring bounds.",
-    "Methods": "📚 Unlocked Study Guide: Ensure parameter counts and type signatures match exactly. Track scope and returns.",
-    "Conditionals": "📚 Unlocked Study Guide: Verify boolean operator logic, use of block braces, and proper nesting of if-else statements."
-};
-
-
-function parseLocalDateString(dateStr) {
-    if (!dateStr) return null;
-    try {
-        const clean = dateStr.replace(' ', 'T');
-        const withOffset = clean.includes('T') && !clean.includes('Z') && !clean.includes('-06:00')
-            ? `${clean}-06:00`
-            : clean;
-        const d = new Date(withOffset);
-        if (!isNaN(d.getTime())) {
-            return d;
+            alert("Unable to process the dispute because required information is missing.");
+            return;
         }
-    } catch (_) { }
-    return null;
-}
 
-function formatLocalDateTime(dateStr) {
-    if (!dateStr) return "";
-    try {
-        const d = new Date(dateStr);
-        if (isNaN(d.getTime())) return "";
-        const formatter = new Intl.DateTimeFormat('en-US', {
-            timeZone: 'America/Regina',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        });
-        const formatted = formatter.format(d);
-        const parts = formatted.split(', ');
-        const dateParts = parts[0].split('/');
-        const timeParts = parts[1].split(':');
-
-        const year = dateParts[2];
-        const month = dateParts[0];
-        const day = dateParts[1];
-        const hours = timeParts[0];
-        const minutes = timeParts[1];
-
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
-    } catch (_) { }
-    return dateStr ? dateStr.substring(0, 16) : "";
-}
-
-function formatInReginaTimezone(dateStr) {
-    if (!dateStr) return "";
-    try {
-        const d = new Date(dateStr);
-        if (isNaN(d.getTime())) return "";
-        const formatter = new Intl.DateTimeFormat('en-US', {
-            timeZone: 'America/Regina',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: 'numeric',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true
-        });
-        return formatter.format(d);
-    } catch (_) { }
-    return dateStr;
-}
-
-function convertReginaToUtcIso(val) {
-    if (!val) return null;
-    try {
-        const dateStr = val.includes('T') && !val.includes('-06:00') ? `${val}-06:00` : val;
-        const d = new Date(dateStr);
-        if (!isNaN(d.getTime())) {
-            return d.toISOString();
+        // FIXED: Read the manual override score value directly from DOM input element when approved
+        let overrideScoreVal = 0;
+        if (isApproved) {
+            const scoreInput = document.getElementById(`inputManualOverrideScore-${qId}`);
+            if (scoreInput) {
+                overrideScoreVal = parseFloat(scoreInput.value);
+                const maxAttr = parseFloat(scoreInput.getAttribute('max')) || 10.0;
+                // Validate score boundaries to prevent negative points or score overflow
+                if (isNaN(overrideScoreVal) || overrideScoreVal < 0 || overrideScoreVal > maxAttr) {
+                    return alert(`Invalid override score value. Must be between 0 and ${maxAttr}.`);
+                }
+            } else {
+                return alert("Dispute score input element not found in DOM.");
+            }
         }
-    } catch (_) { }
-    return val;
-}
+        const actionText = isApproved ? "approve" : "reject";
+        // Confirm the instructor intended to perform the action
+        const confirmed = confirm(
+            `Are you sure you want to ${actionText} this student's dispute?`
+        );
+        if (!confirmed)
+            return;
+        // FIXED: Bind quizTitle from 'state.selectedQuizTitle' to match instructor context schema
+        const payload = {
+            studentId: studentId,
+            quizTitle: state.selectedQuizTitle || state.activeTaskTitle,
+            questionId: qId,
+            isApproved: isApproved,
+            manualOverrideScore: overrideScoreVal // FIXED: Pass the validated score read from DOM
+        };
 
-function getStudyGuideForTopic(topic) {
-    if (!topic || topic === "General Discussion Hub") return null;
-    
-    // Case insensitive lookup
-    const normalized = topic.trim().toLowerCase();
-    for (const key in STUDY_GUIDES) {
-        if (normalized.includes(key.toLowerCase()) || key.toLowerCase().includes(normalized)) {
-            return STUDY_GUIDES[key];
+        try {
+            //Submit the instructor's dispute decision to API
+            const res = await fetch(
+                `${API_BASE}/instructor/resolve-dispute`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                }
+            );
+
+            if (!res.ok) {
+                const errorText = await res.text();
+
+                throw new Error(
+                    errorText || `Failed to ${actionText} the dispute.`
+                );
+            }
+
+            const result = await res.json().catch(() => null);
+
+            alert(
+                result?.message ??
+                (
+                    isApproved
+                        ? "Dispute approved. The students score has been updated."
+                        : "Dispute rejected. The students original score has been retained."
+                )
+            );
+
+            // FIXED: Redirect and reload page context to recalculate Class Average and refresh graphs on Dashboard
+            const titleParam = state.selectedQuizTitle ? `?quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
+            window.location.href = "/Instructor/Dashboard" + titleParam;
+        } catch (err) {
+            console.error("Dispute resolution error:", err);
+
+            alert(
+                `Error processing the dispute: ${err.message}`
+            );
         }
     }
-    return `📚 Unlocked Study Guide: Review key concepts and core definitions of ${topic} to identify logic discrepancies.`;
-}
 
-async function initializeForumPage() {
-    // TODO: Team Member 5 - Load current forum active channels list and configure topic categories.
-    alert("TODO: Team Member 5 - Implement initializeForumPage in app.js");
-}
+
+    // ================= COURSE FORUM SYSTEM =================
+
+    // ================= COURSE FORUM SYSTEM =================
+
+    const STUDY_GUIDES = {
+        "Arrays": "📚 Unlocked Study Guide: Review index boundaries, off-by-one errors, array declarations, and length vs. index indexing logic.",
+        "Recursion": "📚 Unlocked Study Guide: Review your base cases to prevent infinite recursion and stack overflow errors. Trace values manually on a call stack.",
+        "Loops": "📚 Unlocked Study Guide: Watch out for infinite loops, variable updates inside the loop body, and correct boundary checking conditions.",
+        "Strings": "📚 Unlocked Study Guide: Remember that string indices are 0-based, strings are immutable in many languages, and pay attention to substring bounds.",
+        "Methods": "📚 Unlocked Study Guide: Ensure parameter counts and type signatures match exactly. Track scope and returns.",
+        "Conditionals": "📚 Unlocked Study Guide: Verify boolean operator logic, use of block braces, and proper nesting of if-else statements."
+    };
+
+
+    function parseLocalDateString(dateStr) {
+        if (!dateStr) return null;
+        try {
+            const clean = dateStr.replace(' ', 'T');
+            const withOffset = clean.includes('T') && !clean.includes('Z') && !clean.includes('-06:00')
+                ? `${clean}-06:00`
+                : clean;
+            const d = new Date(withOffset);
+            if (!isNaN(d.getTime())) {
+                return d;
+            }
+        } catch (_) { }
+        return null;
+    }
+
+    function formatLocalDateTime(dateStr) {
+        if (!dateStr) return "";
+        try {
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return "";
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'America/Regina',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+            const formatted = formatter.format(d);
+            const parts = formatted.split(', ');
+            const dateParts = parts[0].split('/');
+            const timeParts = parts[1].split(':');
+
+            const year = dateParts[2];
+            const month = dateParts[0];
+            const day = dateParts[1];
+            const hours = timeParts[0];
+            const minutes = timeParts[1];
+
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        } catch (_) { }
+        return dateStr ? dateStr.substring(0, 16) : "";
+    }
+
+    function formatInReginaTimezone(dateStr) {
+        if (!dateStr) return "";
+        try {
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return "";
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'America/Regina',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: 'numeric',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+            return formatter.format(d);
+        } catch (_) { }
+        return dateStr;
+    }
+
+    function convertReginaToUtcIso(val) {
+        if (!val) return null;
+        try {
+            const dateStr = val.includes('T') && !val.includes('-06:00') ? `${val}-06:00` : val;
+            const d = new Date(dateStr);
+            if (!isNaN(d.getTime())) {
+                return d.toISOString();
+            }
+        } catch (_) { }
+        return val;
+    }
+
+    function getStudyGuideForTopic(topic) {
+        if (!topic || topic === "General Discussion Hub") return null;
+
+        // Case insensitive lookup
+        const normalized = topic.trim().toLowerCase();
+        for (const key in STUDY_GUIDES) {
+            if (normalized.includes(key.toLowerCase()) || key.toLowerCase().includes(normalized)) {
+                return STUDY_GUIDES[key];
+            }
+        }
+        return `📚 Unlocked Study Guide: Review key concepts and core definitions of ${topic} to identify logic discrepancies.`;
+    }
+
+    async function initializeForumPage() {
+
+        const topicSelect = document.getElementById("forum-topic-select");
+
+        try {
+            if (topicSelect) {
+                topicSelect.innerHTML = "";
+
+                forumTopics.forEach(topic => {
+                    const option = document.createElement("option");
+                    option.value = topic;
+                    option.textContent = topic;
+                    topicSelect.appendChild(option);
+                });
+
+                topicSelect.addEventListener("change", async event => {
+                    await loadForumTopic(event.target.value);
+                });
+            }
+
+            const defaultTopic = forumTopics[0];
+
+            if (defaultTopic) {
+                await loadForumTopic(defaultTopic);
+            }
+        } catch (error) {
+            console.error("Failed to initialize forum page:", error);
+        }
+    }
+
 
 function onForumQuizDropdownChange(val) {
     state.selectedQuizTitle = val;
     const newUrl = window.location.pathname + '?quizTitle=' + encodeURIComponent(val);
     window.history.pushState({ path: newUrl }, '', newUrl);
     initializeForumPage();
+
 }
+// Simple Q&A forum for MCQ-only quizzes (one room, no per-topic tabs)
+function renderSimpleQAForum(container, quizTitle, isInstructor) {
+        const headerText = isInstructor ? "Course Q&A Moderation" : "Course Q&A Forum";
+        const subText = isInstructor
+            ? "Students can post questions here for MCQ clarification. Answer them publicly."
+            : "Post questions about this MCQ quiz. The instructor will answer here.";
+        container.innerHTML = `
+        <div class="glass-panel">
+            <h4 class="fw-bold text-dark mb-1" style="font-family: var(--font-heading);">&#x1F4AC; ${headerText}</h4>
+            <p class="text-secondary small mb-1">${quizTitle}</p>
+            <p class="text-secondary small mb-4">${subText}</p>
+            <div id="forum-chat-viewport"></div>
+        </div>`;
+        renderUnifiedForumComponent('forum-chat-viewport', 'General Q&A');
+
+    }
 
 
-function renderStudentForumInterface(resources, selectorHTML = '') {
-    const container = document.getElementById('student-forum-container-target');
-    if (!container) return;
+    function renderStudentForumInterface(resources, selectorHTML = '') {
+        const container = document.getElementById('student-forum-container-target');
+        if (!container) return;
 
-    let resourcesHTML = "";
-    if (resources.length > 0) {
-        resourcesHTML = `
+        let resourcesHTML = "";
+        if (resources.length > 0) {
+            resourcesHTML = `
             <div class="glass-panel mb-4" style="border-color: var(--accent-indigo) !important; background-color: rgba(99, 102, 241, 0.02);">
                 <h5 class="fw-bold text-dark mb-2 d-flex align-items-center gap-1" style="font-family: var(--font-heading);">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -2467,94 +2641,94 @@ function renderStudentForumInterface(resources, selectorHTML = '') {
                 <p class="text-secondary small mb-3">The instructor has posted review resources specifically targeting the defects identified in your submission.</p>
                 <div class="d-flex flex-column gap-3">`;
 
-        resources.forEach(r => {
-            let materialsListHTML = "";
-            if (r.comments.length === 0) {
-                materialsListHTML = `<div class="text-secondary small italic ps-3">No study materials posted yet for this error tag.</div>`;
-            } else {
-                materialsListHTML = `<ul class="mb-0 ps-4 small text-dark">` + r.comments.map(c => {
-                    return `<li class="mb-1">${c.message}</li>`;
-                }).join('') + `</ul>`;
-            }
+            resources.forEach(r => {
+                let materialsListHTML = "";
+                if (r.comments.length === 0) {
+                    materialsListHTML = `<div class="text-secondary small italic ps-3">No study materials posted yet for this error tag.</div>`;
+                } else {
+                    materialsListHTML = `<ul class="mb-0 ps-4 small text-dark">` + r.comments.map(c => {
+                        return `<li class="mb-1">${c.message}</li>`;
+                    }).join('') + `</ul>`;
+                }
 
-            resourcesHTML += `
+                resourcesHTML += `
                 <div class="p-3 border rounded bg-white" style="border-color: var(--border-color) !important;">
                     <strong class="text-rose small d-block mb-2">Tag: ${r.tag}</strong>
                     ${materialsListHTML}
                 </div>`;
-        });
+            });
 
-        resourcesHTML += `</div></div>`;
-    }
+            resourcesHTML += `</div></div>`;
+        }
 
-    container.innerHTML = selectorHTML + resourcesHTML + `
+        container.innerHTML = selectorHTML + resourcesHTML + `
         <div id="general-forum-chat-viewport"></div>`;
 
-    renderUnifiedForumComponent('general-forum-chat-viewport', 'General Q&A');
-}
-
-async function initializeInstructorDashboardForum() {
-    const container = document.getElementById('standalone-teacher-forum-container');
-    if (!container) return;
-
-    try {
-        const titleQuery = state.selectedQuizTitle ? `?quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
-        const resQ = await fetch(`${API_BASE}/questions${titleQuery}`);
-        if (!resQ.ok) throw new Error();
-        const dataQ = await resQ.json();
-
-        state.activeTaskTitle = dataQ.title;
-        state.isForumOpen = dataQ.isForumOpen ?? true;
-        state.quizMode = dataQ.quizMode ?? "Manual";
-        state.deadlineString = dataQ.deadlineString || dataQ.DeadlineString || null;
-
-        const resTags = await fetch(`${API_BASE}/instructor/error-tags`);
-        if (!resTags.ok) throw new Error();
-        const tags = await resTags.json();
-
-        await renderTeacherForumInterface(tags, 'standalone-teacher-forum-container');
-    } catch (err) {
-        container.innerHTML = `<div class="alert-custom alert-custom-warning small">Error loading forum rooms: ${err.message}</div>`;
+        renderUnifiedForumComponent('general-forum-chat-viewport', 'General Q&A');
     }
-}
 
-async function renderTeacherForumInterface(tags, targetContainerId = 'standalone-teacher-forum-container', selectorHTML = '') {
-    const container = document.getElementById(targetContainerId);
-    if (!container) return;
+    async function initializeInstructorDashboardForum() {
+        const container = document.getElementById('standalone-teacher-forum-container');
+        if (!container) return;
 
-    const resourcePromises = tags.map(async (tag) => {
-        const scopedTopic = `${state.activeTaskTitle} - Resource - ${tag}`;
-        const res = await fetch(`${API_BASE}/forum/${encodeURIComponent(scopedTopic)}`);
-        if (res.ok) {
-            const comments = await res.json();
-            return { tag, comments };
+        try {
+            const titleQuery = state.selectedQuizTitle ? `?quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
+            const resQ = await fetch(`${API_BASE}/questions${titleQuery}`);
+            if (!resQ.ok) throw new Error();
+            const dataQ = await resQ.json();
+
+            state.activeTaskTitle = dataQ.title;
+            state.isForumOpen = dataQ.isForumOpen ?? true;
+            state.quizMode = dataQ.quizMode ?? "Manual";
+            state.deadlineString = dataQ.deadlineString || dataQ.DeadlineString || null;
+
+            const resTags = await fetch(`${API_BASE}/instructor/error-tags`);
+            if (!resTags.ok) throw new Error();
+            const tags = await resTags.json();
+
+            await renderTeacherForumInterface(tags, 'standalone-teacher-forum-container');
+        } catch (err) {
+            container.innerHTML = `<div class="alert-custom alert-custom-warning small">Error loading forum rooms: ${err.message}</div>`;
         }
-        return { tag, comments: [] };
-    });
-    const resources = await Promise.all(resourcePromises);
+    }
 
-    const selectOptionsHTML = tags.map(tag => `<option value="${tag}">${tag}</option>`).join('');
+    async function renderTeacherForumInterface(tags, targetContainerId = 'standalone-teacher-forum-container', selectorHTML = '') {
+        const container = document.getElementById(targetContainerId);
+        if (!container) return;
 
-    let postedResourcesHTML = `<div class="d-flex flex-column gap-2 mt-3" style="max-height: 250px; overflow-y: auto;">`;
-    let hasResources = false;
-    resources.forEach(r => {
-        if (r.comments.length > 0) {
-            hasResources = true;
-            postedResourcesHTML += `
+        const resourcePromises = tags.map(async (tag) => {
+            const scopedTopic = `${state.activeTaskTitle} - Resource - ${tag}`;
+            const res = await fetch(`${API_BASE}/forum/${encodeURIComponent(scopedTopic)}`);
+            if (res.ok) {
+                const comments = await res.json();
+                return { tag, comments };
+            }
+            return { tag, comments: [] };
+        });
+        const resources = await Promise.all(resourcePromises);
+
+        const selectOptionsHTML = tags.map(tag => `<option value="${tag}">${tag}</option>`).join('');
+
+        let postedResourcesHTML = `<div class="d-flex flex-column gap-2 mt-3" style="max-height: 250px; overflow-y: auto;">`;
+        let hasResources = false;
+        resources.forEach(r => {
+            if (r.comments.length > 0) {
+                hasResources = true;
+                postedResourcesHTML += `
                 <div class="p-2 border rounded bg-white small shadow-sm" style="border-color: var(--border-color) !important;">
                     <strong class="text-rose d-block mb-1">${r.tag}</strong>
                     <ul class="mb-0 ps-3">
                         ${r.comments.map(c => `<li>${c.message}</li>`).join('')}
                     </ul>
                 </div>`;
+            }
+        });
+        if (!hasResources) {
+            postedResourcesHTML += `<div class="text-secondary small italic py-2">No study materials posted yet. Use the fields above to post.</div>`;
         }
-    });
-    if (!hasResources) {
-        postedResourcesHTML += `<div class="text-secondary small italic py-2">No study materials posted yet. Use the fields above to post.</div>`;
-    }
-    postedResourcesHTML += `</div>`;
+        postedResourcesHTML += `</div>`;
 
-    container.innerHTML = selectorHTML + `
+        container.innerHTML = selectorHTML + `
         <div class="row g-4">
             <!-- Left Column: Manage Study Materials -->
             <div class="col-lg-5">
@@ -2591,117 +2765,117 @@ async function renderTeacherForumInterface(tags, targetContainerId = 'standalone
             </div>
         </div>`;
 
-    renderUnifiedForumComponent('general-forum-chat-viewport', 'General Q&A');
-}
-
-async function teacherSubmitResource() {
-    const tag = document.getElementById('resourceFeedbackTagSelect').value;
-    const title = document.getElementById('resourceTitleInput').value.trim();
-    const url = document.getElementById('resourceUrlInput').value.trim();
-
-    if (!title || !url) {
-        return alert("Please fill in both the title and URL/description.");
+        renderUnifiedForumComponent('general-forum-chat-viewport', 'General Q&A');
     }
 
-    const message = `&#x1F4CE; [Study Material] ${title} — ${url}`;
-    const scopedTopic = `${state.activeTaskTitle} - Resource - ${tag}`;
+    async function teacherSubmitResource() {
+        const tag = document.getElementById('resourceFeedbackTagSelect').value;
+        const title = document.getElementById('resourceTitleInput').value.trim();
+        const url = document.getElementById('resourceUrlInput').value.trim();
 
-    try {
-        const res = await fetch(`${API_BASE}/forum/comment`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                isPrivate: false,
-                studentId: 'all',
-                topic: scopedTopic,
-                sender: `${state.user.name} (Instructor)`,
-                message: message
-            })
-        });
+        if (!title || !url) {
+            return alert("Please fill in both the title and URL/description.");
+        }
 
-        if (!res.ok) throw new Error("Failed to post resource.");
+        const message = `&#x1F4CE; [Study Material] ${title} — ${url}`;
+        const scopedTopic = `${state.activeTaskTitle} - Resource - ${tag}`;
 
-        alert("✔ Study resource posted successfully for tag: " + tag);
+        try {
+            const res = await fetch(`${API_BASE}/forum/comment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    isPrivate: false,
+                    studentId: 'all',
+                    topic: scopedTopic,
+                    sender: `${state.user.name} (Instructor)`,
+                    message: message
+                })
+            });
 
-        document.getElementById('resourceTitleInput').value = '';
-        document.getElementById('resourceUrlInput').value = '';
+            if (!res.ok) throw new Error("Failed to post resource.");
 
-        const targetContainer = document.getElementById('student-forum-container-target');
-        if (targetContainer) {
-            await initializeForumPage();
+            alert("✔ Study resource posted successfully for tag: " + tag);
+
+            document.getElementById('resourceTitleInput').value = '';
+            document.getElementById('resourceUrlInput').value = '';
+
+            const targetContainer = document.getElementById('student-forum-container-target');
+            if (targetContainer) {
+                await initializeForumPage();
+            } else {
+                await initializeInstructorDashboardForum();
+            }
+        } catch (err) {
+            alert("Error posting resource: " + err.message);
+        }
+    }
+
+
+    // Toggle accordion section and lazy-load chat
+    function toggleForumAccordion(idx, topic) {
+        const chatEl = document.getElementById(`forum-chat-${idx}`);
+        const arrowEl = document.getElementById(`accord-arrow-${idx}`);
+        const headerEl = chatEl ? chatEl.previousElementSibling : null;
+
+        if (!chatEl) return;
+        const isOpen = chatEl.style.display !== 'none';
+
+        if (isOpen) {
+            chatEl.style.display = 'none';
+            if (arrowEl) arrowEl.style.transform = 'rotate(0deg)';
+            if (headerEl) headerEl.style.background = '#fafafa';
         } else {
-            await initializeInstructorDashboardForum();
-        }
-    } catch (err) {
-        alert("Error posting resource: " + err.message);
-    }
-}
-
-
-// Toggle accordion section and lazy-load chat
-function toggleForumAccordion(idx, topic) {
-    const chatEl   = document.getElementById(`forum-chat-${idx}`);
-    const arrowEl  = document.getElementById(`accord-arrow-${idx}`);
-    const headerEl = chatEl ? chatEl.previousElementSibling : null;
-
-    if (!chatEl) return;
-    const isOpen = chatEl.style.display !== 'none';
-
-    if (isOpen) {
-        chatEl.style.display = 'none';
-        if (arrowEl) arrowEl.style.transform = 'rotate(0deg)';
-        if (headerEl) headerEl.style.background = '#fafafa';
-    } else {
-        chatEl.style.display = 'block';
-        if (arrowEl) arrowEl.style.transform = 'rotate(180deg)';
-        if (headerEl) headerEl.style.background = 'rgba(99,102,241,0.07)';
-        // Lazy-load chat if empty
-        if (!chatEl.innerHTML.trim()) {
-            renderUnifiedForumComponent(`forum-chat-${idx}`, topic);
+            chatEl.style.display = 'block';
+            if (arrowEl) arrowEl.style.transform = 'rotate(180deg)';
+            if (headerEl) headerEl.style.background = 'rgba(99,102,241,0.07)';
+            // Lazy-load chat if empty
+            if (!chatEl.innerHTML.trim()) {
+                renderUnifiedForumComponent(`forum-chat-${idx}`, topic);
+            }
         }
     }
-}
 
-async function initializeInstructorDashboardForum() {
-    const container = document.getElementById('standalone-teacher-forum-container');
-    if (!container) return;
+    async function initializeInstructorDashboardForum() {
+        const container = document.getElementById('standalone-teacher-forum-container');
+        if (!container) return;
 
-    try {
-        const titleQuery = state.selectedQuizTitle ? `?quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
-        const resQ = await fetch(`${API_BASE}/questions${titleQuery}`);
-        if (!resQ.ok) throw new Error();
-        const dataQ = await resQ.json();
-        
-        state.activeTaskTitle = dataQ.title;
-        state.isForumOpen = dataQ.isForumOpen ?? true;
-        state.quizMode = dataQ.quizMode ?? "Manual";
+        try {
+            const titleQuery = state.selectedQuizTitle ? `?quizTitle=${encodeURIComponent(state.selectedQuizTitle)}` : "";
+            const resQ = await fetch(`${API_BASE}/questions${titleQuery}`);
+            if (!resQ.ok) throw new Error();
+            const dataQ = await resQ.json();
 
-        const uniqueTopics = new Set();
-        dataQ.questions.forEach(q => { if (q.topic) uniqueTopics.add(q.topic); });
-        const topicsList = [...Array.from(uniqueTopics), "General Q&A"];
+            state.activeTaskTitle = dataQ.title;
+            state.isForumOpen = dataQ.isForumOpen ?? true;
+            state.quizMode = dataQ.quizMode ?? "Manual";
 
-        // Reuse accordion renderer — pass the standalone container ID
-        renderTeacherForumInterface(topicsList, 'standalone-teacher-forum-container');
-    } catch (err) {
-        container.innerHTML = `<div class="alert-custom alert-custom-warning small">Error loading forum rooms: ${err.message}</div>`;
+            const uniqueTopics = new Set();
+            dataQ.questions.forEach(q => { if (q.topic) uniqueTopics.add(q.topic); });
+            const topicsList = [...Array.from(uniqueTopics), "General Q&A"];
+
+            // Reuse accordion renderer — pass the standalone container ID
+            renderTeacherForumInterface(topicsList, 'standalone-teacher-forum-container');
+        } catch (err) {
+            container.innerHTML = `<div class="alert-custom alert-custom-warning small">Error loading forum rooms: ${err.message}</div>`;
+        }
     }
-}
 
-// targetContainerId: 'student-forum-container-target' (on /Forum page) or 'standalone-teacher-forum-container' (dashboard)
-function renderTeacherForumInterface(topicsList, targetContainerId = 'student-forum-container-target') {
-    const container = document.getElementById(targetContainerId);
-    if (!container) return;
+    // targetContainerId: 'student-forum-container-target' (on /Forum page) or 'standalone-teacher-forum-container' (dashboard)
+    function renderTeacherForumInterface(topicsList, targetContainerId = 'student-forum-container-target') {
+        const container = document.getElementById(targetContainerId);
+        if (!container) return;
 
-    let accordionHTML = '';
-    topicsList.forEach((topic, idx) => {
-        const isOpen = idx === 0;
-        const isGeneral = topic === 'General Q&A';
-        const icon = isGeneral ? '&#x1F4AC;' : '&#x1F4DA;';
-        const safeTopic = topic.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        const chatId  = `forum-chat-${idx}`;
-        const uploadId = `forum-upload-panel-${idx}`;
+        let accordionHTML = '';
+        topicsList.forEach((topic, idx) => {
+            const isOpen = idx === 0;
+            const isGeneral = topic === 'General Q&A';
+            const icon = isGeneral ? '&#x1F4AC;' : '&#x1F4DA;';
+            const safeTopic = topic.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const chatId = `forum-chat-${idx}`;
+            const uploadId = `forum-upload-panel-${idx}`;
 
-        accordionHTML += `
+            accordionHTML += `
             <div class="forum-accordion-item" style="border:1px solid var(--border-color); border-radius:10px; margin-bottom:8px; overflow:hidden;">
                 <!-- Header -->
                 <div class="forum-accordion-header d-flex align-items-center justify-content-between px-3 py-3"
@@ -2736,9 +2910,9 @@ function renderTeacherForumInterface(topicsList, targetContainerId = 'student-fo
                 <div id="${chatId}" style="display:${isOpen ? 'block' : 'none'};">
                 </div>
             </div>`;
-    });
+        });
 
-    container.innerHTML = `
+        container.innerHTML = `
         <div class="glass-panel">
             <h4 class="fw-bold text-dark mb-1" style="font-family: var(--font-heading);">&#x1F4AC; Course Forums Moderation</h4>
             <p class="text-secondary small mb-1">${state.activeTaskTitle}</p>
@@ -2746,175 +2920,404 @@ function renderTeacherForumInterface(topicsList, targetContainerId = 'student-fo
             <div id="forum-accordion-container">${accordionHTML}</div>
         </div>`;
 
-    // Auto-load first topic
-    if (topicsList.length > 0) {
-        renderUnifiedForumComponent('forum-chat-0', topicsList[0]);
-    }
-}
-async function teacherSubmitResource() {
-    const tag = document.getElementById('resourceFeedbackTagSelect').value;
-    const title = document.getElementById('resourceTitleInput').value.trim();
-    const url = document.getElementById('resourceUrlInput').value.trim();
-
-    if (!title || !url) {
-        return alert("Please fill in both the title and URL/description.");
-    }
-
-    const message = `&#x1F4CE; [Study Material] ${title} — ${url}`;
-    const scopedTopic = `${state.activeTaskTitle} - Resource - ${tag}`;
-
-    try {
-        const res = await fetch(`${API_BASE}/forum/comment`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                isPrivate: false,
-                studentId: 'all',
-                topic: scopedTopic,
-                sender: `${state.user.name} (Instructor)`,
-                message: message
-            })
-        });
-
-        if (!res.ok) throw new Error("Failed to post resource.");
-
-        alert("✔ Study resource posted successfully for tag: " + tag);
-
-        document.getElementById('resourceTitleInput').value = '';
-        document.getElementById('resourceUrlInput').value = '';
-
-        const targetContainer = document.getElementById('student-forum-container-target');
-        if (targetContainer) {
-            await initializeForumPage();
-        } else {
-            await initializeInstructorDashboardForum();
+        // Auto-load first topic
+        if (topicsList.length > 0) {
+            renderUnifiedForumComponent('forum-chat-0', topicsList[0]);
         }
-    } catch (err) {
-        alert("Error posting resource: " + err.message);
     }
-}
+    async function teacherSubmitResource() {
+        const tag = document.getElementById('resourceFeedbackTagSelect').value;
+        const title = document.getElementById('resourceTitleInput').value.trim();
+        const url = document.getElementById('resourceUrlInput').value.trim();
+
+        if (!title || !url) {
+            return alert("Please fill in both the title and URL/description.");
+        }
+
+        const message = `&#x1F4CE; [Study Material] ${title} — ${url}`;
+        const scopedTopic = `${state.activeTaskTitle} - Resource - ${tag}`;
+
+        try {
+            const res = await fetch(`${API_BASE}/forum/comment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    isPrivate: false,
+                    studentId: 'all',
+                    topic: scopedTopic,
+                    sender: `${state.user.name} (Instructor)`,
+                    message: message
+                })
+            });
+
+            if (!res.ok) throw new Error("Failed to post resource.");
+
+            alert("✔ Study resource posted successfully for tag: " + tag);
+
+            document.getElementById('resourceTitleInput').value = '';
+            document.getElementById('resourceUrlInput').value = '';
+
+            const targetContainer = document.getElementById('student-forum-container-target');
+            if (targetContainer) {
+                await initializeForumPage();
+            } else {
+                await initializeInstructorDashboardForum();
+            }
+        } catch (err) {
+            alert("Error posting resource: " + err.message);
+        }
+    }
 
 
+    // Team member 5 - Ethan - Implementation of teacher material submission function
+    async function teacherSubmitMaterial(panelId, topic) {
 
-function switchForumTopic(topic, tabId, viewportId) {
-    const clickedTab = document.getElementById(tabId);
-    if (clickedTab) {
-        const parent = clickedTab.parentElement;
-        if (parent) {
-            parent.querySelectorAll('.sub-tab-link').forEach(link => {
-                link.classList.remove('active');
+        const panel = document.getElementById(panelId);
+
+        if (!panel) {
+            console.error(`Material panel not found: ${panelId}`);
+            return;
+        }
+
+        const materialInput = panel.querySelector(
+            'input[type="url"], input[name="materialUrl"], input[name="studyGuideUrl"]'
+        );
+
+        if (!materialInput) {
+            console.error(`No material URL input found inside panel: ${panelId}`);
+            return;
+        }
+
+        const materialUrl = materialInput.value.trim();
+
+        if (!materialUrl) {
+            alert("Please enter a study guide link.");
+            return;
+        }
+
+        try {
+            new URL(materialUrl);
+        } catch {
+            alert("Please enter a valid hyperlink.");
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE}/forum/comment`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    isPrivate: false,
+                    // FIXED: Set studentId to "all" to match API database schema standard
+                    studentId: "all",
+                    topic: topic,
+                    // FIXED: Include instructor's actual name in the sender field
+                    sender: `${state.user.name} (Instructor)`,
+                    message: materialUrl
+                })
+            });
+
+            if (!response.ok) {
+                const errorMessage = await response.text();
+                throw new Error(errorMessage || "Failed to post study material.");
+            }
+
+            materialInput.value = "";
+
+            alert("Study material posted successfully.");
+
+            //FIXED: Replace non-existent function loadForumComments() with standard CaseLab reload checks
+            const targetContainer = document.getElementById('student-forum-container-target');
+            if (targetContainer) {
+                await initializeForumPage();
+            } else {
+                await initializeInstructorDashboardForum();
+            }
+        } catch (error) {
+            console.error("Error posting study material:", error);
+            alert(`Unable to post study material: ${error.message}`);
+        }
+    }
+
+
+    function switchForumTopic(topic, tabId, viewportId) {
+        const clickedTab = document.getElementById(tabId);
+        if (clickedTab) {
+            const parent = clickedTab.parentElement;
+            if (parent) {
+                parent.querySelectorAll('.sub-tab-link').forEach(link => {
+                    link.classList.remove('active');
+                });
+            }
+            clickedTab.classList.add('active');
+        }
+
+        renderUnifiedForumComponent(viewportId, topic);
+    }
+
+    // Team Member 5 - Ethan - Implementing function to fetch and dsiplay forum comments
+    async function renderUnifiedForumComponent(targetContainerID, filterTopic) {
+
+        const container = document.getElementById(targetContainerID);
+
+        if (!container) {
+            console.error(`Forum container "${targetContainerID}" was not found.`);
+            return;
+        }
+
+        if (!filterTopic || !filterTopic.trim()) {
+            container.innerHTML = `
+            <p class="forum-error">A forum topic is required.</p>
+        `;
+            return;
+        }
+
+        container.innerHTML = `
+        <p class="forum-loading">Loading comments...</p>
+    `;
+
+        try {
+            // FIXED: Prefix topic with the active task title to query the correct database records
+            const scopedTopic = `${state.activeTaskTitle} - ${filterTopic}`;
+
+            const response = await fetch(
+                `${API_BASE}/forum/${encodeURIComponent(scopedTopic)}`
+            );
+            if (!response.ok) {
+                const errorMessage = await response.text();
+                throw new Error(
+                    errorMessage ||
+                    `Unable to load forum comments. Status: ${response.status}`
+                );
+            }
+            const comments = await response.json();
+            // FIXED: Sort comments chronologically by timestamp
+            comments.sort(
+                (firstComment, secondComment) =>
+                    new Date(firstComment.timestamp) -
+                    new Date(secondComment.timestamp)
+            );
+            // FIXED: Generate HTML stream for comments, checking if comment is sent by self
+            const commentsHTMLStream = comments.map(c => {
+                const isSelf = c.sender.includes(state.user.name);
+                return `
+                <div class="comment-bubble ${isSelf ? 'self' : ''}">
+                    <span class="d-block small fw-bold" style="color: var(--accent-cyan); font-size: 11px;">${c.sender}</span>
+                    <span style="font-size: 12.5px;">${c.message}</span>
+                </div>`;
+            }).join('');
+            // FIXED: Check if the discussion hub is locked due to deadline expiry
+            let isPastDeadline = false;
+            if (state.deadlineString) {
+                const deadline = parseLocalDateString(state.deadlineString);
+                if (deadline && new Date() > deadline) {
+                    isPastDeadline = true;
+                }
+            }
+            const isForumActive = (state.isForumOpen ?? true) && !isPastDeadline;
+            // FIXED: Render the full Chat Window (Header, Message Stream, and Input Area) matching the CaseLab layout design
+            container.innerHTML = `
+            <div class="glass-panel p-3">
+                <h5 class="fw-bold text-dark border-bottom border-secondary pb-2 mb-3">💬 Course Forum Hub Room: ${filterTopic} for ${state.activeTaskTitle}</h5>
+                <div class="chat-window">
+                    <div class="chat-header">Active Public Discussion Stream</div>
+                    <div class="p-3">
+                        <div id="comments-stream-container-${targetContainerID}" class="chat-message-stream mb-3" style="height: 280px; overflow-y: auto;">
+                            ${commentsHTMLStream || '<p class="text-secondary small text-center py-4">No comments have been posted for this topic yet.</p>'}
+                        </div>
+                        ${isForumActive ? `
+                        <div class="input-group">
+                            <input type="text" id="inputLiveCommentTextString-${targetContainerID}" class="form-control" placeholder="Post a query peer comment...">
+                            <button class="btn btn-dark-custom" onclick="dispatchLiveCommentSubmission('${targetContainerID}', '${filterTopic}')">Comment</button>
+                        </div>` : `
+                        <div class="alert-custom alert-custom-warning small text-center">
+                            🔒 This discussion room is locked ${isPastDeadline ? '(Due Date has passed)' : 'by the instructor'}.
+                        </div>`}
+                    </div>
+                </div>
+            </div>`;
+            // FIXED: Scroll to the bottom of the stream automatically
+            const stream = document.getElementById(`comments-stream-container-${targetContainerID}`);
+            if (stream) {
+                stream.scrollTop = stream.scrollHeight;
+            }
+
+        } catch (error) {
+            console.error("Unable to render forum comments:", error);
+
+            container.innerHTML = `
+            <p class="forum-error">
+                Unable to load the forum comments right now.
+            </p>
+        `;
+        }
+    }
+
+    //Team member 5 - Ethan - Implementation of dispatching forum comments for immediate viewing
+    async function dispatchLiveCommentSubmission(targetContainerID, filterTopic) {
+
+
+        // FIXED: Changed input element ID to match the ID rendered by renderUnifiedForumComponent
+        const input = document.getElementById(`inputLiveCommentTextString-${targetContainerID}`);
+
+        if (!input) {
+            console.error("Forum input field not found.");
+            return;
+        }
+
+        const message = input.value.trim();
+
+        if (!message) {
+            alert("Please enter a comment before submitting.");
+            return;
+        }
+
+        // FIXED: Access user session details directly from global 'state.user' object instead of raw localStorage
+        const currentUser = state.user;
+
+        if (!currentUser) {
+            alert("No logged in user found.");
+            return;
+        }
+
+        // FIXED: Prefix topic with the active task title, and format sender/studentId properties for API database compatibility
+        const scopedTopic = `${state.activeTaskTitle} - ${filterTopic}`;
+        const comment = {
+            topic: filterTopic,
+            sender: `${currentUser.name} (${currentUser.role === 'student' ? 'Student' : 'Instructor'})`,
+            studentId: "all", // Public forum comments are accessible by "all"
+            message: message,
+            isPrivate: false
+        };
+
+        try {
+            const response = await fetch(`${API_BASE}/forum/comment`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(comment)
+            });
+
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+
+            input.value = "";
+
+            await renderUnifiedForumComponent(
+                targetContainerID,
+                filterTopic
+            );
+        }
+        catch (error) {
+            console.error("Unable to submit forum comment:", error);
+            alert("Failed to post your comment.");
+        }
+    }
+
+
+    // Page-based router initialization on DOM Load
+    window.addEventListener('DOMContentLoaded', async () => {
+        // Restore session từ localStorage (khớp với loginAsRole lưu vào localStorage)
+        const savedUser = SafeStorage.getItem('caselab_user');
+        if (savedUser) {
+            state.user = JSON.parse(savedUser);
+            const sessionArea = document.getElementById('appUserSession');
+            if (sessionArea) sessionArea.style.display = "flex";
+
+            const avatar = document.getElementById('sessionAvatar');
+            if (avatar) {
+                avatar.innerText = state.user.name.split(' ').map(n => n[0]).join('').toUpperCase();
+                avatar.style.backgroundColor = state.user.role === 'student' ? 'var(--accent-indigo)' : 'var(--accent-cyan)';
+            }
+
+            const nameDisp = document.getElementById('sessionNameDisplay');
+            if (nameDisp) {
+                nameDisp.innerText = `${state.user.name} (${state.user.role === 'student' ? 'Student' : 'Instructor'})`;
+            }
+
+            // Start notification polling — fetch immediately then every 30 seconds
+            fetchNotifications();
+            state._notifPollInterval = setInterval(fetchNotifications, 30000);
+        }
+
+
+        (async () => {
+            try {
+                const resQ = await fetch(`${API_BASE}/questions`);
+                if (resQ.ok) {
+                    const dataQ = await resQ.json();
+                    state.activeTaskTitle = dataQ.title;
+                    state.questions = dataQ.questions;
+                    state.timeLimitMinutes = dataQ.timeLimitMinutes ?? 40;
+                    state.isQuizOpen = dataQ.isQuizOpen ?? true;
+                    state.isForumOpen = dataQ.isForumOpen ?? true;
+                    state.deadlineString = dataQ.deadlineString ?? null;
+                    state.pdfBase64 = dataQ.pdfBase64 ?? null;
+                    state.quizMode = dataQ.quizMode ?? "Manual";
+                    state.totalScore = dataQ.totalScore ?? 10.0;
+                }
+            } catch (err) {
+                console.error("Failed to preload active questions config: ", err);
+            }
+        })();
+
+        // Set up PDF file upload listener
+        const pdfInput = document.getElementById('inputQuizPdf');
+        if (pdfInput) {
+            pdfInput.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.type !== "application/pdf") {
+                    alert("Please select a valid PDF file.");
+                    e.target.value = "";
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function (evt) {
+                    state.pdfBase64 = evt.target.result;
+                    const statusLabel = document.getElementById('quizPdfStatusLabel');
+                    if (statusLabel) {
+                        statusLabel.innerText = `✔ Attached: ${file.name}`;
+                    }
+                };
+                reader.readAsDataURL(file);
             });
         }
-        clickedTab.classList.add('active');
-    }
 
-    renderUnifiedForumComponent(viewportId, topic);
-}
+        const path = window.location.pathname.toLowerCase();
 
-async function renderUnifiedForumComponent(targetContainerID, filterTopic) {
-    // TODO: Team Member 5 - Query forum comments for specific topics and render scroll streams.
-    alert("TODO: Team Member 5 - Implement renderUnifiedForumComponent in app.js");
-}
-
-async function dispatchLiveCommentSubmission(targetContainerID, filterTopic) {
-    // TODO: Team Member 5 - Post new comments to forum streams and update layouts.
-    alert("TODO: Team Member 5 - Implement dispatchLiveCommentSubmission in app.js");
-}
-
-// Page-based router initialization on DOM Load
-window.addEventListener('DOMContentLoaded', async () => {
-    // Restore session from localStorage if exists
-    const savedUser = localStorage.getItem('caselab_user');
-    if (savedUser) {
-        state.user = JSON.parse(savedUser);
-        const sessionArea = document.getElementById('appUserSession');
-        if (sessionArea) sessionArea.style.display = "flex";
-        
-        const avatar = document.getElementById('sessionAvatar');
-        if (avatar) {
-            avatar.innerText = state.user.name.split(' ').map(n => n[0]).join('').toUpperCase();
-            avatar.style.backgroundColor = state.user.role === 'student' ? 'var(--accent-indigo)' : 'var(--accent-cyan)';
-        }
-        
-        const nameDisp = document.getElementById('sessionNameDisplay');
-        if (nameDisp) {
-            nameDisp.innerText = `${state.user.name} (${state.user.role === 'student' ? 'Student' : 'Instructor'})`;
-        }
-
-        // Start notification polling — fetch immediately then every 30 seconds
-        fetchNotifications();
-        state._notifPollInterval = setInterval(fetchNotifications, 30000);
-    }
-
-    // Proactively fetch current quiz config to populate globally
-    try {
-        const resQ = await fetch(`${API_BASE}/questions`);
-        if (resQ.ok) {
-            const dataQ = await resQ.json();
-            state.activeTaskTitle = dataQ.title;
-            state.questions = dataQ.questions;
-            state.timeLimitMinutes = dataQ.timeLimitMinutes ?? 40;
-            state.isQuizOpen = dataQ.isQuizOpen ?? true;
-            state.isForumOpen = dataQ.isForumOpen ?? true;
-            state.deadlineString = dataQ.deadlineString ?? null;
-            state.pdfBase64 = dataQ.pdfBase64 ?? null;
-            state.quizMode = dataQ.quizMode ?? "Manual";
-            state.totalScore = dataQ.totalScore ?? 10.0;
-        }
-    } catch (err) {
-        console.error("Failed to preload active questions config: ", err);
-    }
-
-    // Set up PDF file upload listener
-    const pdfInput = document.getElementById('inputQuizPdf');
-    if (pdfInput) {
-        pdfInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            if (file.type !== "application/pdf") {
-                alert("Please select a valid PDF file.");
-                e.target.value = "";
-                return;
+        if (path.includes('/student/dashboard')) {
+            renderStudentDashboard();
+        } else if (path.includes('/student/exam')) {
+            loadQuestionsForExam();
+        } else if (path.includes('/student/mistakebank')) {
+            openStudentMistakeBankWithReload();
+        } else if (path.includes('/instructor/dashboard')) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const qTitle = urlParams.get('quizTitle');
+            if (qTitle) {
+                state.selectedQuizTitle = qTitle;
             }
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                state.pdfBase64 = evt.target.result;
-                const statusLabel = document.getElementById('quizPdfStatusLabel');
-                if (statusLabel) {
-                    statusLabel.innerText = `✔ Attached: ${file.name}`;
-                }
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-
-    const path = window.location.pathname.toLowerCase();
+            await loadQuizzesSidebar();
+            await switchTeacherTab('analytics');
+        } else if (path.includes('/instructor/grading')) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const sId = urlParams.get('studentId');
+            const qTitle = urlParams.get('quizTitle');
+            if (qTitle) {
+                state.selectedQuizTitle = qTitle;
+            }
+            if (sId) {
+                routeTargetStudentToEvaluationDesk(sId);
+            }
+        } else if (path.includes('/forum')) {
+            if (typeof initializeForumPage === 'function') {
+                initializeForumPage();
+            }
+        }
+    });
     
-    if (path.includes('/student/dashboard')) {
-        renderStudentDashboard();
-    } else if (path.includes('/student/exam')) {
-        loadQuestionsForExam();
-    } else if (path.includes('/student/mistakebank')) {
-        openStudentMistakeBankWithReload();
-    } else if (path.includes('/instructor/dashboard')) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const qTitle = urlParams.get('quizTitle');
-        if (qTitle) {
-            state.selectedQuizTitle = qTitle;
-        }
-        await loadQuizzesSidebar();
-        await switchTeacherTab('analytics');
-    } else if (path.includes('/instructor/grading')) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const sId = urlParams.get('studentId');
-        const qTitle = urlParams.get('quizTitle');
-        if (qTitle) {
-            state.selectedQuizTitle = qTitle;
-        }
-        if (sId) {
-            routeTargetStudentToEvaluationDesk(sId);
-        }
-    } else if (path.includes('/forum')) {
-        initializeForumPage();
-    }
-});

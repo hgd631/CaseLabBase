@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace CaseLab.API.Controllers
+namespace CaseLabBase.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
