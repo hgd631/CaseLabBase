@@ -1,4 +1,7 @@
--- Drop tables if they exist in dependency order
+-- Create CaseLabBaseDB database for PostgreSQL
+-- CREATE DATABASE "CaseLabBaseDB";
+
+-- Drop tables in dependency order if they exist
 DROP TABLE IF EXISTS "Notifications" CASCADE;
 DROP TABLE IF EXISTS "Tickets" CASCADE;
 DROP TABLE IF EXISTS "Comments" CASCADE;
@@ -50,6 +53,7 @@ CREATE TABLE "Submissions" (
     "QuizTitle" VARCHAR(150) NOT NULL,
     "Status" VARCHAR(50) NOT NULL DEFAULT 'Pending',
     "FinalScore" DECIMAL(6,2) NOT NULL DEFAULT 0.00,
+    "SurveyDifficulty" VARCHAR(50) NULL,
     "SurveyPainPoint" TEXT NULL,
     "DisputeStatus" VARCHAR(50) NOT NULL DEFAULT 'None',
     CONSTRAINT "UQ_StudentId_QuizTitle" UNIQUE ("StudentId", "QuizTitle"),
@@ -113,7 +117,8 @@ CREATE TABLE "Notifications" (
 );
 
 -- ============================================================
--- Seed: Users & Error Tags only
+-- Seed: Users & Error Tags only (NO quiz seed data)
+-- Create your own quiz from the Instructor Dashboard to test!
 -- ============================================================
 INSERT INTO "Users" ("Id", "Name", "Role") VALUES
 ('s1', 'Han Dang', 'student'),
