@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Instructor Evaluation Desk";
+    ViewData["Title"] = "Grading";
 }
 
 <div class="row mb-4">
@@ -8,10 +8,10 @@
             <div>
                 <a href="/Instructor/Dashboard" class="btn btn-sm btn-outline-custom text-secondary me-2">← Back to Dashboard</a>
                 <h4 class="fw-bold d-inline-block m-0" style="font-family: var(--font-heading);">
-                    Evaluation Desk: <span id="currentGradingStudentNameHeader" class="text-cyan">Student Name</span>
+                    Grading: <span id="currentGradingStudentNameHeader" class="text-cyan">Student Name</span>
                 </h4>
             </div>
-            <span class="badge bg-indigo text-uppercase text-white" style="font-size: 10px; letter-spacing: 0.05em;">Manual Audit Flow</span>
+            <span class="badge bg-indigo text-uppercase text-white" style="font-size: 10px; letter-spacing: 0.05em;">Grading Flow</span>
         </div>
     </div>
 </div>
@@ -25,13 +25,13 @@
         </div>
 
         <div class="glass-panel">
-            <h5 class="fw-bold border-bottom border-secondary pb-2 mb-4" style="font-family: var(--font-heading);">Submission Outputs Loop</h5>
-            
+            <h5 class="fw-bold border-bottom border-secondary pb-2 mb-4" style="font-family: var(--font-heading);">Submission Answers</h5>
+
             <div id="gradingQuestionsLoopContainer">
                 <!-- Dynamically populated MCQ and Essay student answers -->
                 <div class="text-center py-4 text-secondary">
                     <div class="spinner-border spinner-border-sm text-cyan me-2" role="status"></div>
-                    Retrieving student submission streams...
+                    Loading student submission...
                 </div>
             </div>
         </div>
@@ -41,10 +41,10 @@
     <div class="col-lg-5" id="gradingRightPanelColumn">
         <!-- Evaluation Controls block -->
         <div class="glass-panel mb-4" id="normalGradingBlockControls">
-            <h5 class="fw-bold border-bottom border-secondary pb-2 mb-3" style="font-family: var(--font-heading);">Grade Allocation Desk</h5>
-            
+            <h5 class="fw-bold border-bottom border-secondary pb-2 mb-3" style="font-family: var(--font-heading);">Grade Allocation</h5>
+
             <div class="mb-3">
-                <label class="form-label text-secondary small fw-semibold">ASSIGN EVALUATION SCORE RESULT:</label>
+                <label class="form-label text-secondary small fw-semibold">Score:</label>
                 <div class="input-group">
                     <input type="number" step="0.1" min="0" max="10" class="form-control text-center font-monospace fw-bold text-cyan" id="inputInitialManualEssayScore" value="0">
                     <span class="input-group-text bg-light text-secondary small">/ 10.0 pts</span>
@@ -52,7 +52,7 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label text-secondary small fw-semibold d-block">APPLY DEFECT TEMPLATE CARD (GROW-AS-YOU-GO):</label>
+                <label class="form-label text-secondary small fw-semibold d-block">Apply Error Tag:</label>
                 <div class="small text-secondary mb-2 italic">Active Selection: <strong id="currentSelectedCardLabel" class="text-rose">None</strong></div>
                 <div class="d-flex flex-column gap-2 mb-3 overflow-y-auto" style="max-height: 160px;" id="templateBankRadioGroup">
                     <!-- Dynamic radio options for error tags -->
@@ -60,7 +60,7 @@
             </div>
 
             <div class="mb-4 p-3 border rounded bg-dark-subtle" style="border-color: var(--border-color) !important;">
-                <label class="form-label text-secondary small fw-semibold">GENERATE NEW ERROR TEMPLATE TYPE:</label>
+                <label class="form-label text-secondary small fw-semibold">Create Error Tag Template:</label>
                 <div class="input-group input-group-sm">
                     <input type="text" class="form-control" id="inputGrowFeedback" placeholder="e.g. Memory leak on reference pointer...">
                     <button class="btn btn-outline-custom border-secondary" onclick="generateGrowCardAction()">Add Template</button>
@@ -69,14 +69,14 @@
 
             <div class="d-grid">
                 <button class="btn btn-dark-custom btn-lg py-2.5 fw-bold" onclick="instructorSubmitEvaluation()">
-                    🟢 Commit Audit Evaluation
+                    Save Grade
                 </button>
             </div>
         </div>
 
         <!-- Dispute private chat ticket zone -->
         <div class="glass-panel" id="instructorDisputeTicketBlock">
-            <h5 class="fw-bold border-bottom border-secondary pb-2 mb-3" style="font-family: var(--font-heading);">Private Dispute Log Thread</h5>
+            <h5 class="fw-bold border-bottom border-secondary pb-2 mb-3" style="font-family: var(--font-heading);">Dispute Chat</h5>
             <div id="instructorPrivateTicketChatAreaZone">
                 <!-- Injected private chat audit room -->
                 <div class="text-center py-4 text-secondary small">

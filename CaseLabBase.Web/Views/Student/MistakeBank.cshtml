@@ -1,12 +1,12 @@
 @{
-    ViewData["Title"] = "Student Mistake Bank Portal";
+    ViewData["Title"] = "Mistake Bank";
 }
 
 <div class="row g-4">
     <!-- Left Navigation Panel -->
     <div class="col-md-3">
         <div class="glass-panel p-3">
-            <h5 class="fw-bold mb-4 ps-2" style="font-family: var(--font-heading);">Workspace Links</h5>
+            <h5 class="fw-bold mb-4 ps-2" style="font-family: var(--font-heading);">Menu</h5>
             <ul class="nav flex-column gap-2">
                 <li class="nav-item">
                     <a class="nav-link text-secondary hover-indigo rounded px-3 py-2 fw-medium d-flex align-items-center" href="/Student/Dashboard">
@@ -35,22 +35,22 @@
     <!-- Main Workspace Content -->
     <div class="col-md-9">
         <div class="glass-panel mb-4">
-            <h2 class="fw-bold mb-2" style="font-family: var(--font-heading);">Private Mistake Bank</h2>
-            <p class="text-secondary small mb-4">Review grading evaluations, assigned error tags, and engage in private dispute dialogues with your instructor.</p>
+            <h2 class="fw-bold mb-2" style="font-family: var(--font-heading);">Mistake Bank</h2>
+            <p class="text-secondary small mb-4">Review your grades, comments, and chat with the instructor if you have questions.</p>
 
             <div id="mistakeBankCoreContent">
                 <div class="text-center py-4 text-secondary">
                     <div class="spinner-border spinner-border-sm text-cyan me-2" role="status"></div>
-                    Retrieving grading reviews...
+                    Loading grades...
                 </div>
             </div>
         </div>
 
         <div class="glass-panel">
-            <h5 class="fw-bold mb-3" style="font-family: var(--font-heading);">Private Dispute Process Rules</h5>
+            <h5 class="fw-bold mb-3" style="font-family: var(--font-heading);">How to Request Grade Reviews</h5>
             <div class="small text-secondary lh-lg">
-                <p class="mb-2">1. If you believe your essay code response was marked incorrectly or has special considerations, you can click <strong>"Dispute Grade"</strong> to open a private 1-on-1 discussion thread.</p>
-                <p class="mb-0">2. Dr. Ali Bayeh (Instructor) can review your statements, post feedback, and override your grade directly from the instructor audit dashboard.</p>
+                <p class="mb-2">1. If you have questions about your grade, you can click <strong>"Dispute Grade"</strong> to open a private chat with the instructor.</p>
+                <p class="mb-0">2. The instructor can override your grade after reviewing your request.</p>
             </div>
         </div>
     </div>

@@ -65,4 +65,11 @@ C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\CaseLabB
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\CaseLabBase.Web.genruntimeconfig.cache
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\ref\CaseLabBase.Web.dll
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\9ufwhtjs64-{0}-rjdbzjbjp9-rjdbzjbjp9.gz
-C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\xxafrsm3ut-{0}-r57qwche7l-r57qwche7l.gz
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\bin\Debug\net10.0\Microsoft.EntityFrameworkCore.dll
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\bin\Debug\net10.0\Microsoft.EntityFrameworkCore.Abstractions.dll
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\bin\Debug\net10.0\Microsoft.EntityFrameworkCore.Relational.dll
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\bin\Debug\net10.0\Npgsql.dll
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\bin\Debug\net10.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\CaseLabBase.Web.csproj.AssemblyReference.cache
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\xxafrsm3ut-{0}-7eprxgl58e-7eprxgl58e.gz
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\CaseLabB.399AE4ED.Up2Date

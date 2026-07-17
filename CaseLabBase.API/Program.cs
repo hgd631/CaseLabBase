@@ -6,9 +6,10 @@ using CaseLabBase.BLL.Observer;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 // Add services to the container
 builder.Services.AddDbContext<CaseLabBaseDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Register Repositories (DAL)
 builder.Services.AddScoped<UserRepository>();

@@ -122,7 +122,7 @@ namespace CaseLabBase.BLL.Services
         } 
         
 
-        public async Task SubmitSurveyAsync(string studentId, string quizTitle, List<SubmitSurveyRequestItem> reflections)
+        public async Task SubmitSurveyAsync(string studentId, string quizTitle, string difficulty, string? commentNote)
         {
     throw new System.NotImplementedException("TODO: Team Member 2 - Implement SubmitSurveyAsync in StudentService.cs");
 }

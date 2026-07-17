@@ -150,3 +150,5 @@ C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.API\obj\Debug\net10.0\refint\C
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.API\obj\Debug\net10.0\CaseLabBase.API.pdb
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.API\obj\Debug\net10.0\CaseLabBase.API.genruntimeconfig.cache
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.API\obj\Debug\net10.0\ref\CaseLabBase.API.dll
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.API\bin\Debug\net10.0\Npgsql.dll
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.API\bin\Debug\net10.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll

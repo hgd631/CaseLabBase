@@ -16,7 +16,6 @@ namespace CaseLabBase.DAL.Repositories
             _context = context;
         }
 
-        /// <summary>
         /// Get unread notifications for a specific user (includes targeted + broadcast to their role group).
         /// </summary>
         public async Task<List<Notification>> GetForUserAsync(string userId, string role)

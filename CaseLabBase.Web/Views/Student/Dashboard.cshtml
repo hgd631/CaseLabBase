@@ -1,12 +1,12 @@
 @{
-    ViewData["Title"] = "Student Workspace Dashboard";
+    ViewData["Title"] = "Student Dashboard";
 }
 
 <div class="row g-4">
     <!-- Left Navigation Panel -->
     <div class="col-md-3">
         <div class="glass-panel p-3">
-            <h5 class="fw-bold mb-4 ps-2" style="font-family: var(--font-heading);">Workspace Links</h5>
+            <h5 class="fw-bold mb-4 ps-2" style="font-family: var(--font-heading);">Menu</h5>
             <ul class="nav flex-column gap-2">
                 <li class="nav-item">
                     <a class="nav-link text-dark bg-light rounded px-3 py-2 fw-medium border-start border-3 border-indigo d-flex align-items-center" href="/Student/Dashboard">
@@ -36,23 +36,23 @@
     <!-- Main Workspace Content -->
     <div class="col-md-9">
         <div class="glass-panel mb-4">
-            <h2 class="fw-bold mb-2" style="font-family: var(--font-heading);">Assessment Assignments Registry</h2>
-            <p class="text-secondary small mb-4">Select an active evaluation process to initialize form question tasks.</p>
+            <h2 class="fw-bold mb-2" style="font-family: var(--font-heading);">Assignments</h2>
+            <p class="text-secondary small mb-4">Select a quiz from the list to start taking it.</p>
 
             <div id="assignmentContainerStudent">
                 <div class="text-center py-4 text-secondary">
                     <div class="spinner-border spinner-border-sm text-cyan me-2" role="status"></div>
-                    Retrieving active configurations...
+                    Loading assignments...
                 </div>
             </div>
         </div>
 
         <div class="glass-panel">
-            <h5 class="fw-bold mb-3" style="font-family: var(--font-heading);">Pacing & Feedback Instructions</h5>
+            <h5 class="fw-bold mb-3" style="font-family: var(--font-heading);">Instructions</h5>
             <div class="small text-secondary lh-lg">
-                <p class="mb-2">1. Click <strong>"Execute Form Task"</strong> to enter the timed workspace. You will have a 40-minute duration constraint to submit your final outputs.</p>
-                <p class="mb-2">2. Upon completion, you will be prompted to provide subjective cognitive complexity reflections. Completing the survey triggers immediate database registration.</p>
-                <p class="mb-0">3. Once your instructor manually grades the submissions, any identified defects will be registered in your private <strong>Mistake Bank</strong> portal.</p>
+                <p class="mb-2">1. Click <strong>"Start Quiz"</strong> to enter the quiz page. You will have a 40-minute limit to submit your answers.</p>
+                <p class="mb-2">2. After finishing the quiz, you can submit a feedback survey to rate the difficulty of each question.</p>
+                <p class="mb-0">3. Once your instructor grades your submission, you can view your errors and feedback in the <strong>Mistake Bank</strong>.</p>
             </div>
         </div>
     </div>

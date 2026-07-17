@@ -1,4 +1,4 @@
-// CaseLabBase - Client Script (app.js)
+
 const API_BASE = "http://localhost:5088/api";
 
 const SafeStorage = {
@@ -109,112 +109,12 @@ function logoutSystem() {
 
 // ================= NOTIFICATION SYSTEM =================
 
-//Member 1-Han: Implement notification polling, dropdown UI, and mark-all-read functionality.
-// State variable to track whether the notification dropdown UI is currently open
-let _notifDropdownOpen = false;
 
-async function fetchNotifications() {
-    // 1. Guard Clause: If there is no logged-in user in the global state, stop immediately
-    if (!state.user) return;
-
-    try {
-        // 2. HTTP Request: Fetch user-specific notifications based on their ID and Role
-        const res = await fetch(`${API_BASE}/notifications?userId=${state.user.id}&role=${state.user.role}`);
-        if (!res.ok) return; // If the server responds with an error status (e.g., 400 or 500), abort
-
-        // 3. Parse JSON: Convert the raw response stream into a usable JavaScript object
-        const data = await res.json();
-
-        // 4. DOM Elements: Grab the badge (unread counter) and list (the dropdown container) elements
-        const badge = document.getElementById('notifBadge');
-        const list = document.getElementById('notifList');
-        if (!badge || !list) return; // Safety check: if elements don't exist in HTML, stop to avoid errors
-
-        // 5. Update Badge UI: Show/hide and update the unread notifications count
-        if (data.unreadCount > 0) {
-            badge.style.display = 'block'; // Make badge visible
-            // If count is greater than 9, display "9+", otherwise show the actual number
-            badge.textContent = data.unreadCount > 9 ? '9+' : data.unreadCount;
-        } else {
-            badge.style.display = 'none'; // Hide badge if there are 0 unread notifications
-        }
-
-        // 6. Handle Empty State: If the user has zero notifications total, display a placeholder message
-        if (data.notifications.length === 0) {
-            list.innerHTML = '<p class="text-secondary small text-center py-4" style="margin:0;">No notifications yet</p>';
-            return;
-        }
-
-        // 7. Render Notifications List: Loop through the array and map each notification to an HTML string
-        list.innerHTML = data.notifications.map(n => `
-            <div onclick="${n.linkUrl ? `window.location='${n.linkUrl}'` : ''}"
-                 style="padding:12px 16px; border-bottom:1px solid #f1f5f9; cursor:${n.linkUrl ? 'pointer' : 'default'};
-                        background:${n.isRead ? '#fff' : '#f5f3ff'}; transition:background 0.15s;"
-                 onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='${n.isRead ? '#fff' : '#f5f3ff'}'">
-                <div class="d-flex align-items-start gap-2">
-                    <span style="font-size:16px; margin-top:1px;">${n.isRead ? '🔔' : '🔴'}</span>
-                    <div style="flex:1; min-width:0;">
-                        <p class="fw-semibold mb-0" style="font-size:12px; color:#1e293b;">${n.title}</p>
-                        <p class="text-secondary mb-0" style="font-size:11px; white-space:normal;">${n.message}</p>
-                        <p class="mb-0" style="font-size:10px; color:#94a3b8; margin-top:2px;">${new Date(n.createdAt).toLocaleString()}</p>
-                    </div>
-                </div>
-            </div>`).join(''); // .join('') turns the mapped array of HTML strings into one clean string for innerHTML
-
-    } catch (_) {
-        /* Fail Silently: Catch network errors (like offline status) so the entire app doesn't crash */
-    }
-}
-
-async function clickNotification(id, linkUrl) {
-    try {
-        await fetch(`${API_BASE}/notifications/mark-single-read/${id}`, { method: 'POST' });
-    } catch (_) { }
-
-    if (linkUrl) {
-        window.location = linkUrl;
-    } else {
-        await fetchNotifications();
-    }
-}
-
-function toggleNotifDropdown() {
-    const dropdown = document.getElementById('notifDropdown');
-    if (!dropdown) return;
-    _notifDropdownOpen = !_notifDropdownOpen;
-    dropdown.style.display = _notifDropdownOpen ? 'block' : 'none';
-    if (_notifDropdownOpen) fetchNotifications();
-}
-
-
-// Member 1-Han : Send POST request to notification mark-read endpoint and refresh current feed state.
-async function markAllNotifsRead() {
-  
-    // 1. Guard Clause: Stop immediately if no user is currently logged in
-    if (!state.user) return;
-
-    try {
-        // 2. HTTP POST Request: Tell the backend API to mark all notifications as read for this user
-        await fetch(`${API_BASE}/notifications/mark-read?userId=${state.user.id}&role=${state.user.role}`, { method: 'POST' });
-
-        // 3. UI Refresh: Re-fetch notifications so the badge and dropdown update instantly on the screen
-        await fetchNotifications();
-
-    } catch (_) {
-        /* Fail Silently: Catch network issues so the UI doesn't crash if the request fails */
-    }
-
-}
-
-// Close dropdown when clicking outside
-document.addEventListener('click', (e) => {
-    const bell = document.getElementById('notifBellBtn');
-    const dropdown = document.getElementById('notifDropdown');
-    if (bell && dropdown && !bell.contains(e.target) && !dropdown.contains(e.target)) {
-        _notifDropdownOpen = false;
-        dropdown.style.display = 'none';
-    }
-});
+// ================= NOTIFICATION SYSTEM =================
+async function fetchNotifications() { }
+async function clickNotification(id, linkUrl) { }
+function toggleNotifDropdown() { }
+async function markAllNotifsRead() { }
 
 // ================= STUDENT WORKSPACE FLOW =================
 

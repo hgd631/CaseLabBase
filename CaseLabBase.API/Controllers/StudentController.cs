@@ -55,7 +55,7 @@ namespace CaseLabBase.API.Controllers
 
             try
             {
-                await _studentService.SubmitSurveyAsync(request.StudentId, request.QuizTitle, request.Reflections ?? new());
+                await _studentService.SubmitSurveyAsync(request.StudentId, request.QuizTitle, request.Difficulty, request.CommentNote);
                 return Ok(new { Message = "Survey submitted successfully." });
             }
             catch (Exception ex)
