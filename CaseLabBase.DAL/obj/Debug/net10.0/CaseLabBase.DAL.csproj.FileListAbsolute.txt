@@ -1,16 +1,3 @@
-C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.DAL\bin\Debug\net10.0\CaseLabBase.DAL.deps.json
-C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.DAL\bin\Debug\net10.0\CaseLabBase.DAL.dll
-C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.DAL\bin\Debug\net10.0\CaseLabBase.DAL.pdb
-C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.DAL\obj\Debug\net10.0\CaseLabBase.DAL.csproj.AssemblyReference.cache
-C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.DAL\obj\Debug\net10.0\CaseLabBase.DAL.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.DAL\obj\Debug\net10.0\CaseLabBase.DAL.AssemblyInfoInputs.cache
-C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.DAL\obj\Debug\net10.0\CaseLabBase.DAL.AssemblyInfo.cs
-C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.DAL\obj\Debug\net10.0\CaseLabBase.DAL.csproj.CoreCompileInputs.cache
-C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.DAL\obj\Debug\net10.0\CaseLabBase.DAL.sourcelink.json
-C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.DAL\obj\Debug\net10.0\CaseLabBase.DAL.dll
-C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.DAL\obj\Debug\net10.0\refint\CaseLabBase.DAL.dll
-C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.DAL\obj\Debug\net10.0\CaseLabBase.DAL.pdb
-C:\Users\handa\OneDrive\Desktop\CaseLabBase\CaseLabBase.DAL\obj\Debug\net10.0\ref\CaseLabBase.DAL.dll
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.DAL\bin\Debug\net10.0\CaseLabBase.DAL.deps.json
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.DAL\bin\Debug\net10.0\CaseLabBase.DAL.dll
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.DAL\bin\Debug\net10.0\CaseLabBase.DAL.pdb

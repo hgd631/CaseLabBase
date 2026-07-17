@@ -107,7 +107,7 @@ function logoutSystem() {
     window.location.href = "/";
 }
 
-// ================= NOTIFICATION SYSTEM =================
+
 
 
 // ================= NOTIFICATION SYSTEM =================
@@ -119,14 +119,131 @@ async function markAllNotifsRead() { }
 // ================= STUDENT WORKSPACE FLOW =================
 
 async function renderStudentDashboard() {
-    // TODO: Team Member 2 - Load student-assigned quizzes and mistake banks, rendering status buttons based on submission records.
-    alert("TODO: Team Member 2 - Implement renderStudentDashboard in app.js");
+    // Team Member 2 : Kelly - Load student-assigned quizzes and mistake banks, rendering status buttons based on submission records.
+    try {
+        // FIXED: Used the correct container ID from index.html instead of the non-existent one
+        const dashboard = document.getElementById("assignmentContainerStudent");
+        if (!dashboard) return;
+        dashboard.innerHTML = "";
+        // Fetch all active quizzes
+        const quizzesRes = await fetch(`${API_BASE}/questions/quizzes`);
+        if (!quizzesRes.ok) throw new Error("Failed to load quizzes.");
+        const quizzes = await quizzesRes.json();
+        // Iterate through each quiz to generate quiz cards
+        for (const quiz of quizzes) {
+            const card = document.createElement("div");
+            // FIXED: Added standard styling class names to align with premium glassmorphism theme
+            card.className = "glass-card d-flex flex-column gap-3 mb-3 p-3";
+            // Title and header section
+            const headerDiv = document.createElement("div");
+            headerDiv.className = "d-flex justify-content-between align-items-center";
+
+            const title = document.createElement("strong");
+            title.className = "d-block text-white";
+            title.textContent = quiz.title;
+            headerDiv.appendChild(title);
+            card.appendChild(headerDiv);
+            // FIXED: Call the correct API endpoint with quizTitle to check if submission exists
+            const submissionRes = await fetch(`${API_BASE}/student/mistake-bank/${state.user.id}?quizTitle=${encodeURIComponent(quiz.title)}`);
+
+            if (submissionRes.ok) {
+                // If a submission exists, parse the status and display appropriate status badge
+                const submissionData = await submissionRes.json();
+
+                const statusBadge = document.createElement("span");
+                if (submissionData.status === "Pending") {
+                    statusBadge.className = "badge-custom badge-custom-amber text-center";
+                    statusBadge.textContent = "✔ Submission processed. Awaiting Instructor Grading.";
+                } else if (submissionData.status === "Graded") {
+                    statusBadge.className = "badge-custom badge-custom-emerald text-center";
+                    statusBadge.textContent = `✔ Graded. Result Score Registry: ${submissionData.finalScore} / 10.0 pts.`;
+                }
+                card.appendChild(statusBadge);
+                // View Mistake Bank button
+                const mistakeBtn = document.createElement("button");
+                mistakeBtn.className = "btn btn-sm btn-outline-custom w-100";
+                mistakeBtn.textContent = "View Mistake Bank";
+                // FIXED: Set state variables and call the correct refresh function
+                mistakeBtn.onclick = async () => {
+                    state.activeTaskTitle = quiz.title;
+                    openStudentMistakeBankWithReload();
+                };
+                card.appendChild(mistakeBtn);
+            } else {
+                // If no submission exists (Not Started)
+                const timeInfo = document.createElement("span");
+                timeInfo.className = "text-secondary small";
+                timeInfo.textContent = "Time Allowed: 40 Minutes";
+                headerDiv.appendChild(timeInfo);
+                const examBtn = document.createElement("button");
+                examBtn.className = "btn btn-dark-custom btn-sm w-100";
+                examBtn.textContent = "Execute Form Task";
+                // FIXED: Fetch questions for this quiz first, set state variables, and call the correct exam form function
+                examBtn.onclick = async () => {
+                    state.activeTaskTitle = quiz.title;
+
+                    const qRes = await fetch(`${API_BASE}/questions?quizTitle=${encodeURIComponent(quiz.title)}`);
+                    if (qRes.ok) {
+                        const qData = await qRes.json();
+                        state.questions = qData.questions;
+                        openStudentExamForm();
+                    } else {
+                        alert("Failed to load questions for this exam.");
+                    }
+                };
+                card.appendChild(examBtn);
+            }
+            dashboard.appendChild(card);
+        }
+    } catch (err) {
+        console.error(err);
+        dashboard.innerHTML = `<div class="alert-custom alert-custom-warning small">Error loading tasks: ${err.message}</div>`;
+    }
 }
 
 async function loadQuestionsForExam() {
-    // TODO: Team Member 2 - Load active quiz configuration details and initialize questions list layout.
-    alert("TODO: Team Member 2 - Implement loadQuestionsForExam in app.js");
-}
+
+    // Team Member 2 Kelly - Load active quiz configuration details and initialize questions list layout.
+    try {
+        // Get the quiz title from URL search parameters (if any)
+        const urlParams = new URLSearchParams(window.location.search);
+        const qTitle = urlParams.get('quizTitle');
+        const titleQuery = qTitle ? `?quizTitle=${encodeURIComponent(qTitle)}` : "";
+        // Fetch quiz questions from the API using the correct query parameters
+        const resQ = await fetch(`${API_BASE}/questions${titleQuery}`);
+        if (!resQ.ok) throw new Error();
+        const dataQ = await resQ.json();
+
+        // Save the metadata to the global application state
+        state.isQuizOpen = dataQ.isQuizOpen ?? true;
+        state.deadlineString = dataQ.deadlineString ?? null;
+        state.timeLimitMinutes = dataQ.timeLimitMinutes ?? 40;
+        state.pdfBase64 = dataQ.pdfBase64 ?? null;
+        state.quizMode = dataQ.quizMode ?? "Manual";
+        state.totalScore = dataQ.totalScore ?? 10.0;
+
+        // FIXED: Prevent access if the quiz is closed or has expired
+        if (typeof isQuizActive === "function" && !isQuizActive()) {
+            alert("This assessment is currently closed or has passed its deadline.");
+            window.location.href = "/Student/Dashboard";
+            return;
+        }
+        // Save active questions and title to the global state
+        state.activeTaskTitle = dataQ.title;
+        state.questions = dataQ.questions;
+
+        // Update the page title element
+        document.getElementById('examTitle').innerText = state.activeTaskTitle;
+
+        // FIXED: Call the project's standard rendering function instead of duplicate document.createElement code
+        openStudentExamForm();
+    } catch (err) {
+        console.error(err);
+        alert("Failed to load questions.");
+    }
+}   
+
+
 function openStudentExamForm() {
     // Reset question navigation index
     state.currentExamQuestionIndex = 0;
@@ -495,8 +612,70 @@ function updateCharCount(input, qId) {
 }
 
 async function completeSurveyPipeline() {
-    // TODO: Team Member 2 - Collect exam answer responses and reflections, submitting payloads to exam & survey endpoints.
-    alert("TODO: Team Member 2 - Implement completeSurveyPipeline in app.js");
+    //Team Member 2: Kelly- Collect exam answer responses and reflections, submitting payloads to exam & survey endpoints.
+
+    // FIXED: Collect reflections from UI inputs into state before preparing the payload
+    state.questions.forEach(q => {
+        const noteNode = document.getElementById(`survey-note-node-${q.id}`);
+        if (noteNode && state.studentSurvey[q.id]) {
+            state.studentSurvey[q.id].note = noteNode.value || "";
+        }
+    });
+    try {
+        const answers = state.questions.map(q => ({
+            questionId: q.id,
+            studentAnswer: state.studentAnswers[q.id] ?? ""
+        }));
+
+        //submit exam 
+        const examRes = await fetch(`${API_BASE}/student/submit-exam`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                studentId: state.user.id,
+                quizTitle: state.activeTaskTitle,
+                answers: answers
+            })
+        });
+
+        if (!examRes.ok) {
+            throw new Error(await examRes.text());
+        }
+
+        //build survey payload 
+        const reflections = Object.entries(state.studentSurvey).map(([questionId, survey]) => ({
+            // FIXED: Corrected spelling typo 'questioId' -> 'questionId' to align with C# DTO
+            questionId: Number(questionId),
+            difficulty: survey.difficulty,
+            commentNote: survey.note
+        }));
+
+       
+        //submit survey
+        const surveyRes = await fetch(`${API_BASE}/student/submit-survey`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                studentId: state.user.id,
+                quizTitle: state.activeTaskTitle,
+                reflections: reflections
+            })
+        });
+
+        if (!surveyRes.ok) {
+            throw new Error(await surveyRes.text());
+        }
+        alert("Assessment and survey submitted successfully! You may now view your mistake bank for feedback.");
+        window.location.href = "/Student/Dashboard";
+    }
+    catch (err) {
+        console.error(err);
+        alert('Submission failed: ' + err.message); 
+    }
 }
 
 // ================= STUDENT MISTAKE BANK =================
@@ -510,8 +689,58 @@ function onMistakeQuizDropdownChange(val) {
 
 
 async function openStudentMistakeBankWithReload() {
-    // TODO: Team Member 2 - Query student evaluation logs for active mistake checks, compiling correct/incorrect answer states.
-    alert("TODO: Team Member 2 - Implement openStudentMistakeBankWithReload in app.js");
+    // Team Member 2: Kelly- Query student evaluation logs for active mistake checks, compiling correct/incorrect answer states.
+
+    try {
+        // FIXED: Retrieve the selected quiz title from URL parameters or fallback to state.activeTaskTitle
+        const urlParams = new URLSearchParams(window.location.search);
+        const qTitle = urlParams.get('quizTitle') || state.activeTaskTitle;
+        const res = await fetch(`${API_BASE}/student/mistake-bank/${state.user.id}?quizTitle=${encodeURIComponent(qTitle)}`);
+        if (!res.ok) throw new Error("Failed to load mistake bank.");
+        const data = await res.json();
+
+        state.openStudentMistakeBankWithReload = data;
+        // FIXED: Target 'mistakeBankCoreContent' container ID to match MistakeBank.cshtml (preventing NullReferenceError)
+        const container = document.getElementById('mistakeBankCoreContent');
+        if (!container) return;
+
+        container.innerHTML = "";
+        // FIXED: Render quiz context header card at the top
+        container.innerHTML += `
+            <div class="mb-4 p-3 border rounded bg-light" style="border-color: var(--border-color) !important;">
+                <h5 class="fw-bold mb-1 text-dark" style="font-family: var(--font-heading);">${data.quizTitle}</h5>
+                <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
+                    <span class="text-secondary small">Submission Status: <span class="badge bg-success">${data.status}</span></span>
+                    <strong class="text-indigo font-monospace">Final Score: ${data.finalScore} pts</strong>
+                </div>
+            </div>`;
+        data.answers.forEach(answer => {
+            // FIXED: Removed invalid React fragment (<> and </>) tags which cause syntax errors in vanilla JS
+            // FIXED: Map JSON properties to correct camelCase properties returned by C# API ('QuestionTopic' -> 'questionTopic')
+            // FIXED: Map the correct prompt property name ('questionsPayload' -> 'questionPrompt')
+            container.innerHTML += `
+                <div class="glass-card mb-3 p-3 border rounded bg-white shadow-sm" style="border-color: var(--border-color) !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                        <span class="badge bg-indigo text-white small">Topic: ${answer.questionTopic}</span>
+                        <span class="badge ${answer.isCorrect ? 'bg-success' : 'bg-danger'}">
+                            ${answer.isCorrect ? '🟢 Correct' : '❌ Incorrect'}
+                        </span>
+                    </div>
+                    <h6 class="fw-bold text-dark mb-2">${answer.questionPrompt}</h6>
+                    <div class="small text-secondary mb-1">Your Submission Output:</div>
+                    <pre class="p-2 rounded small mb-2" style="background: #0f172a; color: #38bdf8; font-family: monospace;">${answer.studentAnswer || '[Empty Answer]'}</pre>
+                    ${answer.teacherFeedback ? `
+                    <div class="p-2 border border-warning rounded bg-warning-subtle text-dark small mt-2">
+                        <strong>👨‍🏫 Instructor Feedback:</strong> "${answer.teacherFeedback}"
+                    </div>` : ''}
+                </div>
+            `;
+        });
+    } catch (err) {
+        console.error(err);
+        alert("Error loading mistake bank: " + err.message); 
+    }
+
 }
 function switchMistakeBankSubTab(tab) {
     state.activeMistakeSubTab = tab;

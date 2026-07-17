@@ -1,0 +1,1 @@
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\wwwroot\js\openStudentMistakeBankWithReload.js

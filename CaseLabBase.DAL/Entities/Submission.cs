@@ -12,6 +12,7 @@ namespace CaseLabBase.DAL.Entities
         public string? SurveyPainPoint { get; set; }
         public string DisputeStatus { get; set; } = "None"; // "None", "PendingReview", "Resolved_Accepted", "Resolved_Rejected"
 
+        public string? SurveyDifficulty { get; set; }
         // Navigation properties
         public virtual User Student { get; set; } = null!;
         public virtual Quiz Quiz { get; set; } = null!;
