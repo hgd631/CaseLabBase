@@ -25,17 +25,6 @@ namespace CaseLabBase.API.Controllers
             return Ok(comments);
         }
 
-        [HttpGet("dispute/{studentId}/{topic}")]
-        public async Task<IActionResult> GetDisputeComments(string studentId, string topic)
-        {
-            if (string.IsNullOrWhiteSpace(studentId) || string.IsNullOrWhiteSpace(topic))
-            {
-                return BadRequest("StudentId and Topic are required.");
-            }
-
-            var comments = await _forumService.GetDisputeCommentsAsync(studentId, topic);
-            return Ok(comments);
-        }
 
         [HttpPost("comment")]
         public async Task<IActionResult> PostComment([FromBody] CommentDTO commentDto)
@@ -45,7 +34,8 @@ namespace CaseLabBase.API.Controllers
                 return BadRequest("Invalid comment data.");
             }
 
-            commentDto.Timestamp = DateTime.Now;
+            commentDto.Timestamp = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc);
+
             await _forumService.AddCommentAsync(commentDto);
             return Ok(new { Message = "Comment added successfully." });
         }

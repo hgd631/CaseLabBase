@@ -5,7 +5,7 @@ namespace CaseLabBase.DAL.Entities
     public class Notification
     {
         public int Id { get; set; }
-        /// <summary>'all-students', 'all-teachers', or a specific UserId</summary>
+        //all-students', 'all-teachers', or a specific UserId
         public string TargetUserId { get; set; } = null!;
         public string Title { get; set; } = null!;
         public string Message { get; set; } = null!;

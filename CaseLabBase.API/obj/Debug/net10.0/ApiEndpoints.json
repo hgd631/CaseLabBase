@@ -58,27 +58,6 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "CaseLabBase.API.Controllers.ForumController",
-    "Method": "GetDisputeComments",
-    "RelativePath": "api/Forum/dispute/{studentId}/{topic}",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "studentId",
-        "Type": "System.String",
-        "IsRequired": true
-      },
-      {
-        "Name": "topic",
-        "Type": "System.String",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
     "ContainingType": "CaseLabBase.API.Controllers.InstructorController",
     "Method": "GetAnalytics",
     "RelativePath": "api/Instructor/analytics",
@@ -154,38 +133,6 @@
   },
   {
     "ContainingType": "CaseLabBase.API.Controllers.InstructorController",
-    "Method": "ResolveDispute",
-    "RelativePath": "api/Instructor/resolve-dispute",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "request",
-        "Type": "CaseLabBase.BLL.DTOs.ResolveDisputeRequest",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "CaseLabBase.API.Controllers.InstructorController",
-    "Method": "ResolveSubmissionDispute",
-    "RelativePath": "api/Instructor/resolve-submission-dispute",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "request",
-        "Type": "CaseLabBase.BLL.DTOs.ResolveSubmissionDisputeRequest",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "CaseLabBase.API.Controllers.InstructorController",
     "Method": "GetRoster",
     "RelativePath": "api/Instructor/roster",
     "HttpMethod": "GET",
@@ -224,7 +171,7 @@
   {
     "ContainingType": "CaseLabBase.API.Controllers.NotificationsController",
     "Method": "GetNotifications",
-    "RelativePath": "api/Notifications",
+    "RelativePath": "api/Notifications/{userId}",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -232,20 +179,15 @@
       {
         "Name": "userId",
         "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "role",
-        "Type": "System.String",
-        "IsRequired": false
+        "IsRequired": true
       }
     ],
     "ReturnTypes": []
   },
   {
     "ContainingType": "CaseLabBase.API.Controllers.NotificationsController",
-    "Method": "MarkRead",
-    "RelativePath": "api/Notifications/mark-read",
+    "Method": "MarkAllRead",
+    "RelativePath": "api/Notifications/read-all/{userId}",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -253,12 +195,7 @@
       {
         "Name": "userId",
         "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "role",
-        "Type": "System.String",
-        "IsRequired": false
+        "IsRequired": true
       }
     ],
     "ReturnTypes": []
@@ -266,7 +203,7 @@
   {
     "ContainingType": "CaseLabBase.API.Controllers.NotificationsController",
     "Method": "MarkSingleRead",
-    "RelativePath": "api/Notifications/mark-single-read/{id}",
+    "RelativePath": "api/Notifications/read/{id}",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -348,38 +285,6 @@
       {
         "Name": "request",
         "Type": "CaseLabBase.BLL.DTOs.UpdateQuizSettingsRequest",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "CaseLabBase.API.Controllers.StudentController",
-    "Method": "InitiateDispute",
-    "RelativePath": "api/Student/initiate-dispute",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "request",
-        "Type": "CaseLabBase.BLL.DTOs.InitiateDisputeRequest",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "CaseLabBase.API.Controllers.StudentController",
-    "Method": "InitiateSubmissionDispute",
-    "RelativePath": "api/Student/initiate-submission-dispute",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "request",
-        "Type": "CaseLabBase.BLL.DTOs.InitiateSubmissionDisputeRequest",
         "IsRequired": true
       }
     ],

@@ -1,19 +1,24 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using CaseLabBase.BLL.DTOs;
+﻿using CaseLabBase.BLL.DTOs;
 using CaseLabBase.BLL.Observer;
 using CaseLabBase.DAL.Entities;
 using CaseLabBase.DAL.Repositories;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace CaseLabBase.BLL.Services
 {
+    // Implementation of Observer Pattern (Subject)
+
+    //Observer Pattern: StudentService acts as the Subject that notifies registered observers (e.g., TeacherNotificationService) when a student submits an exam.
     public class StudentService : ISubmissionSubject
     {
         private readonly SubmissionRepository _submissionRepository;
         private readonly QuestionRepository _questionRepository;
         private readonly ForumRepository _forumRepository;
         private readonly UserRepository _userRepository;
+
+        // List to hold all registered observers (e.g., Notification system)
         private readonly List<ISubmissionObserver> _observers = new();
 
         public StudentService(
@@ -27,12 +32,15 @@ namespace CaseLabBase.BLL.Services
             _questionRepository = questionRepository;
             _forumRepository = forumRepository;
             _userRepository = userRepository;
+
+            // Automatically register all observers found in the system
             foreach (var observer in observers)
             {
                 RegisterObserver(observer);
             }
         }
 
+        #region Observer Pattern Methods
         public void RegisterObserver(ISubmissionObserver observer)
         {
             _observers.Add(observer);
@@ -50,216 +58,123 @@ namespace CaseLabBase.BLL.Services
                 await observer.OnSubmittedAsync(submission);
             }
         }
+        #endregion
 
-        //Team member 2: Kelly Implemented SubmitExamAsync in StudentService.cs
+        // Processes the exam submission
         public async Task SubmitExamAsync(string studentId, string quizTitle, List<SubmitAnswerRequestItem> answers)
-
         {
-            var questions = await _questionRepository.GetByQuizTitleAsync(quizTitle);
+            var activeQuestions = await _questionRepository.GetByQuizTitleAsync(quizTitle);
+            bool hasEssay = activeQuestions.Any(q => q.Type == "Essay");
 
-            // Check if the quiz contains any essay questions to determine the grading status
-            int essayCount = questions.Count(q => q.Type == "Essay");
-            bool hasEssay = essayCount > 0;
-
-
+            // Create the initial submission record
             var submission = new Submission
             {
                 StudentId = studentId,
                 QuizTitle = quizTitle,
-                Status = hasEssay ? "Pending" : "Graded", // Dynamically set status based on question types
-                FinalScore = 0,
-                DisputeStatus = "None",
+                Status = hasEssay ? "Pending" : "Graded", // Essays require manual teacher grading
+                FinalScore = 0.00m,
                 SurveyPainPoint = "Awaiting reflection survey..."
             };
+
             await _submissionRepository.SaveSubmissionAsync(submission);
-            decimal totalScore = 0;
 
-            foreach (var item in answers)
+            decimal initialScore = 0.00m;
+
+            // Process each student answer
+            foreach (var answerItem in answers)
             {
-                var question = questions.FirstOrDefault(q => q.Id == item.QuestionId);
-                if (question == null)
-                    continue;
+                var question = activeQuestions.FirstOrDefault(q => q.Id == answerItem.QuestionId);
+                if (question == null) continue;
 
-                var submissionAnswer = new SubmissionAnswer
+                var answerEntity = new SubmissionAnswer
                 {
                     SubmissionId = submission.Id,
-                    QuestionId = question.Id,
-                    StudentAnswer = item.StudentAnswer,
+                    QuestionId = answerItem.QuestionId,
+                    StudentAnswer = answerItem.StudentAnswer,
                     Difficulty = "Medium"
-                   
                 };
 
-                // Separate logic for Multiple Choice Questions (MCQ) and Essay Questions
+                // Logic for automatic MCQ grading
                 if (question.Type == "MCQ")
                 {
-                    // Perform a safe case-insensitive string comparison with trimming
-                    bool isCorrect = string.Equals(
-                        item.StudentAnswer?.Trim(),
-                        question.CorrectKey?.Trim(),
-                        System.StringComparison.OrdinalIgnoreCase);
-
-                    decimal earnedScore = isCorrect ? question.MaxScore : 0;
-                    totalScore += earnedScore;
-
-                    submissionAnswer.IsCorrect = isCorrect;
-                    submissionAnswer.EarnedScore = earnedScore;
-                    submissionAnswer.TeacherTag = "Auto-Graded";
+                    bool isCorrect = (answerItem.StudentAnswer == question.CorrectKey);
+                    answerEntity.IsCorrect = isCorrect;
+                    answerEntity.TeacherTag = "Auto-Graded";
+                    answerEntity.EarnedScore = isCorrect ? question.MaxScore : 0.00m;
+                    if (isCorrect) initialScore += question.MaxScore;
                 }
-                else // Handles Essay questions that require manual grading by a teacher
+                else
                 {
-                    submissionAnswer.IsCorrect = null;
-                    submissionAnswer.EarnedScore = 0;
-                    submissionAnswer.TeacherTag = "Pending";
+                    // Essay questions stay pending for teacher evaluation
+                    answerEntity.IsCorrect = null;
+                    answerEntity.TeacherTag = "Pending";
+                    answerEntity.EarnedScore = 0.00m;
                 }
-       
-               
-                await _submissionRepository.SaveSubmissionAnswerAsync(submissionAnswer);
+
+                await _submissionRepository.SaveSubmissionAnswerAsync(answerEntity);
             }
-            submission.FinalScore = totalScore;
+
+            // Update final score and notify observers (Pattern Trigger)
+            submission.FinalScore = initialScore;
             await _submissionRepository.SaveSubmissionAsync(submission);
 
+            // Trigger the Observer Pattern to notify Teachers
             await NotifyObserversAsync(submission);
         }
 
-
+        // Updates student reflection survey data
         public async Task SubmitSurveyAsync(string studentId, string quizTitle, string difficulty, string? commentNote)
-        //Team member 2: Kelly Implemented SubmitSurveyAsync in StudentService.cs
-       
-
         {
             var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, quizTitle);
-            if (submission == null)
-                return;
+            if (submission == null) return;
 
-            // adding a default value for SurveyPainPoint in case no reflections are provided
             submission.SurveyDifficulty = difficulty;
-            submission.SurveyPainPoint = commentNote ?? "No notes.";
+            submission.SurveyPainPoint = string.IsNullOrWhiteSpace(commentNote) ? "No notes." : commentNote;
+
             await _submissionRepository.SaveSubmissionAsync(submission);
-        
+        }
 
-           
-        } 
-
-
-        //Team member 2: Kelly Implemented GetMistakeBankAsync in StudentService.cs
+        // Retrieves graded results and mistakes for the student
         public async Task<SubmissionDTO?> GetMistakeBankAsync(string studentId, string quizTitle)
         {
             var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, quizTitle);
-            if (submission == null)
-            {
-                return null;
-            }
-            var submissionDTO = new SubmissionDTO
+            if (submission == null) return null;
+
+            return new SubmissionDTO
             {
                 StudentId = submission.StudentId,
                 StudentName = submission.Student.Name,
                 Status = submission.Status,
                 FinalScore = submission.FinalScore,
+                SurveyDifficulty = submission.SurveyDifficulty,
                 SurveyPainPoint = submission.SurveyPainPoint,
-                DisputeStatus = submission.DisputeStatus,
-            };
-
-            submissionDTO.Answers = submission.Answers
-
-                .Select(a => new SubmissionAnswerDTO
+                Answers = submission.Answers.Select(a =>
                 {
-                    QuestionId = a.QuestionId,
-                    QuestionPrompt = a.Question.Prompt,
-                    QuestionTopic = a.Question.Topic,
-                    QuestionType = a.Question.Type,
-                    StudentAnswer = a.StudentAnswer,
-                    IsCorrect = a.IsCorrect,
-                    TeacherTag = a.TeacherTag,
-                    Difficulty = a.Difficulty,
-                    CommentNote = a.CommentNote,
-                    MaxScore = a.Question.MaxScore,
-                    EarnedScore = a.EarnedScore,
-                     
-                })
-                .ToList();
-            return submissionDTO;
-        } 
+                    var optionsList = string.IsNullOrEmpty(a.Question.Options)
+                        ? new List<string>()
+                        : System.Text.Json.JsonSerializer.Deserialize<List<string>>(a.Question.Options);
 
-        // Member Han - Implement InitiateDisputeAsync in StudentService
-        public async Task InitiateDisputeAsync(string studentId, int questionId, string reason)
-        {
+                   
+                    var fullCorrectAnswer = optionsList?.FirstOrDefault(o => o.Trim().StartsWith(a.Question.CorrectKey))
+                                            ?? a.Question.CorrectKey;
 
-            var question = await _questionRepository.GetByIdAsync(questionId);
-            if (question == null) return;
-
-            var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, question.QuizTitle);
-            var studentUser = await _userRepository.GetByIdAsync(studentId);
-            if (submission == null || studentUser == null) return;
-
-            // 1. Mutate dispute status
-            submission.DisputeStatus = "PendingReview";
-            await _submissionRepository.SaveSubmissionAsync(submission);
-
-            // 2. Open dispute ticket
-            var ticket = new Ticket
-            {
-                StudentId = studentId,
-                QuestionId = questionId,
-                Msg = reason,
-                Status = "Pending"
+                    return new SubmissionAnswerDTO
+                    {
+                        QuestionId = a.QuestionId,
+                        QuestionPrompt = a.Question.Prompt,
+                        QuestionTopic = a.Question.Topic,
+                        QuestionType = a.Question.Type,
+                        StudentAnswer = a.StudentAnswer,
+                        IsCorrect = a.IsCorrect,
+                        TeacherTag = a.TeacherTag,
+                        TeacherFeedback = a.TeacherFeedback,
+                        MaxScore = a.Question.MaxScore,
+                        EarnedScore = a.EarnedScore,
+                      
+                        CorrectAnswer = fullCorrectAnswer
+                    };
+                }).ToList()
             };
-            await _forumRepository.SaveTicketAsync(ticket);
-
-            // 3. Log private thread starting comment
-            var startComment = new Comment
-            {
-                IsPrivate = true,
-                StudentId = studentId,
-                Topic = "Dispute Q" + questionId,
-                Sender = $"{studentUser.Name} (Student)",
-                Message = "🚨 [Dispute Opened]: " + reason,
-                Timestamp = System.DateTime.Now
-            };
-            await _forumRepository.AddCommentAsync(startComment);
-            
-}
-
-
-
-        public async Task InitiateSubmissionDisputeAsync(string studentId, string quizTitle, string reason)
-        {
-            var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, quizTitle);
-            var studentUser = await _userRepository.GetByIdAsync(studentId);
-            if (submission == null || studentUser == null) return;
-
-            // 1. Mutate dispute status
-            submission.DisputeStatus = "PendingReview";
-            await _submissionRepository.SaveSubmissionAsync(submission);
-
-            // 2. Open dispute ticket mapping to first question (to satisfy schema FK)
-            var questions = await _questionRepository.GetByQuizTitleAsync(quizTitle);
-            var firstQuestion = questions.FirstOrDefault();
-            int questionId = firstQuestion?.Id ?? 0;
-
-            if (questionId > 0)
-            {
-                var ticket = new Ticket
-                {
-                    StudentId = studentId,
-                    QuestionId = questionId,
-                    Msg = reason,
-                    Status = "Pending"
-                };
-                await _forumRepository.SaveTicketAsync(ticket);
-            }
-
-            // 3. Log private thread starting comment
-            var startComment = new Comment
-            {
-                IsPrivate = true,
-                StudentId = studentId,
-                Topic = "Dispute " + studentId + " - " + quizTitle,
-                Sender = $"{studentUser.Name} (Student)",
-                Message = "🚨 [Submission Dispute Opened]: " + reason,
-                Timestamp = System.DateTime.Now
-            };
-            await _forumRepository.AddCommentAsync(startComment);
         }
-
     }
 }

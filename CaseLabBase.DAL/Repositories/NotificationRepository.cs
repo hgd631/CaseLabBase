@@ -16,8 +16,8 @@ namespace CaseLabBase.DAL.Repositories
             _context = context;
         }
 
-        /// Get unread notifications for a specific user (includes targeted + broadcast to their role group).
-        /// </summary>
+        // Get unread notifications for a specific user (includes targeted + broadcast to their role group).
+        
         public async Task<List<Notification>> GetForUserAsync(string userId, string role)
         {
             // Match: specific user, or broadcast to all-students/all-teachers
@@ -30,7 +30,7 @@ namespace CaseLabBase.DAL.Repositories
                 .ToListAsync();
         }
 
-        /// <summary>Get count of unread notifications for a user.</summary>
+        //Get count of unread notifications for a user.
         public async Task<int> GetUnreadCountAsync(string userId, string role)
         {
             var broadcast = role == "student" ? "all-students" : "all-teachers";
@@ -38,7 +38,7 @@ namespace CaseLabBase.DAL.Repositories
                 .CountAsync(n => !n.IsRead && (n.TargetUserId == userId || n.TargetUserId == broadcast));
         }
 
-        /// <summary>Mark all notifications for a user as read.</summary>
+        //Mark all notifications for a user as read.
         public async Task MarkAllReadAsync(string userId, string role)
         {
             var broadcast = role == "student" ? "all-students" : "all-teachers";
@@ -50,7 +50,7 @@ namespace CaseLabBase.DAL.Repositories
             await _context.SaveChangesAsync();
         }
 
-        /// <summary>Mark a single notification as read.</summary>
+        //Mark a single notification as read.
         public async Task MarkSingleReadAsync(int id)
         {
             var n = await _context.Notifications.FindAsync(id);
@@ -61,14 +61,14 @@ namespace CaseLabBase.DAL.Repositories
             }
         }
 
-        /// <summary>Create a single notification.</summary>
+        //Create a single notification.
         public async Task CreateAsync(Notification notification)
         {
             await _context.Notifications.AddAsync(notification);
             await _context.SaveChangesAsync();
         }
 
-        /// <summary>Convenience: broadcast to all students.</summary>
+        //broadcast to all students.
         public async Task NotifyAllStudentsAsync(string title, string message, string? linkUrl = null)
         {
             var n = new Notification
@@ -82,7 +82,7 @@ namespace CaseLabBase.DAL.Repositories
             await CreateAsync(n);
         }
 
-        /// <summary>Convenience: notify all teachers.</summary>
+        //notify all teachers.
         public async Task NotifyAllTeachersAsync(string title, string message, string? linkUrl = null)
         {
             var n = new Notification
@@ -96,7 +96,7 @@ namespace CaseLabBase.DAL.Repositories
             await CreateAsync(n);
         }
 
-        /// <summary>Convenience: notify a specific user.</summary>
+        //notify a specific user.
         public async Task NotifyUserAsync(string userId, string title, string message, string? linkUrl = null)
         {
             var n = new Notification

@@ -3,12 +3,11 @@ using CaseLabBase.DAL.Entities;
 
 namespace CaseLabBase.BLL.Observer
 {
+
+    //Observer interface for handling student exam submissions.
+    // Implement this interface to receive notifications when a student submits an exam.
    
-    // GoF Design Pattern: Observer
-    // Defines a standard interface for objects that should be notified
-    // of changes or actions occurring on a Subject.
-    // This acts as the "Observer" contract in the Gang of Four design.
-    
+
     public interface ISubmissionObserver
     {
        

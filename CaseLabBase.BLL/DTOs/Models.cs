@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-
 namespace CaseLabBase.BLL.DTOs
 {
     public class UserDTO
@@ -9,7 +8,6 @@ namespace CaseLabBase.BLL.DTOs
         public string Name { get; set; } = null!;
         public string Role { get; set; } = null!;
     }
-
     public class QuizDTO
     {
         public string Title { get; set; } = null!;
@@ -21,7 +19,6 @@ namespace CaseLabBase.BLL.DTOs
         public string QuizMode { get; set; } = "Manual";
         public decimal TotalScore { get; set; } = 10.00m;
     }
-
     public class QuestionDTO
     {
         public int Id { get; set; }
@@ -33,7 +30,6 @@ namespace CaseLabBase.BLL.DTOs
         public decimal MaxScore { get; set; } = 0.00m;
         public string? MarkingGuide { get; set; }
     }
-
     public class SubmissionAnswerDTO
     {
         public int QuestionId { get; set; }
@@ -49,13 +45,12 @@ namespace CaseLabBase.BLL.DTOs
         public decimal EarnedScore { get; set; } = 0.00m;
         public string? MarkingGuide { get; set; }
         public string? TeacherFeedback { get; set; }
-
+        public string? CorrectAnswer { get; set; }
         // Diagnostic rates based on student reflections for this quiz
         public decimal EasyRate { get; set; }
         public decimal MediumRate { get; set; }
         public decimal HardRate { get; set; }
     }
-
     public class SubmissionDTO
     {
         public string StudentId { get; set; } = null!;
@@ -64,11 +59,11 @@ namespace CaseLabBase.BLL.DTOs
         public decimal FinalScore { get; set; }
         public string? SurveyDifficulty { get; set; }
         public string? SurveyPainPoint { get; set; }
-        public string DisputeStatus { get; set; } = null!;
+        //public string? CorrectAnswer { get; set; }
+
         public bool IsFlagged { get; set; }
         public List<SubmissionAnswerDTO> Answers { get; set; } = new();
     }
-
     public class CommentDTO
     {
         public int Id { get; set; }
@@ -79,17 +74,7 @@ namespace CaseLabBase.BLL.DTOs
         public string Message { get; set; } = null!;
         public DateTime Timestamp { get; set; }
     }
-
-    public class TicketDTO
-    {
-        public int Id { get; set; }
-        public int QuestionId { get; set; }
-        public string StudentId { get; set; } = null!;
-        public string StudentName { get; set; } = null!;
-        public string Msg { get; set; } = null!;
-        public string Status { get; set; } = null!;
-    }
-
+    
     // Requests models
     public class PublishTaskRequest
     {
@@ -103,20 +88,17 @@ namespace CaseLabBase.BLL.DTOs
         public string QuizMode { get; set; } = "Manual";
         public decimal TotalScore { get; set; } = 10.00m;
     }
-
     public class SubmitExamRequest
     {
         public string StudentId { get; set; } = null!;
         public string QuizTitle { get; set; } = null!;
         public List<SubmitAnswerRequestItem> Answers { get; set; } = new();
     }
-
     public class SubmitAnswerRequestItem
     {
         public int QuestionId { get; set; }
         public string? StudentAnswer { get; set; }
     }
-
     public class SubmitSurveyRequest
     {
         public string StudentId { get; set; } = null!;
@@ -124,29 +106,14 @@ namespace CaseLabBase.BLL.DTOs
         public string Difficulty { get; set; } = null!; // "Easy", "Medium", "Hard"
         public string? CommentNote { get; set; }
     }
-
-    public class InitiateDisputeRequest
-    {
-        public string StudentId { get; set; } = null!;
-        public int QuestionId { get; set; }
-        public string Message { get; set; } = null!;
-    }
-
-    public class DisputeChatRequest
-    {
-        public string StudentId { get; set; } = null!;
-        public int QuestionId { get; set; }
-        public string Sender { get; set; } = null!;
-        public string Message { get; set; } = null!;
-    }
-
+   
+    
     public class GradeSubmissionRequest
     {
         public string StudentId { get; set; } = null!;
-        public string QuizTitle { get; set; } = null!;
+        public string? QuizTitle { get; set; }
         public List<GradeQuestionItem> Grades { get; set; } = new();
     }
-
     public class GradeQuestionItem
     {
         public int QuestionId { get; set; }
@@ -154,16 +121,7 @@ namespace CaseLabBase.BLL.DTOs
         public string? ChosenTag { get; set; }
         public string? TeacherFeedback { get; set; }
     }
-
-    public class ResolveDisputeRequest
-    {
-        public string StudentId { get; set; } = null!;
-        public string QuizTitle { get; set; } = null!;
-        public int QuestionId { get; set; }
-        public bool IsApproved { get; set; }
-        public decimal ManualOverrideScore { get; set; }
-    }
-
+    
     public class UpdateQuestionRequest
     {
         public int Id { get; set; }
@@ -174,7 +132,6 @@ namespace CaseLabBase.BLL.DTOs
         public decimal MaxScore { get; set; }
         public string? MarkingGuide { get; set; }
     }
-
     public class ClassAnalyticsDTO
     {
         public string ActiveTaskTitle { get; set; } = null!;
@@ -183,7 +140,6 @@ namespace CaseLabBase.BLL.DTOs
         public decimal FailureRatePercentage { get; set; }
         public decimal ClassAverageScore { get; set; }
     }
-
     public class UpdateQuizSettingsRequest
     {
         public string Title { get; set; } = null!;
@@ -192,18 +148,6 @@ namespace CaseLabBase.BLL.DTOs
         public bool IsForumOpen { get; set; }
         public string? DeadlineString { get; set; }
     }
-
-    public class InitiateSubmissionDisputeRequest
-    {
-        public string StudentId { get; set; } = null!;
-        public string QuizTitle { get; set; } = null!;
-        public string Message { get; set; } = null!;
-    }
-
-    public class ResolveSubmissionDisputeRequest
-    {
-        public string StudentId { get; set; } = null!;
-        public string QuizTitle { get; set; } = null!;
-        public bool IsApproved { get; set; }
-    }
+    
+    
 }

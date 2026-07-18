@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CaseLabBase.DAL")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1303ea75b9a99901547bfedd2314e562551ca9dd")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+912c25100bd32c7c5c3278997dcbeba0185dea64")]
 [assembly: System.Reflection.AssemblyProductAttribute("CaseLabBase.DAL")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CaseLabBase.DAL")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

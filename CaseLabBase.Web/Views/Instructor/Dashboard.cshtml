@@ -10,10 +10,10 @@
                 <h4 class="fw-bold m-0" style="font-family: var(--font-heading);">Instructor Panel Workspace</h4>
                 <ul class="nav nav-tabs-custom m-0" id="teacherTabs">
                     <li class="nav-item">
-                        <span class="nav-link-custom active" id="tab-btn-analytics" onclick="switchTeacherTab('analytics')">📋 Quizzes & Grading</span>
+                        <span class="nav-link-custom active" id="tab-btn-analytics" onclick="switchTeacherTab('analytics')">Quizzes & Grading</span>
                     </li>
                     <li class="nav-item">
-                        <span class="nav-link-custom" id="tab-btn-forum" onclick="switchTeacherTab('forum')">💬 Course Discussions</span>
+                        <span class="nav-link-custom" id="tab-btn-forum" onclick="switchTeacherTab('forum')">Course Discussions</span>
                     </li>
                 </ul>
             </div>
@@ -28,7 +28,7 @@
         <div class="col-md-3">
             <div class="glass-panel p-3 h-100">
                 <div class="d-flex justify-content-between align-items-center mb-3 ps-1">
-                    <h5 class="fw-bold m-0" style="font-family: var(--font-heading);">Quizzes</h5>
+                    <h5 class="fw-bold m-0" style="font-family: var(--font-heading);">Assignments</h5>
                     <button class="btn btn-sm btn-dark-custom py-1 px-2 fw-semibold" style="font-size: 11.5px;" onclick="enterCreateQuizMode()">➕ Create Quiz</button>
                 </div>
                 <p class="text-secondary small mb-3 ps-1">Select a quiz to load details:</p>
@@ -67,13 +67,13 @@
                     <div class="col-12">
                         <ul class="nav nav-tabs-custom m-0 border-bottom-0" id="quizSubTabs" style="gap: 10px;">
                             <li class="nav-item">
-                                <span class="nav-link-custom active" id="quiz-sub-btn-view" onclick="switchQuizSubTab('view')">👁 View Quiz</span>
+                                <span class="nav-link-custom active" id="quiz-sub-btn-view" onclick="switchQuizSubTab('view')"> View Quiz</span>
                             </li>
                             <li class="nav-item">
-                                <span class="nav-link-custom" id="quiz-sub-btn-grading" onclick="switchQuizSubTab('grading')">✍ Grading</span>
+                                <span class="nav-link-custom" id="quiz-sub-btn-grading" onclick="switchQuizSubTab('grading')"> Grading</span>
                             </li>
                             <li class="nav-item">
-                                <span class="nav-link-custom" id="quiz-sub-btn-diagnostics" onclick="switchQuizSubTab('diagnostics')">📊 Diagnostics</span>
+                                <span class="nav-link-custom" id="quiz-sub-btn-diagnostics" onclick="switchQuizSubTab('diagnostics')"> Analytics</span>
                             </li>
                         </ul>
                     </div>
@@ -83,7 +83,7 @@
                 <div id="quiz-sub-tab-content-view" class="quiz-sub-tab-content">
                     <div class="glass-panel">
                         <h5 class="fw-bold mb-1" style="font-family: var(--font-heading);">Quiz Questions & Answer Keys</h5>
-                        <p class="text-secondary small mb-4">Mutate correct keys for MCQ to trigger system re-grading, or add marking guidelines for Essay questions.</p>
+                        <p class="text-secondary small mb-4">Edit answer for MCQ for system re-grading, or add notes for Essay questions.</p>
                         <div id="viewQuizQuestionsContainer" class="d-flex flex-column gap-3">
                             <!-- Question edit cards will be dynamically injected here -->
                         </div>
@@ -105,10 +105,7 @@
                                     <li class="sub-tab-link" id="sub-btn-graded" onclick="switchRosterSubTab('graded')">
                                         Graded
                                     </li>
-                                    <li class="sub-tab-link d-flex align-items-center gap-1" id="sub-btn-dispute" onclick="switchRosterSubTab('dispute')">
-                                        Disputes
-                                        <span id="subTabTicketBadgeCount" class="badge bg-danger rounded-pill" style="display: none; font-size: 10px;">0</span>
-                                    </li>
+                                    
                                 </ul>
                             </div>
                         </div>
@@ -157,7 +154,7 @@
                     <div class="row">
                         <div class="col-12">
                             <div class="glass-panel">
-                                <h4 class="fw-bold mb-1" style="font-family: var(--font-heading);">📊 Quiz Statistics</h4>
+                                <h4 class="fw-bold mb-1" style="font-family: var(--font-heading);">Quiz Statistics</h4>
                                 <p class="text-secondary small mb-4">Overview of class grades, difficulty ratings, and student flags.</p>
                                 <div id="analyticsQuestionDiagnosticsContainer" class="d-flex flex-column gap-3">
                                     <!-- Dynamic questions diagnostics injected here -->
@@ -197,7 +194,7 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label text-secondary small fw-semibold">Quiz Deadline (Date & Time):</label>
+                                    <label class="form-label text-secondary small fw-semibold">Deadline (Date & Time):</label>
                                     <input type="datetime-local" class="form-control form-control-sm" id="inputQuizDeadline">
                                 </div>
 
@@ -216,7 +213,7 @@
 
                             <div class="d-grid">
                                 <button class="btn btn-dark-custom btn-lg py-2.5 fw-bold" onclick="instructorPublishTask()">
-                                    Publish Task & Clear Previous Scores
+                                    Publish
                                 </button>
                             </div>
                         </div>
@@ -245,8 +242,12 @@
 <!-- COURSE FORUMS TAB CONTENT -->
 <div id="teacher-tab-forum" class="teacher-tab-content d-none">
     <div class="row">
-        <div class="col-12" id="standalone-teacher-forum-container">
-            <!-- Dynamic Forum Room Injection -->
+        
+        <div class="col-12" id="student-forum-container-target">
+            <div class="text-center py-5 text-secondary">
+                <div class="spinner-border text-primary mb-2"></div>
+                <p>Loading course discussions...</p>
+            </div>
         </div>
     </div>
 </div>

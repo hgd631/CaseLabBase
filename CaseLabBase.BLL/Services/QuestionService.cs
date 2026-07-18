@@ -1,10 +1,12 @@
+
+using CaseLabBase.BLL.DTOs;
+using CaseLabBase.BLL.Factory;
+using CaseLabBase.DAL.Entities;
+using CaseLabBase.DAL.Repositories;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using CaseLabBase.BLL.DTOs;
-using CaseLabBase.DAL.Entities;
-using CaseLabBase.DAL.Repositories;
 
 namespace CaseLabBase.BLL.Services
 {
@@ -24,15 +26,9 @@ namespace CaseLabBase.BLL.Services
             _forumRepository = forumRepository;
         }
 
-
-        // Team Member 1 - Implement GetAllQuizzesAsync in QuestionService
         public async Task<List<QuizDTO>> GetAllQuizzesAsync()
         {
-
-            // 1. Fetch the raw list of all quizzes from the Database using the Repository
             var list = await _questionRepository.GetQuizzesAsync();
-
-            // 2. Map (convert) the database entities into QuizDTOs to send only the necessary data to the frontend
             return list.Select(q => new QuizDTO
             {
                 Title = q.Title,
@@ -43,12 +39,9 @@ namespace CaseLabBase.BLL.Services
                 PdfBase64 = q.PdfBase64,
                 QuizMode = q.QuizMode,
                 TotalScore = q.TotalScore
-            }).ToList(); // Convert the mapped items back into a List and return it
+            }).ToList();
         }
 
-        //-------------------------------------------------------------------
-
-        // Implement GetActiveQuestionsAsync in QuestionService
         public async Task<List<QuestionDTO>> GetActiveQuestionsAsync(string quizTitle)
         {
             var list = await _questionRepository.GetByQuizTitleAsync(quizTitle);
@@ -58,17 +51,15 @@ namespace CaseLabBase.BLL.Services
                 Type = q.Type,
                 Topic = q.Topic,
                 Prompt = q.Prompt,
-                Options = q.Options != null ? System.Text.Json.JsonSerializer.Deserialize<List<string>>(q.Options) : null,
+                Options = !string.IsNullOrEmpty(q.Options)
+                    ? JsonSerializer.Deserialize<List<string>>(q.Options)
+                    : null,
                 CorrectKey = q.CorrectKey,
                 MaxScore = q.MaxScore,
                 MarkingGuide = q.MarkingGuide
             }).ToList();
         }
 
-
-
-        //------------------------------------------------------------------
-        // Member 1- Han: Implement PublishNewTaskAsync in QuestionService
         public async Task PublishNewTaskAsync(PublishTaskRequest request)
         {
             // 1. Validate: sum of question weights must equal total score
@@ -78,16 +69,7 @@ namespace CaseLabBase.BLL.Services
                 throw new System.ArgumentException($"The sum of question scores ({sumOfWeights:0.00}) must equal the quiz total score ({request.TotalScore:0.00}).");
             }
 
-            // Overwrite: If a quiz with the same title exists, clear submissions first
-            // to avoid foreign key violations in SubmissionAnswers, then delete the quiz
-            var existingQuiz = await _questionRepository.GetQuizByTitleAsync(request.Title);
-            if (existingQuiz != null)
-            {
-                await _submissionRepository.DeleteSubmissionsByQuizTitleAsync(request.Title);
-                await _questionRepository.DeleteQuizAsync(existingQuiz);
-            }
-
-            // 2. Create and add new Quiz entity
+            // 2. Create and add Quiz entity (will overwrite if exists)
             var quizEntity = new Quiz
             {
                 Title = request.Title,
@@ -106,11 +88,12 @@ namespace CaseLabBase.BLL.Services
             foreach (var q in request.Questions)
             {
                 string? optionsJson = q.Options != null ? JsonSerializer.Serialize(q.Options) : null;
-                var questionEntity = Factory.QuestionFactory.Create(q.Type, request.Title, q.Prompt, q.Topic, optionsJson, q.CorrectKey ?? "", q.MaxScore);
+                // Using 7-argument overload of QuestionFactory to match your factory class
+                var questionEntity = QuestionFactory.Create(q.Type, request.Title, q.Prompt, q.Topic, optionsJson, q.CorrectKey ?? "", q.MaxScore);
+                questionEntity.MarkingGuide = q.MarkingGuide; // Set MarkingGuide directly
                 await _questionRepository.AddAsync(questionEntity);
             }
         }
-
 
         public async Task UpdateQuestionAsync(UpdateQuestionRequest request)
         {
@@ -163,7 +146,5 @@ namespace CaseLabBase.BLL.Services
                 await _questionRepository.UpdateQuizAsync(quiz);
             }
         }
-
-
     }
 }

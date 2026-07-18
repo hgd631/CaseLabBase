@@ -47,7 +47,7 @@ namespace CaseLabBase.BLL.Services
 
 
 
-        // Han - Implement GetDisputeCommentsAsync in ForumService.cs
+        // Han - Implement GetDisputeCommentsAsync 
         public async Task<List<CommentDTO>> GetDisputeCommentsAsync(string studentId, string topic)
         {
             var list = await _forumRepository.GetPrivateCommentsForDisputeAsync(studentId, topic);
@@ -63,7 +63,7 @@ namespace CaseLabBase.BLL.Services
             }).ToList();
         }
 
-        // Han - Implement AddCommentAsync in ForumService.cs
+        // Han - Implement AddCommentAsync
         public async Task AddCommentAsync(CommentDTO comment)
         {
             var commentEntity = new Comment

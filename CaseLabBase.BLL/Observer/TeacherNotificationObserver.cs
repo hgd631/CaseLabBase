@@ -4,12 +4,8 @@ using CaseLabBase.DAL.Repositories;
 
 namespace CaseLabBase.BLL.Observer
 {
-    
-    // GoF Design Pattern: Concrete Observer
-    // Decouples notification delivery from the core student submission flow.
-    // When triggered by the Subject, this class generates and logs notifications in the database
-    // to alert all teachers that a new student quiz submission requires grading.
-    
+
+    //Observer implementation that handles notifications for teachers when a student submits an exam.
     public class TeacherNotificationObserver : ISubmissionObserver
     {
         private readonly NotificationRepository _notificationRepository;

@@ -26,6 +26,8 @@ C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\rjsmrazo
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\rjsmcshtml.dswa.cache.json
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\scopedcss\bundle\CaseLabBase.Web.styles.css
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\9ufwhtjs64-{0}-rjdbzjbjp9-rjdbzjbjp9.gz
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\ge5p6u3t8i-{0}-n8l4l7fkiq-n8l4l7fkiq.gz
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\fnb6nty6cs-{0}-6f5s3qlweb-6f5s3qlweb.gz
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\staticwebassets.build.json
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\staticwebassets.build.json.cache
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\staticwebassets.development.json
@@ -38,4 +40,8 @@ C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\refint\C
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\CaseLabBase.Web.pdb
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\CaseLabBase.Web.genruntimeconfig.cache
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\ref\CaseLabBase.Web.dll
-C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\xxafrsm3ut-{0}-xx0jp7orl4-xx0jp7orl4.gz
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\c11olpysu5-{0}-no7wq4elh4-no7wq4elh4.gz
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\bdtynlqs6p-{0}-eaudh4yhv2-eaudh4yhv2.gz
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\uw4qzrkbe9-{0}-e0b1hsehb8-e0b1hsehb8.gz
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\6usb65y8o8-{0}-8ndsypqmxb-8ndsypqmxb.gz
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\jlvwwnc67n-{0}-emkf084kiw-emkf084kiw.gz

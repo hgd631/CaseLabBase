@@ -2,11 +2,8 @@ using CaseLabBase.DAL.Entities;
 
 namespace CaseLabBase.BLL.Factory
 {
-    
-    // GoF Design Pattern: Simple Factory / Factory Method
-    // Decouples the client (QuestionService) from concrete question creation logic.
-    // This abstract class defines the Creator interface for producing Question products.
-    
+    //Abstract Creator for Question entities.
+
     public abstract class QuestionCreator
     {
         
@@ -68,10 +65,10 @@ namespace CaseLabBase.BLL.Factory
     
     public static class QuestionFactory
     {
-        
+
         // Entry point for creating questions dynamically.
-        
-        // <param name="type">Type of question: "MCQ" or "Essay"</param>
+
+        //type: The type of question to create (e.g., "MCQ" or "Essay").
         public static Question Create(string type, string quizTitle, string prompt, string? topic, string? optionsJson, string correctKey, decimal maxScore)
         {
             // Decides which concrete subclass to instantiate based on runtime parameters

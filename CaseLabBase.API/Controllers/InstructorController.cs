@@ -1,9 +1,9 @@
-using CaseLabBase.DAL.Repositories;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+using System.Linq;
 using CaseLabBase.BLL.DTOs;
 using CaseLabBase.BLL.Services;
-using Microsoft.AspNetCore.Mvc;
-using System.Linq;
-using System.Threading.Tasks;
+using CaseLabBase.DAL.Repositories;
 
 namespace CaseLabBase.API.Controllers
 {
@@ -35,7 +35,7 @@ namespace CaseLabBase.API.Controllers
             var title = await GetDefaultQuizTitleAsync(quizTitle);
             if (string.IsNullOrEmpty(title))
             {
-                return NotFound("No quizzes are active to retrieve analytics.");
+                return NotFound("No quizzes are active to get analytics.");
             }
 
             var dto = await _instructorService.GetClassAnalyticsAsync(title);
@@ -65,61 +65,38 @@ namespace CaseLabBase.API.Controllers
                 return BadRequest("Invalid grading request.");
             }
 
-            var title = await GetDefaultQuizTitleAsync(request.QuizTitle);
-            if (string.IsNullOrEmpty(title))
+            try
             {
-                return BadRequest("No active quiz title context.");
+                var title = await GetDefaultQuizTitleAsync(request.QuizTitle);
+                if (string.IsNullOrEmpty(title))
+                {
+                    return BadRequest("No active quiz title context.");
+                }
+
+                await _instructorService.GradeSubmissionAsync(request.StudentId, title, request.Grades);
+
+                // Notify the specific student their results are ready
+                await _notifications.NotifyUserAsync(
+                    userId: request.StudentId,
+                    title: "Your Results Are Ready",
+                    message: $"Your submission for '{title}' has been graded. Check your Mistake Bank for feedback.",
+                    linkUrl: "/Student/MistakeBank"
+                );
+
+                return Ok(new { Message = "Student submission graded and published." });
             }
-
-            await _instructorService.GradeSubmissionAsync(request.StudentId, title, request.Grades);
-
-            // Notify the specific student their results are ready
-            await _notifications.NotifyUserAsync(
-                userId: request.StudentId,
-                title: "Your Results Are Ready",
-                message: $"Your submission for '{title}' has been graded. Check your Mistake Bank for feedback.",
-                linkUrl: "/Student/MistakeBank"
-            );
-
-            return Ok(new { Message = "Student submission graded and published." });
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    error = ex.Message,
+                    stackTrace = ex.StackTrace,
+                    innerException = ex.InnerException?.Message
+                });
+            }
         }
 
-        [HttpPost("resolve-dispute")]
-        public async Task<IActionResult> ResolveDispute([FromBody] ResolveDisputeRequest request)
-        {
-            if (request == null || string.IsNullOrWhiteSpace(request.StudentId))
-            {
-                return BadRequest("Invalid dispute resolution request.");
-            }
-
-            var title = await GetDefaultQuizTitleAsync(request.QuizTitle);
-            if (string.IsNullOrEmpty(title))
-            {
-                return BadRequest("No active quiz title context.");
-            }
-
-            await _instructorService.ResolveDisputeAsync(request.StudentId, title, request.QuestionId, request.IsApproved, request.ManualOverrideScore);
-            return Ok(new { Message = "Dispute resolved and status updated." });
-        }
-
-        [HttpPost("resolve-submission-dispute")]
-        public async Task<IActionResult> ResolveSubmissionDispute([FromBody] ResolveSubmissionDisputeRequest request)
-        {
-            if (request == null || string.IsNullOrWhiteSpace(request.StudentId))
-            {
-                return BadRequest("Invalid dispute resolution request.");
-            }
-
-            var title = await GetDefaultQuizTitleAsync(request.QuizTitle);
-            if (string.IsNullOrEmpty(title))
-            {
-                return BadRequest("No active quiz title context.");
-            }
-
-            await _instructorService.ResolveSubmissionDisputeAsync(request.StudentId, title, request.IsApproved);
-            return Ok(new { Message = "Submission dispute status resolved successfully." });
-        }
-
+        
         [HttpGet("error-tags")]
         public async Task<IActionResult> GetErrorTags()
         {
@@ -151,7 +128,7 @@ namespace CaseLabBase.API.Controllers
                 return BadRequest("Invalid rename request.");
             }
             await _instructorService.RenameErrorTagAsync(request.OldTag, request.NewTag);
-            return Ok(new { Message = "Error tag successfully renamed and merged across database records." });
+            return Ok(new { Message = "Error tag successfully renamed and merged " });
         }
     }
 

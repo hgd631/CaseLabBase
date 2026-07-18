@@ -1,55 +1,79 @@
 @{
     ViewData["Title"] = "Login Portal";
-    ViewData["BodyClass"] = "";
 }
 
-<script>
-    localStorage.removeItem('caselab_user');
-</script>
+<style>
+    .login-container {
+        max-width: 400px;
+        margin: 100px auto;
+        padding: 40px;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        background: #fff;
+        text-align: center;
+    }
 
-<div class="row justify-content-center align-items-center min-vh-75" style="margin-top: 5vh;">
-    <div class="col-md-6 col-lg-5">
-        <div class="glass-panel text-center px-4 py-5 shadow-lg">
-            <div class="mb-4">
-                <div class="d-inline-flex align-items-center justify-content-center rounded-circle border mb-3" style="width: 72px; height: 72px; background: rgba(var(--accent-indigo-rgb), 0.1); border-color: rgba(var(--accent-indigo-rgb), 0.3) !important; box-shadow: 0 0 15px rgba(var(--accent-indigo-rgb), 0.15);">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent-indigo)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                </div>
-                <h2 class="fw-bold mb-1" style="font-family: var(--font-heading);">Login Portal</h2>
-                <p class="text-secondary small">Choose a user profile to log in</p>
-            </div>
+    .user-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        text-align: left;
+    }
 
-            <div class="text-start mb-4">
-                <label class="form-label text-secondary small fw-semibold">Select User:</label>
-                <div class="d-grid gap-2">
-                    <div class="mcq-option-card px-3 py-2.5 mb-2" onclick="loginAsRole('s1')">
-                        <div class="rounded-circle text-white d-flex align-items-center justify-content-center font-monospace fw-bold" style="width: 28px; height: 28px; background-color: var(--accent-indigo); font-size: 12px;">HD</div>
-                        <div>
-                            <span class="d-block fw-medium" style="font-size: 13.5px;">Han Dang</span>
-                            <span class="text-secondary" style="font-size: 11px;">Student (ID: s1)</span>
-                        </div>
-                    </div>
+        .user-card:hover {
+            border-color: #4338f8;
+            background-color: #f8fafc;
+        }
 
-                    <div class="mcq-option-card px-3 py-2.5 mb-2" onclick="loginAsRole('s2')">
-                        <div class="rounded-circle text-white d-flex align-items-center justify-content-center font-monospace fw-bold" style="width: 28px; height: 28px; background-color: var(--accent-indigo); font-size: 12px;">JS</div>
-                        <div>
-                            <span class="d-block fw-medium" style="font-size: 13.5px;">John Smith</span>
-                            <span class="text-secondary" style="font-size: 11px;">Student (ID: s2)</span>
-                        </div>
-                    </div>
+    .avatar {
+        width: 35px;
+        height: 35px;
+        background-color: #4338f8;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.8rem;
+    }
 
-                    <div class="mcq-option-card px-3 py-2.5 mb-2" onclick="loginAsRole('t1')" style="border-color: rgba(var(--accent-indigo-rgb), 0.25);">
-                        <div class="rounded-circle text-white d-flex align-items-center justify-content-center font-monospace fw-bold" style="width: 28px; height: 28px; background-color: var(--accent-cyan); font-size: 12px;">AB</div>
-                        <div>
-                            <span class="d-block fw-medium" style="font-size: 13.5px;">Dr. Ali Bayeh</span>
-                            <span class="text-secondary" style="font-size: 11px;">Instructor (ID: t1)</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    .login-title {
+        color: #4338f8;
+        font-weight: 800;
+        margin-bottom: 30px;
+    }
+</style>
 
+<div class="login-container shadow-sm">
+    <h2 class="login-title">Login</h2>
+
+    <!-- Student -->
+    <div class="user-card" onclick="loginAsRole('s1')">
+        <div class="avatar">HD</div>
+        <div>
+            <div class="fw-bold small">Han Dang</div>
+            <div class="text-secondary small">Student</div>
+        </div>
+    </div>
+    <div class="user-card" onclick="loginAsRole('s2')">
+        <div class="avatar-circle">JS</div>
+        <div>
+            <div class="fw-bold small">John Smith</div>
+            <div class="text-secondary" style="font-size: 11px;">Student (s2)</div>
+        </div>
+    </div>
+    <!-- Instructor -->
+    <div class="user-card" onclick="loginAsRole('t1')">
+        <div class="avatar" style="background-color: #0891b2;">AB</div>
+        <div>
+            <div class="fw-bold small">Dr. Ali Bayeh</div>
+            <div class="text-secondary small">Instructor</div>
         </div>
     </div>
 </div>

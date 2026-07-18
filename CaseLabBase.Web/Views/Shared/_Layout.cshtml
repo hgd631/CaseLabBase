@@ -41,7 +41,16 @@
     </main>
 
     <!-- App Logic Script -->
-    <script src="~/js/app.js" asp-append-version="true"></script>
+    <!--<script src="~/js/app.js" asp-append-version="true"></script>-->
+
+    <script src="~/js/state.js" asp-append-version="true"></script>
+    <script src="~/js/utils.js" asp-append-version="true"></script>
+    <script src="~/js/auth.js" asp-append-version="true"></script>
+    <script src="~/js/student.js" asp-append-version="true"></script>
+    <script src="~/js/instructor.js" asp-append-version="true"></script>
+    <script src="~/js/forum.js" asp-append-version="true"></script>
+    <script src="~/js/init.js" asp-append-version="true"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

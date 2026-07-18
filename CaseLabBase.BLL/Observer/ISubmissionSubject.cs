@@ -3,11 +3,9 @@ using CaseLabBase.DAL.Entities;
 
 namespace CaseLabBase.BLL.Observer
 {
-    
-    // GoF Design Pattern: Observer (Subject)
-    //  Defines interface for registering, removing, and notifying observers.
-    // This acts as the "Subject" contract in the Gang of Four design.
-  
+
+
+    // Subject interface for managing observers related to student exam submissions.
     public interface ISubmissionSubject
     {
         

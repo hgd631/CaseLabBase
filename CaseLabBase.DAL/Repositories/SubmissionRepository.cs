@@ -52,11 +52,9 @@ namespace CaseLabBase.DAL.Repositories
                 .FirstOrDefaultAsync(s => s.StudentId == studentId && s.QuizTitle == quizTitle);
         }
 
-        /// <summary>
-        /// Inserts a new Submission or updates an existing one by (StudentId, QuizTitle).
-        /// After the call, submission.Id is guaranteed to reflect the real database row Id.
-        /// Uses direct property assignments instead of SetValues to avoid EF Core PK mutation errors.
-        /// </summary>
+
+        // Inserts a new Submission or updates an existing one by (StudentId, QuizTitle).
+
         public async Task SaveSubmissionAsync(Submission submission)
         {
             var existing = await _context.Submissions
@@ -64,7 +62,7 @@ namespace CaseLabBase.DAL.Repositories
 
             if (existing == null)
             {
-                // INSERT path: let EF Core populate submission.Id after SaveChangesAsync
+                // INSERT path: add the new entity to the context
                 _context.Submissions.Add(submission);
                 await _context.SaveChangesAsync();
                 // submission.Id is now the real identity-generated PK
@@ -81,10 +79,8 @@ namespace CaseLabBase.DAL.Repositories
             }
         }
 
-        /// <summary>
-        /// Inserts a new SubmissionAnswer or updates an existing one by (SubmissionId, QuestionId).
-        /// Uses direct property assignments instead of SetValues.
-        /// </summary>
+
+        // Inserts a new SubmissionAnswer or updates an existing one by (SubmissionId, QuestionId).
         public async Task SaveSubmissionAnswerAsync(SubmissionAnswer answer)
         {
             var existing = await _context.SubmissionAnswers
