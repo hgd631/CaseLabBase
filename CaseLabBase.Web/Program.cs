@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 // Add services to the container (register MVC views & controllers)
+builder.Services.AddControllers();
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
