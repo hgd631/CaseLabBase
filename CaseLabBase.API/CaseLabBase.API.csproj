@@ -16,4 +16,8 @@
     <ProjectReference Include="..\CaseLabBase.BLL\CaseLabBase.BLL.csproj" />
   </ItemGroup>
 
+	<ItemGroup>
+		<Content Update="appsettings.json" CopyToPublishDirectory="Never" />
+	</ItemGroup>
+
 </Project>

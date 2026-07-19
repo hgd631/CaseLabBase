@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CaseLabBase.Web")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ac41b43fc90aa611ce36c70685b3f53337ad1e51")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+80f16394abeb7a7ed027f46bece0c78a0d8a2a7d")]
 [assembly: System.Reflection.AssemblyProductAttribute("CaseLabBase.Web")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CaseLabBase.Web")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
