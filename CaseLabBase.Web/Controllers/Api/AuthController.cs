@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using CaseLabBase.BLL.Services;
 
-namespace CaseLabBase.Web.Controllers
+namespace CaseLabBase.Web.Controllers.Api
 {
     [ApiController]
     [Route("api/[controller]")]
