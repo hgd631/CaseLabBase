@@ -1,12 +1,14 @@
 using System;
 using System.IO;
 using System.Linq;
+using CaseLabBase.API.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Services.AddControllers()
+    .AddApplicationPart(typeof(CaseLabBase.API.Controllers.AuthController).Assembly);
 
 // Add services to the container (register MVC views & controllers)
-builder.Services.AddControllers();
+//builder.Services.AddControllers();
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
