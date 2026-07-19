@@ -1,6 +1,6 @@
 ﻿
 
-const API_BASE = "http://localhost:5088/api";
+const API_BASE = "/api";
 
 const SafeStorage = {
     getItem(key) {

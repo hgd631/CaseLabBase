@@ -1,4 +1,3 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.0.31903.59
@@ -10,6 +9,11 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CaseLabBase.API", "CaseLabBase.API\CaseLabBase.API.csproj", "{F2AF7011-C7D4-4DBF-81A1-E722C1A5ED15}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CaseLabBase.Web", "CaseLabBase.Web\CaseLabBase.Web.csproj", "{A20F8A5D-261B-4E3D-9474-C3B4E2E66708}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A7B26DAF-6977-4AF7-A12A-5208D20ADB63}"
+	ProjectSection(SolutionItems) = preProject
+		Dockerfile = Dockerfile
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,5 +37,11 @@ Global
 		{A20F8A5D-261B-4E3D-9474-C3B4E2E66708}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A20F8A5D-261B-4E3D-9474-C3B4E2E66708}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A20F8A5D-261B-4E3D-9474-C3B4E2E66708}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9970071D-6ACB-4879-9ABC-F92A9BCA3B2D}
 	EndGlobalSection
 EndGlobal
