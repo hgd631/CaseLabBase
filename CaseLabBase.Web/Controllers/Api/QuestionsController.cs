@@ -8,13 +8,13 @@ using CaseLabBase.DAL.Repositories;
 namespace CaseLabBase.Web.Controllers.Api
 {
     [ApiController]
-    [Route("api/questions")]
-    public class QuestionsApiController : ControllerBase
+    [Route("api/[controller]")]
+    public class QuestionsController : ControllerBase
     {
         private readonly QuestionService _questionService;
         private readonly NotificationRepository _notifications;
 
-        public QuestionsApiController(QuestionService questionService, NotificationRepository notifications)
+        public QuestionsController(QuestionService questionService, NotificationRepository notifications)
         {
             _questionService = questionService;
             _notifications = notifications;
@@ -114,5 +114,8 @@ namespace CaseLabBase.Web.Controllers.Api
             await _questionService.UpdateQuizSettingsAsync(request);
             return Ok(new { Message = "Quiz configurations updated successfully." });
         }
+
+
+
     }
 }

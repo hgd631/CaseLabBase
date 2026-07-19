@@ -9,13 +9,13 @@ using CaseLabBase.DAL.Repositories;
 namespace CaseLabBase.Web.Controllers.Api
 {
     [ApiController]
-    [Route("api/student")]
-    public class StudentApiController : ControllerBase
+    [Route("api/[controller]")]
+    public class StudentController : ControllerBase
     {
         private readonly StudentService _studentService;
         private readonly QuestionService _questionService;
 
-        public StudentApiController(StudentService studentService, QuestionService questionService)
+        public StudentController(StudentService studentService, QuestionService questionService)
         {
             _studentService = studentService;
             _questionService = questionService;
@@ -32,12 +32,10 @@ namespace CaseLabBase.Web.Controllers.Api
             try
             {
                 await _studentService.SubmitExamAsync(request.StudentId, request.QuizTitle, request.Answers ?? new());
-
                 return Ok(new { Message = "Exam submitted successfully." });
             }
             catch (Exception ex)
             {
-                // Return full exception details so the client can display the real error
                 var detail = ex.InnerException != null
                     ? $"{ex.Message} => {ex.InnerException.Message}"
                     : ex.Message;
@@ -89,29 +87,6 @@ namespace CaseLabBase.Web.Controllers.Api
             return Ok(dto);
         }
 
-        [HttpPost("initiate-dispute")]
-        public async Task<IActionResult> InitiateDispute([FromBody] InitiateDisputeRequest request)
-        {
-            if (request == null || string.IsNullOrWhiteSpace(request.StudentId))
-            {
-                return BadRequest("Invalid dispute request data.");
-            }
-
-            await _studentService.InitiateDisputeAsync(request.StudentId, request.QuestionId, request.Message);
-            return Ok(new { Message = "Dispute ticket opened and private chat initialized." });
-        }
-
-        [HttpPost("initiate-submission-dispute")]
-        public async Task<IActionResult> InitiateSubmissionDispute([FromBody] InitiateSubmissionDisputeRequest request)
-        {
-            if (request == null || string.IsNullOrWhiteSpace(request.StudentId) || string.IsNullOrWhiteSpace(request.QuizTitle))
-            {
-                return BadRequest("Invalid dispute request data.");
-            }
-
-            var disputeMsg = request.Message ?? request.Reason ?? "No reason provided.";
-            await _studentService.InitiateSubmissionDisputeAsync(request.StudentId, request.QuizTitle, disputeMsg);
-            return Ok(new { Message = "Submission dispute opened and private chat initialized." });
-        }
+        
     }
 }

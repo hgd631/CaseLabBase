@@ -8,14 +8,14 @@ using CaseLabBase.DAL.Repositories;
 namespace CaseLabBase.Web.Controllers.Api
 {
     [ApiController]
-    [Route("api/instructor")]
-    public class InstructorApiController : ControllerBase
+    [Route("api/[controller]")]
+    public class InstructorController : ControllerBase
     {
         private readonly InstructorService _instructorService;
         private readonly QuestionService _questionService;
         private readonly NotificationRepository _notifications;
 
-        public InstructorApiController(InstructorService instructorService, QuestionService questionService, NotificationRepository notifications)
+        public InstructorController(InstructorService instructorService, QuestionService questionService, NotificationRepository notifications)
         {
             _instructorService = instructorService;
             _questionService = questionService;
@@ -35,7 +35,7 @@ namespace CaseLabBase.Web.Controllers.Api
             var title = await GetDefaultQuizTitleAsync(quizTitle);
             if (string.IsNullOrEmpty(title))
             {
-                return NotFound("No quizzes are active to retrieve analytics.");
+                return NotFound("No quizzes are active to get analytics.");
             }
 
             var dto = await _instructorService.GetClassAnalyticsAsync(title);
@@ -46,7 +46,7 @@ namespace CaseLabBase.Web.Controllers.Api
         public async Task<IActionResult> GetRoster([FromQuery] string subTab, [FromQuery] string? quizTitle)
         {
             if (string.IsNullOrWhiteSpace(subTab)) subTab = "pending";
-            
+
             var title = await GetDefaultQuizTitleAsync(quizTitle);
             if (string.IsNullOrEmpty(title))
             {
@@ -87,50 +87,16 @@ namespace CaseLabBase.Web.Controllers.Api
             }
             catch (System.Exception ex)
             {
-                return StatusCode(500, new { 
-                    error = ex.Message, 
+                return StatusCode(500, new
+                {
+                    error = ex.Message,
                     stackTrace = ex.StackTrace,
-                    innerException = ex.InnerException?.Message 
+                    innerException = ex.InnerException?.Message
                 });
             }
         }
 
-        [HttpPost("resolve-dispute")]
-        public async Task<IActionResult> ResolveDispute([FromBody] ResolveDisputeRequest request)
-        {
-            if (request == null || string.IsNullOrWhiteSpace(request.StudentId))
-            {
-                return BadRequest("Invalid dispute resolution request.");
-            }
-
-            var title = await GetDefaultQuizTitleAsync(request.QuizTitle);
-            if (string.IsNullOrEmpty(title))
-            {
-                return BadRequest("No active quiz title context.");
-            }
-
-            await _instructorService.ResolveDisputeAsync(request.StudentId, title, request.QuestionId, request.IsApproved, request.ManualOverrideScore);
-            return Ok(new { Message = "Dispute resolved and status updated." });
-        }
-
-        [HttpPost("resolve-submission-dispute")]
-        public async Task<IActionResult> ResolveSubmissionDispute([FromBody] ResolveSubmissionDisputeRequest request)
-        {
-            if (request == null || string.IsNullOrWhiteSpace(request.StudentId))
-            {
-                return BadRequest("Invalid dispute resolution request.");
-            }
-
-            var title = await GetDefaultQuizTitleAsync(request.QuizTitle);
-            if (string.IsNullOrEmpty(title))
-            {
-                return BadRequest("No active quiz title context.");
-            }
-
-            await _instructorService.ResolveSubmissionDisputeAsync(request.StudentId, title, request.IsApproved);
-            return Ok(new { Message = "Submission dispute status resolved successfully." });
-        }
-
+        
         [HttpGet("error-tags")]
         public async Task<IActionResult> GetErrorTags()
         {
@@ -162,7 +128,7 @@ namespace CaseLabBase.Web.Controllers.Api
                 return BadRequest("Invalid rename request.");
             }
             await _instructorService.RenameErrorTagAsync(request.OldTag, request.NewTag);
-            return Ok(new { Message = "Error tag successfully renamed and merged across database records." });
+            return Ok(new { Message = "Error tag successfully renamed and merged " });
         }
     }
 
