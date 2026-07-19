@@ -1,4 +1,5 @@
-﻿// 1. DASHBOARD: Load all available quizzes
+﻿
+// 1. DASHBOARD: Load all available quizzes
 async function renderStudentDashboard() {
     const box = document.getElementById('assignmentContainerStudent');
     if (!box) return;
@@ -296,7 +297,7 @@ async function openStudentMistakeBankWithReload() {
 
         const data = await resMistakes.json();
 
-        // Lọc danh sách câu sai (isCorrect là false)
+        
         const incorrect = data.answers.filter(a => a.isCorrect === false);
 
         let summaryHTML = `

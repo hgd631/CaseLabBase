@@ -43,5 +43,5 @@ C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\ref\Case
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\c11olpysu5-{0}-no7wq4elh4-no7wq4elh4.gz
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\bdtynlqs6p-{0}-eaudh4yhv2-eaudh4yhv2.gz
 C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\uw4qzrkbe9-{0}-e0b1hsehb8-e0b1hsehb8.gz
-C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\6usb65y8o8-{0}-8ndsypqmxb-8ndsypqmxb.gz
-C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\jlvwwnc67n-{0}-emkf084kiw-emkf084kiw.gz
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\jlvwwnc67n-{0}-pmmw6qc9nq-pmmw6qc9nq.gz
+C:\Users\handa\source\uni\CaseLabBase\CaseLabBase.Web\obj\Debug\net10.0\compressed\6usb65y8o8-{0}-ljlxyvtoxh-ljlxyvtoxh.gz

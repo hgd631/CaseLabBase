@@ -245,7 +245,7 @@ async function saveQuestionChanges(qId, type) {
         prompt: document.getElementById(`edit-q-prompt-${qId}`).value,
         maxScore: parseFloat(document.getElementById(`edit-q-score-${qId}`).value),
         topic: document.getElementById(`edit-q-topic-${qId}`).value,
-        // Get the key from the new select dropdown
+        // FIX: Get the key from the select dropdown if it's an MCQ
         correctKey: type === 'MCQ' ? document.getElementById(`edit-q-key-${qId}`).value : "Essay Evaluation"
     };
 
@@ -264,9 +264,9 @@ async function saveQuestionChanges(qId, type) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        if (res.ok) alert("Question updated successfully!");
+        if (res.ok) alert("Question updated!");
         else alert("Failed to update.");
-    } catch (e) { alert("Error connecting to API."); }
+    } catch (e) { alert("Server error."); }
 }
 
 // HITESH - STATISTICS & ANALYTICS 
