@@ -4,6 +4,7 @@ using System.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 // Add services to the container (register MVC views & controllers)
 builder.Services.AddControllersWithViews();
 
@@ -15,7 +16,7 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthorization();
-
+app.MapControllers();
 // Setup standard MVC Routing
 app.MapControllerRoute(
     name: "default",
