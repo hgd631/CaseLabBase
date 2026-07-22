@@ -114,14 +114,22 @@ function addCustomQuestionField(type) {
 }
 
 async function instructorPublishTask() {
-    const title = document.getElementById('inputTaskTitle').value;
+    const title = document.getElementById('inputTaskTitle').value.trim();
+    const totalScoreInput = parseFloat(document.getElementById('inputQuizTotalScore').value) || 0;
+
     if (!title) return alert("Please enter a title.");
 
     const questionNodes = document.querySelectorAll('#custom-questions-list-container > .border');
+    if (questionNodes.length === 0) return alert("Please add questions.");
+
     const questions = [];
+    let calculatedSum = 0;
 
     questionNodes.forEach(node => {
         const type = node.getAttribute('data-type');
+        const score = parseFloat(node.querySelector('.custom-q-score').value) || 0;
+        calculatedSum += score;
+
         let options = null;
         if (type === 'MCQ') {
             options = [
@@ -134,25 +142,42 @@ async function instructorPublishTask() {
         questions.push({
             type: type,
             prompt: node.querySelector('.custom-q-prompt').value,
-            maxScore: parseFloat(node.querySelector('.custom-q-score').value),
+            maxScore: score,
             topic: node.querySelector('.custom-q-topic').value || "General",
             options: options,
             correctKey: type === 'MCQ' ? node.querySelector('.custom-q-key').value : "Essay Evaluation"
         });
     });
 
-    await fetch(`${API_BASE}/questions/publish`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            title: title,
-            questions: questions,
-            timeLimitMinutes: parseInt(document.getElementById('inputQuizTimeLimit').value),
-            deadlineString: document.getElementById('inputQuizDeadline').value
-        })
-    });
-    alert("Quiz Published!");
-    location.reload();
+    //  Ensure sum matches input
+    if (Math.abs(calculatedSum - totalScoreInput) > 0.01) {
+        return alert(`Total score mismatch! Questions sum to ${calculatedSum}, but you entered ${totalScoreInput}.`);
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/questions/publish`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: title,
+                questions: questions,
+                totalScore: totalScoreInput, // FIX: This was missing
+                timeLimitMinutes: parseInt(document.getElementById('inputQuizTimeLimit').value),
+                deadlineString: document.getElementById('inputQuizDeadline').value,
+                quizMode: "Manual",
+                isQuizOpen: true,
+                isForumOpen: true
+            })
+        });
+
+        if (res.ok) {
+            alert("Quiz Published!");
+            location.reload();
+        } else {
+            const err = await res.text();
+            alert("Error: " + err);
+        }
+    } catch (e) { alert("Server error."); }
 }
 
 // SONI - VIEW & EDIT ASSIGNED QUESTIONS 
@@ -268,6 +293,13 @@ async function saveQuestionChanges(qId, type) {
         else alert("Failed to update.");
     } catch (e) { alert("Server error."); }
 }
+
+
+
+
+
+
+
 
 // HITESH - STATISTICS & ANALYTICS 
 async function loadInstructorAnalytics() {
