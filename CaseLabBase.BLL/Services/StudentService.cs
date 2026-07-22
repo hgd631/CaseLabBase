@@ -140,12 +140,15 @@ namespace CaseLabBase.BLL.Services
             var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, quizTitle);
             if (submission == null) return null;
 
+            decimal actualTotalQuizScore = submission.Answers.Sum(a => a.Question.MaxScore);
+
             return new SubmissionDTO
             {
                 StudentId = submission.StudentId,
                 StudentName = submission.Student.Name,
                 Status = submission.Status,
                 FinalScore = submission.FinalScore,
+                QuizMaxScore = actualTotalQuizScore,
                 SurveyDifficulty = submission.SurveyDifficulty,
                 SurveyPainPoint = submission.SurveyPainPoint,
                 Answers = submission.Answers.Select(a =>

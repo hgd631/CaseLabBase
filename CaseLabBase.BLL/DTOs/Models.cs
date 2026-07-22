@@ -61,6 +61,8 @@ namespace CaseLabBase.BLL.DTOs
         public string? SurveyPainPoint { get; set; }
         //public string? CorrectAnswer { get; set; }
 
+        public decimal QuizMaxScore { get; set; }
+
         public bool IsFlagged { get; set; }
         public List<SubmissionAnswerDTO> Answers { get; set; } = new();
     }

@@ -388,8 +388,21 @@ async function routeTargetStudentToEvaluationDesk(studentId) {
             if (a.questionType === "Essay") {
                 row += `
                     <div class="row g-2 mb-3">
-                        <div class="col-3">Score: <input type="number" step="0.1" class="form-control form-control-sm grading-score-input" data-qid="${a.questionId}" value="${a.earnedScore}"></div>
-                        <div class="col-9">Feedback: <input type="text" class="form-control form-control-sm" id="feedback-note-${a.questionId}" value="${a.teacherFeedback || ''}"></div>
+                        <div class="col-4">
+                            <label class="small fw-bold">Score:</label>
+                            <div class="input-group input-group-sm">
+                                
+                                <input type="number" step="0.1" class="form-control grading-score-input" 
+                                       data-qid="${a.questionId}" value="${a.earnedScore}" 
+                                       max="${a.maxScore}"
+                                       oninput="if(parseFloat(this.value) > ${a.maxScore}) this.value = ${a.maxScore}; if(parseFloat(this.value) < 0) this.value = 0;">
+                                <span class="input-group-text bg-light text-secondary">/ ${a.maxScore}</span>
+                            </div>
+                        </div>
+                        <div class="col-8">
+                            <label class="small fw-bold">Feedback:</label>
+                            <input type="text" class="form-control form-control-sm" id="feedback-note-${a.questionId}" value="${a.teacherFeedback || ''}" placeholder="Teacher's comments...">
+                        </div>
                     </div>
                     <div class="mb-2">
                         <label class="small fw-bold d-block mb-2">Select Error Tag:</label>
@@ -397,14 +410,14 @@ async function routeTargetStudentToEvaluationDesk(studentId) {
                             ${state.errorTags.map(t => `<button class="btn btn-xs btn-outline-danger me-1 mb-1 tag-btn-${a.questionId}" style="font-size:11px;" onclick="selectTag(${a.questionId},'${t}',this)">${t}</button>`).join('')}
                         </div>
                         
-                        <!-- RE-ADDED: Create New Tag Input -->
                         <div class="input-group input-group-sm w-75 mt-2">
-                            <input type="text" id="new-tag-input-${a.questionId}" class="form-control" placeholder="Create new tag (e.g. [F3] Syntax)">
-                            <button class="btn btn-outline-secondary" onclick="addNewTagToBank(${a.questionId})">Add Tag</button>
+                            <input type="text" id="new-tag-input-${a.questionId}" class="form-control" placeholder="New tag...">
+                            <button class="btn btn-outline-secondary" onclick="addNewTagToBank(${a.questionId})">Add</button>
                         </div>
                         
                         <input type="hidden" id="tag-val-${a.questionId}" class="grading-tag-input" value="${a.teacherTag || ''}">
                     </div>`;
+            
             } else {
                 row += `<div class="small italic text-secondary">Auto-graded: ${a.earnedScore} pts</div>
                         <input type="hidden" class="grading-score-input" data-qid="${a.questionId}" value="${a.earnedScore}">`;

@@ -68,7 +68,7 @@ namespace CaseLabBase.DAL.Repositories
 
         public async Task UpdateQuizAsync(Quiz quiz)
         {
-            
+            _context.Quizzes.Update(quiz);
             await _context.SaveChangesAsync();
         }
 

@@ -303,7 +303,9 @@ async function openStudentMistakeBankWithReload() {
         let summaryHTML = `
             <div class="mb-3">
                 <span class="badge bg-danger p-2 me-1">Mistakes found: ${incorrect.length}</span>
-                <span class="float-end fw-bold text-dark">Total Score: ${data.finalScore} pts</span>
+                <span class="float-end fw-bold text-dark">
+            Total Score: ${data.finalScore} / ${data.quizMaxScore} pts
+        </span>
             </div><hr>`;
 
         let mistakesHTML = `<h6>Incorrect Items (Mistakes)</h6>`;

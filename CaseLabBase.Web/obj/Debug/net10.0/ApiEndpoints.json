@@ -1,1 +1,346 @@
-[]
+[
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.AuthController",
+    "Method": "GetAllUsers",
+    "RelativePath": "api/Auth/users",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.AuthController",
+    "Method": "GetUserById",
+    "RelativePath": "api/Auth/users/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.ForumController",
+    "Method": "GetForumComments",
+    "RelativePath": "api/Forum/{topic}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "topic",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.ForumController",
+    "Method": "PostComment",
+    "RelativePath": "api/Forum/comment",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "commentDto",
+        "Type": "CaseLabBase.BLL.DTOs.CommentDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.InstructorController",
+    "Method": "GetAnalytics",
+    "RelativePath": "api/Instructor/analytics",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "quizTitle",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.InstructorController",
+    "Method": "GetErrorTags",
+    "RelativePath": "api/Instructor/error-tags",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.InstructorController",
+    "Method": "AddErrorTag",
+    "RelativePath": "api/Instructor/error-tags",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "tag",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.InstructorController",
+    "Method": "GradeSubmission",
+    "RelativePath": "api/Instructor/grade",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "CaseLabBase.BLL.DTOs.GradeSubmissionRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.InstructorController",
+    "Method": "RenameErrorTag",
+    "RelativePath": "api/Instructor/rename-error-tag",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "CaseLabBase.Web.Controllers.Api.RenameErrorTagRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.InstructorController",
+    "Method": "GetRoster",
+    "RelativePath": "api/Instructor/roster",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subTab",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "quizTitle",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.InstructorController",
+    "Method": "UpdateAnswerKey",
+    "RelativePath": "api/Instructor/update-answer-key",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "CaseLabBase.Web.Controllers.Api.UpdateAnswerKeyRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.NotificationsController",
+    "Method": "GetNotifications",
+    "RelativePath": "api/Notifications/{userId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.NotificationsController",
+    "Method": "MarkAllRead",
+    "RelativePath": "api/Notifications/read-all/{userId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.NotificationsController",
+    "Method": "MarkSingleRead",
+    "RelativePath": "api/Notifications/read/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.QuestionsController",
+    "Method": "GetActiveQuestions",
+    "RelativePath": "api/Questions",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "quizTitle",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.QuestionsController",
+    "Method": "PublishNewTask",
+    "RelativePath": "api/Questions/publish",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "CaseLabBase.BLL.DTOs.PublishTaskRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.QuestionsController",
+    "Method": "GetAllQuizzes",
+    "RelativePath": "api/Questions/quizzes",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.QuestionsController",
+    "Method": "UpdateQuestion",
+    "RelativePath": "api/Questions/update-question",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "CaseLabBase.BLL.DTOs.UpdateQuestionRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.QuestionsController",
+    "Method": "UpdateQuizSettings",
+    "RelativePath": "api/Questions/update-settings",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "CaseLabBase.BLL.DTOs.UpdateQuizSettingsRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.StudentController",
+    "Method": "GetMistakeBank",
+    "RelativePath": "api/Student/mistake-bank/{studentId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "studentId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "quizTitle",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.StudentController",
+    "Method": "SubmitExam",
+    "RelativePath": "api/Student/submit-exam",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "CaseLabBase.BLL.DTOs.SubmitExamRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CaseLabBase.Web.Controllers.Api.StudentController",
+    "Method": "SubmitSurvey",
+    "RelativePath": "api/Student/submit-survey",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "CaseLabBase.BLL.DTOs.SubmitSurveyRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  }
+]

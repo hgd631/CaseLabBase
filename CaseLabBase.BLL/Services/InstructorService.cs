@@ -61,7 +61,7 @@ namespace CaseLabBase.BLL.Services
             var all = await _submissionRepository.GetSubmissionsByQuizWithAnswersAsync(quizTitle);
             IEnumerable<Submission> filtered = all;
 
-            
+
             if (subTab == "pending")
             {
                 filtered = all.Where(s => s.Status == "Pending");
@@ -188,25 +188,44 @@ namespace CaseLabBase.BLL.Services
         {
             var q = await _questionRepository.GetByIdAsync(questionId);
             if (q == null) return;
-
+            // Update the correct answer key for the question
             q.CorrectKey = correctKey;
             await _questionRepository.UpdateAsync(q);
 
+            var allQuestionsInQuiz = await _questionRepository.GetByQuizTitleAsync(q.QuizTitle);
+            decimal newQuizTotalScore = allQuestionsInQuiz.Sum(x => x.MaxScore);
+
+            var quiz = await _questionRepository.GetQuizByTitleAsync(q.QuizTitle);
+            if (quiz != null)
+            {
+                quiz.TotalScore = newQuizTotalScore; // Use your repository method to save the quiz update
+
+                await _questionRepository.UpdateQuizAsync(quiz);
+            }
+
+            // 4. Re-grade all student submissions for this quiz
             var submissions = await _submissionRepository.GetSubmissionsByQuizWithAnswersAsync(q.QuizTitle);
             foreach (var s in submissions)
             {
                 var mcqAnswer = s.Answers.FirstOrDefault(a => a.QuestionId == questionId);
                 if (mcqAnswer != null)
                 {
+                    // Re-check if the student's answer is correct now
                     mcqAnswer.IsCorrect = (mcqAnswer.StudentAnswer == correctKey);
-                    mcqAnswer.EarnedScore = (mcqAnswer.IsCorrect == true) ? q.MaxScore : 0.00m;
-                    await _submissionRepository.SaveSubmissionAnswerAsync(mcqAnswer);
 
-                    s.FinalScore = s.Answers.Sum(a => a.EarnedScore);
-                    await _submissionRepository.SaveSubmissionAsync(s);
+                    // Assign score based on the CURRENT weight of the question
+                    mcqAnswer.EarnedScore = (mcqAnswer.IsCorrect == true) ? q.MaxScore : 0.00m;
+
+                    await _submissionRepository.SaveSubmissionAnswerAsync(mcqAnswer);
                 }
+
+                // 5. Re-calculate the Student's Final Score
+                
+                s.FinalScore = s.Answers.Sum(a => a.EarnedScore);
+                await _submissionRepository.SaveSubmissionAsync(s);
             }
         }
+    
 
         // Han - Implement RenameErrorTagAsync
         public async Task RenameErrorTagAsync(string oldTag, string newTag)
