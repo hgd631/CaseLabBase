@@ -3,7 +3,6 @@ using CaseLabBase.DAL.Entities;
 using CaseLabBase.DAL.Repositories;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace CaseLabBase.BLL.Services
@@ -25,24 +24,38 @@ namespace CaseLabBase.BLL.Services
         }
 
         // Hitesh - Implement GetClassAnalyticsAsync
-        // Updated by Han
+        // Updated by Han using manual loops
         public async Task<ClassAnalyticsDTO> GetClassAnalyticsAsync(string quizTitle)
         {
             var submissions = await _submissionRepository.GetSubmissionsByQuizWithAnswersAsync(quizTitle);
-            int total = submissions.Count;
-            int graded = submissions.Count(s => s.Status == "Graded");
+
+            int total = 0;
+            int graded = 0;
+            int failed = 0;
+            decimal totalFinalScoreSum = 0;
 
             var quiz = await _questionRepository.GetQuizByTitleAsync(quizTitle);
-            decimal totalScore = quiz?.TotalScore ?? 10.00m;
+            decimal totalScoreLimit = quiz?.TotalScore ?? 10.00m;
 
-            decimal defectRate = 0;
-            if (graded > 0)
+            foreach (var s in submissions)
             {
-                int failed = submissions.Count(s => s.Status == "Graded" && s.FinalScore < 0.80m * totalScore);
-                defectRate = ((decimal)failed / graded) * 100;
+                total++;
+                if (s.Status == "Graded")
+                {
+                    graded++;
+                    totalFinalScoreSum += s.FinalScore;
+                    if (s.FinalScore < 0.80m * totalScoreLimit)
+                    {
+                        failed++;
+                    }
+                }
             }
 
-            decimal avg = submissions.Count > 0 ? submissions.Average(s => s.FinalScore) : 0;
+            decimal defectRate = 0;
+            if (graded > 0) defectRate = ((decimal)failed / graded) * 100;
+
+            decimal avg = 0;
+            if (total > 0) avg = totalFinalScoreSum / total;
 
             return new ClassAnalyticsDTO
             {
@@ -54,180 +67,164 @@ namespace CaseLabBase.BLL.Services
             };
         }
 
-        // Hitesh - Implement GetRosterSubTabAsync in InstructorService.cs
-        // Updated by Han to support custom reflection analysis
+        // Hitesh - Implement GetRosterSubTabAsync 
+        // Updated by Han to support manual reflection analysis
         public async Task<List<SubmissionDTO>> GetRosterSubTabAsync(string subTab, string quizTitle)
         {
-            var all = await _submissionRepository.GetSubmissionsByQuizWithAnswersAsync(quizTitle);
-            IEnumerable<Submission> filtered = all;
-
-
-            if (subTab == "pending")
-            {
-                filtered = all.Where(s => s.Status == "Pending");
-            }
-            else if (subTab == "graded")
-            {
-                filtered = all.Where(s => s.Status == "Graded");
-            }
-
-            var allAnswersForQuiz = all.SelectMany(s => s.Answers).ToList();
-            var questionStats = allAnswersForQuiz
-                .GroupBy(a => a.QuestionId)
-                .ToDictionary(
-                    g => g.Key,
-                    g => {
-                        var answersWithDifficulty = g.Where(a => !string.IsNullOrEmpty(a.Difficulty)).ToList();
-                        int total = answersWithDifficulty.Count;
-                        int easy = answersWithDifficulty.Count(a => a.Difficulty == "Easy");
-                        int medium = answersWithDifficulty.Count(a => a.Difficulty == "Medium");
-                        int hard = answersWithDifficulty.Count(a => a.Difficulty == "Hard");
-
-                        return new
-                        {
-                            EasyRate = total > 0 ? Math.Round(((decimal)easy / total) * 100m, 1) : 0m,
-                            MediumRate = total > 0 ? Math.Round(((decimal)medium / total) * 100m, 1) : 0m,
-                            HardRate = total > 0 ? Math.Round(((decimal)hard / total) * 100m, 1) : 0m
-                        };
-                    }
-                );
+            var allSubmissions = await _submissionRepository.GetSubmissionsByQuizWithAnswersAsync(quizTitle);
+            var resultList = new List<SubmissionDTO>();
 
             var quiz = await _questionRepository.GetQuizByTitleAsync(quizTitle);
-            decimal totalScore = quiz?.TotalScore ?? 10.00m;
+            decimal totalScoreLimit = quiz?.TotalScore ?? 10.00m;
 
-            return filtered.Select(s => new SubmissionDTO
+            foreach (var s in allSubmissions)
             {
-                StudentId = s.StudentId,
-                StudentName = s.Student.Name,
-                Status = s.Status,
-                FinalScore = s.FinalScore,
-                SurveyDifficulty = s.SurveyDifficulty,
-                SurveyPainPoint = s.SurveyPainPoint,
-                IsFlagged = (s.SurveyDifficulty == "Hard" && s.FinalScore >= 0.80m * totalScore),
-                Answers = s.Answers.Select(a => {
-                    var stats = questionStats.ContainsKey(a.QuestionId) ? questionStats[a.QuestionId] : new { EasyRate = 0m, MediumRate = 0m, HardRate = 0m };
-                    return new SubmissionAnswerDTO
+                
+                bool include = false;
+                if (subTab == "all") include = true;
+                else if (subTab == "pending" && s.Status == "Pending") include = true;
+                else if (subTab == "graded" && s.Status == "Graded") include = true;
+
+                if (include)
+                {
+                    var dto = new SubmissionDTO
                     {
-                        QuestionId = a.QuestionId,
-                        QuestionPrompt = a.Question.Prompt,
-                        QuestionTopic = a.Question.Topic,
-                        QuestionType = a.Question.Type,
-                        StudentAnswer = a.StudentAnswer,
-                        IsCorrect = a.IsCorrect,
-                        TeacherTag = a.TeacherTag,
-                        EarnedScore = a.EarnedScore,
-                        EasyRate = stats.EasyRate,
-                        MediumRate = stats.MediumRate,
-                        HardRate = stats.HardRate,
-                        TeacherFeedback = a.TeacherFeedback
+                        StudentId = s.StudentId,
+                        StudentName = s.Student.Name,
+                        Status = s.Status,
+                        FinalScore = s.FinalScore,
+                        SurveyDifficulty = s.SurveyDifficulty,
+                        SurveyPainPoint = s.SurveyPainPoint,
+                        IsFlagged = (s.SurveyDifficulty == "Hard" && s.FinalScore >= 0.80m * totalScoreLimit),
+                        Answers = new List<SubmissionAnswerDTO>()
                     };
-                }).ToList()
-            }).ToList();
+
+                    foreach (var a in s.Answers)
+                    {
+                        dto.Answers.Add(new SubmissionAnswerDTO
+                        {
+                            QuestionId = a.QuestionId,
+                            QuestionPrompt = a.Question.Prompt,
+                            QuestionTopic = a.Question.Topic,
+                            QuestionType = a.Question.Type,
+                            StudentAnswer = a.StudentAnswer,
+                            IsCorrect = a.IsCorrect,
+                            TeacherTag = a.TeacherTag,
+                            EarnedScore = a.EarnedScore,
+                            TeacherFeedback = a.TeacherFeedback
+                        });
+                    }
+                    resultList.Add(dto);
+                }
+            }
+            return resultList;
         }
 
-        // Soni - Implement GradeSubmissionAsync in InstructorService.cs
-        // Refactored and fixed by Han
+        // Soni - Implement GradeSubmissionAsync
+        // Fixed by Han: Cap score at MaxScore to prevent 11/10
         public async Task GradeSubmissionAsync(string studentId, string quizTitle, List<GradeQuestionItem> grades)
         {
             var submission = await _submissionRepository.GetByStudentIdAndQuizWithAnswersAsync(studentId, quizTitle);
-
-            if (submission == null)
-            {
-                throw new ArgumentException("Submission not found.");
-            }
+            if (submission == null) throw new ArgumentException("Not found.");
 
             submission.Status = "Graded";
 
             foreach (var answer in submission.Answers)
             {
-                var gradeItem = grades.FirstOrDefault(g => g.QuestionId == answer.QuestionId);
-                if (gradeItem != null)
+                foreach (var gradeItem in grades)
                 {
-                    //  If instructor gives more points than MaxScore, cap it at MaxScore.
-                    // This prevents getting 11/10 points.
-                    decimal finalPoints = gradeItem.EarnedScore;
-                    if (finalPoints > answer.Question.MaxScore)
+                    if (gradeItem.QuestionId == answer.QuestionId)
                     {
-                        finalPoints = answer.Question.MaxScore;
-                    }
+                        decimal finalPoints = gradeItem.EarnedScore;
 
-                    answer.EarnedScore = finalPoints;
-                    answer.TeacherFeedback = gradeItem.TeacherFeedback;
+                        // Cap at MaxScore
+                        if (finalPoints > answer.Question.MaxScore)
+                        {
+                            finalPoints = answer.Question.MaxScore;
+                        }
 
-                    if (answer.Question.Type == "Essay")
-                    {
-                        answer.TeacherTag = !string.IsNullOrEmpty(gradeItem.ChosenTag) ? gradeItem.ChosenTag : "Graded";
-                        // Student gets IsCorrect=true only if they reach the absolute Max Score
-                        answer.IsCorrect = (answer.EarnedScore == answer.Question.MaxScore);
+                        answer.EarnedScore = finalPoints;
+                        answer.TeacherFeedback = gradeItem.TeacherFeedback;
+
+                        if (answer.Question.Type == "Essay")
+                        {
+                            answer.TeacherTag = !string.IsNullOrEmpty(gradeItem.ChosenTag) ? gradeItem.ChosenTag : "Graded";
+                            answer.IsCorrect = (answer.EarnedScore == answer.Question.MaxScore);
+                        }
+                        await _submissionRepository.SaveSubmissionAnswerAsync(answer);
                     }
-                    await _submissionRepository.SaveSubmissionAnswerAsync(answer);
                 }
             }
 
-            submission.FinalScore = submission.Answers.Sum(a => a.EarnedScore);
+            // Manual Sum Calculation
+            decimal newFinalScore = 0;
+            foreach (var a in submission.Answers)
+            {
+                newFinalScore += a.EarnedScore;
+            }
+
+            submission.FinalScore = newFinalScore;
             await _submissionRepository.SaveSubmissionAsync(submission);
         }
 
-        // Soni - Implement GetErrorTagsAsync
-        // Updated by Han
+        // Soni - Implement UpdateAnswerKeyAsync
+        // Fixed by Han: Recalculate everything with manual loops
+        public async Task UpdateAnswerKeyAsync(int questionId, string correctKey)
+        {
+            var q = await _questionRepository.GetByIdAsync(questionId);
+            if (q == null) return;
+
+            q.CorrectKey = correctKey;
+            await _questionRepository.UpdateAsync(q);
+
+            // Manual sum for Quiz Total Score
+            var allQuestions = await _questionRepository.GetByQuizTitleAsync(q.QuizTitle);
+            decimal quizTotal = 0;
+            foreach (var item in allQuestions)
+            {
+                quizTotal += item.MaxScore;
+            }
+
+            var quiz = await _questionRepository.GetQuizByTitleAsync(q.QuizTitle);
+            if (quiz != null)
+            {
+                quiz.TotalScore = quizTotal;
+                await _questionRepository.UpdateQuizAsync(quiz);
+            }
+
+            // Manual re-grading logic
+            var submissions = await _submissionRepository.GetSubmissionsByQuizWithAnswersAsync(q.QuizTitle);
+            foreach (var s in submissions)
+            {
+                decimal studentNewScore = 0;
+                foreach (var ans in s.Answers)
+                {
+                    if (ans.QuestionId == questionId)
+                    {
+                        ans.IsCorrect = (ans.StudentAnswer == correctKey);
+                        ans.EarnedScore = (ans.IsCorrect == true) ? q.MaxScore : 0.00m;
+                        await _submissionRepository.SaveSubmissionAnswerAsync(ans);
+                    }
+                    studentNewScore += ans.EarnedScore;
+                }
+                s.FinalScore = studentNewScore;
+                await _submissionRepository.SaveSubmissionAsync(s);
+            }
+        }
+
         public async Task<List<string>> GetErrorTagsAsync()
         {
             var list = await _submissionRepository.GetErrorTagsAsync();
-            return list.Select(t => t.Tag).ToList();
+            var tags = new List<string>();
+            foreach (var t in list) { tags.Add(t.Tag); }
+            return tags;
         }
 
-        // Updated by Han
         public async Task AddErrorTagAsync(string tag)
         {
             await _submissionRepository.AddErrorTagAsync(new ErrorTag { Tag = tag });
         }
 
-        // Soni - Implement UpdateAnswerKeyAsync
-        // Fixed by Han
-        public async Task UpdateAnswerKeyAsync(int questionId, string correctKey)
-        {
-            var q = await _questionRepository.GetByIdAsync(questionId);
-            if (q == null) return;
-            // Update the correct answer key for the question
-            q.CorrectKey = correctKey;
-            await _questionRepository.UpdateAsync(q);
-
-            var allQuestionsInQuiz = await _questionRepository.GetByQuizTitleAsync(q.QuizTitle);
-            decimal newQuizTotalScore = allQuestionsInQuiz.Sum(x => x.MaxScore);
-
-            var quiz = await _questionRepository.GetQuizByTitleAsync(q.QuizTitle);
-            if (quiz != null)
-            {
-                quiz.TotalScore = newQuizTotalScore; // Use your repository method to save the quiz update
-
-                await _questionRepository.UpdateQuizAsync(quiz);
-            }
-
-            // 4. Re-grade all student submissions for this quiz
-            var submissions = await _submissionRepository.GetSubmissionsByQuizWithAnswersAsync(q.QuizTitle);
-            foreach (var s in submissions)
-            {
-                var mcqAnswer = s.Answers.FirstOrDefault(a => a.QuestionId == questionId);
-                if (mcqAnswer != null)
-                {
-                    // Re-check if the student's answer is correct now
-                    mcqAnswer.IsCorrect = (mcqAnswer.StudentAnswer == correctKey);
-
-                    // Assign score based on the CURRENT weight of the question
-                    mcqAnswer.EarnedScore = (mcqAnswer.IsCorrect == true) ? q.MaxScore : 0.00m;
-
-                    await _submissionRepository.SaveSubmissionAnswerAsync(mcqAnswer);
-                }
-
-                // 5. Re-calculate the Student's Final Score
-                
-                s.FinalScore = s.Answers.Sum(a => a.EarnedScore);
-                await _submissionRepository.SaveSubmissionAsync(s);
-            }
-        }
-    
-
-        // Han - Implement RenameErrorTagAsync
         public async Task RenameErrorTagAsync(string oldTag, string newTag)
         {
             await _submissionRepository.RenameErrorTagAsync(oldTag, newTag);
