@@ -22,7 +22,7 @@ namespace CaseLabBase.BLL.Services
             // Validate the requested forum topic.
             if (string.IsNullOrWhiteSpace(topic))
             {
-                // FIXED: Fully qualified with 'System.' to prevent compilation errors if 'using System;' is missing at the top of the file
+                // Fixed: Fully qualified with 'System.' to prevent compilation errors if 'using System;' is missing at the top of the file
                 throw new System.ArgumentException(
                     "A forum topic is required.",
                     nameof(topic)

@@ -9,12 +9,12 @@ namespace CaseLabBase.DAL.Repositories
     public class SubmissionRepository
     {
         private readonly CaseLabBaseDbContext _context;
-
+        // Constructor that initializes the repository with the database context.
         public SubmissionRepository(CaseLabBaseDbContext context)
         {
             _context = context;
         }
-
+        // Retrieves all submissions along with their associated student and answers, including the related questions for each answer.
         public async Task<List<Submission>> GetAllWithAnswersAsync()
         {
             return await _context.Submissions

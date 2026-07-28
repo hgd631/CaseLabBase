@@ -42,13 +42,13 @@ let state = {
     studentSurvey: {}, // Survey ratings and notes
     flaggedQuestions: {}, // Questions flagged by student to revisit
 
-    errorTags: [], // Grow-As-You-Go error tag templates
+    errorTags: [], // error tag templates
     chosenTag: null, // Error tag selected during grading
     activeGradingStudentID: null, // Student currently being evaluated
 
     currentExamQuestionIndex: 0, // Current active question index when taking exam
     examTimerInterval: null,
-    examSecondsRemaining: 2394, // 39:54
+    examSecondsRemaining: 2394,
 
     timeLimitMinutes: 40,
     isQuizOpen: true,

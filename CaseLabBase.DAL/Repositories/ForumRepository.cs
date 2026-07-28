@@ -6,15 +6,17 @@ using CaseLabBase.DAL.Entities;
 
 namespace CaseLabBase.DAL.Repositories
 {
+    // Repository class for managing forum-related data operations, including comments and tickets.
     public class ForumRepository
     {
         private readonly CaseLabBaseDbContext _context;
 
+        // Constructor that initializes the repository with the database context.
         public ForumRepository(CaseLabBaseDbContext context)
         {
             _context = context;
         }
-
+        // Retrieves all public comments associated with a specific topic, ordered by timestamp.
         public async Task<List<Comment>> GetPublicCommentsByTopicAsync(string topic)
         {
             return await _context.Comments
@@ -22,7 +24,7 @@ namespace CaseLabBase.DAL.Repositories
                 .OrderBy(c => c.Timestamp)
                 .ToListAsync();
         }
-
+        // Retrieves all private comments for a specific student and topic, ordered by timestamp.
         public async Task<List<Comment>> GetPrivateCommentsForDisputeAsync(string studentId, string topic)
         {
             return await _context.Comments
@@ -30,13 +32,13 @@ namespace CaseLabBase.DAL.Repositories
                 .OrderBy(c => c.Timestamp)
                 .ToListAsync();
         }
-
+        // Adds a new comment to the database and saves changes.
         public async Task AddCommentAsync(Comment comment)
         {
             await _context.Comments.AddAsync(comment);
             await _context.SaveChangesAsync();
         }
-
+        // Retrieves all tickets, including related student and question data.
         public async Task<List<Ticket>> GetAllTicketsAsync()
         {
             return await _context.Tickets
@@ -44,7 +46,7 @@ namespace CaseLabBase.DAL.Repositories
                 .Include(t => t.Question)
                 .ToListAsync();
         }
-
+        // Retrieves a specific ticket based on student ID and question ID, including related student and question data.
         public async Task<Ticket?> GetTicketAsync(string studentId, int questionId)
         {
             return await _context.Tickets

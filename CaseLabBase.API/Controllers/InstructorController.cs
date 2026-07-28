@@ -9,19 +9,22 @@ namespace CaseLabBase.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    // This controller handles instructor-related API endpoints.
     public class InstructorController : ControllerBase
     {
+        
         private readonly InstructorService _instructorService;
         private readonly QuestionService _questionService;
         private readonly NotificationRepository _notifications;
 
+        // Constructor to initialize the InstructorController with the required services and repositories.
         public InstructorController(InstructorService instructorService, QuestionService questionService, NotificationRepository notifications)
         {
             _instructorService = instructorService;
             _questionService = questionService;
             _notifications = notifications;
         }
-
+        // Helper method to get the default quiz title if none is provided.
         private async Task<string?> GetDefaultQuizTitleAsync(string? quizTitle)
         {
             if (!string.IsNullOrEmpty(quizTitle)) return quizTitle;
@@ -29,6 +32,8 @@ namespace CaseLabBase.API.Controllers
             return quizzes.FirstOrDefault()?.Title;
         }
 
+        // GET: api/instructor/analytics
+        // This endpoint retrieves analytics data for a specific quiz or the default quiz if none is specified.
         [HttpGet("analytics")]
         public async Task<IActionResult> GetAnalytics([FromQuery] string? quizTitle)
         {
@@ -43,6 +48,7 @@ namespace CaseLabBase.API.Controllers
         }
 
         [HttpGet("roster")]
+        // This endpoint retrieves the roster of student submissions based on the specified sub-tab and quiz title.
         public async Task<IActionResult> GetRoster([FromQuery] string subTab, [FromQuery] string? quizTitle)
         {
             if (string.IsNullOrWhiteSpace(subTab)) subTab = "pending";
@@ -58,6 +64,7 @@ namespace CaseLabBase.API.Controllers
         }
 
         [HttpPost("grade")]
+        // This endpoint allows instructors to grade a student's submission and notify them of the results.
         public async Task<IActionResult> GradeSubmission([FromBody] GradeSubmissionRequest request)
         {
             if (request == null || string.IsNullOrWhiteSpace(request.StudentId))
@@ -98,6 +105,7 @@ namespace CaseLabBase.API.Controllers
 
         
         [HttpGet("error-tags")]
+        // This endpoint retrieves all error tags used in the system.
         public async Task<IActionResult> GetErrorTags()
         {
             var tags = await _instructorService.GetErrorTagsAsync();
@@ -105,6 +113,7 @@ namespace CaseLabBase.API.Controllers
         }
 
         [HttpPost("error-tags")]
+        // This endpoint allows instructors to add a new error tag to the system.
         public async Task<IActionResult> AddErrorTag([FromBody] string tag)
         {
             if (string.IsNullOrWhiteSpace(tag)) return BadRequest("Tag content cannot be empty.");
@@ -121,6 +130,7 @@ namespace CaseLabBase.API.Controllers
         }
 
         [HttpPost("rename-error-tag")]
+        // This endpoint allows instructors to rename an existing error tag and merge it with another tag.
         public async Task<IActionResult> RenameErrorTag([FromBody] RenameErrorTagRequest request)
         {
             if (request == null || string.IsNullOrWhiteSpace(request.OldTag) || string.IsNullOrWhiteSpace(request.NewTag))
@@ -131,13 +141,13 @@ namespace CaseLabBase.API.Controllers
             return Ok(new { Message = "Error tag successfully renamed and merged " });
         }
     }
-
+    // Request DTO for grading a student's submission.
     public class UpdateAnswerKeyRequest
     {
         public int QuestionId { get; set; }
         public string CorrectKey { get; set; } = null!;
     }
-
+    // Request DTO for grading a student's submission.
     public class RenameErrorTagRequest
     {
         public string OldTag { get; set; } = null!;

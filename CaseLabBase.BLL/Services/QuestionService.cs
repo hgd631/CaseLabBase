@@ -10,12 +10,14 @@ using System.Threading.Tasks;
 
 namespace CaseLabBase.BLL.Services
 {
+    
     public class QuestionService
     {
         private readonly QuestionRepository _questionRepository;
         private readonly SubmissionRepository _submissionRepository;
         private readonly ForumRepository _forumRepository;
 
+        // Constructor to inject the required repositories
         public QuestionService(
             QuestionRepository questionRepository,
             SubmissionRepository submissionRepository,
@@ -25,7 +27,7 @@ namespace CaseLabBase.BLL.Services
             _submissionRepository = submissionRepository;
             _forumRepository = forumRepository;
         }
-
+        // Method to retrieve all quizzes and convert them to DTOs
         public async Task<List<QuizDTO>> GetAllQuizzesAsync()
         {
             var list = await _questionRepository.GetQuizzesAsync();
@@ -41,7 +43,7 @@ namespace CaseLabBase.BLL.Services
                 TotalScore = q.TotalScore
             }).ToList();
         }
-
+        // Method to retrieve active questions for a specific quiz and convert them to DTOs
         public async Task<List<QuestionDTO>> GetActiveQuestionsAsync(string quizTitle)
         {
             var list = await _questionRepository.GetByQuizTitleAsync(quizTitle);

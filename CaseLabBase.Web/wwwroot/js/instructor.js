@@ -19,6 +19,7 @@ async function switchTeacherTab(tab) {
     if (tab === 'forum') initializeForumPage();
 }
 
+// Load the list of quizzes into the sidebar for instructors
 async function loadQuizzesSidebar() {
     const sidebar = document.getElementById('quizListSidebarContainer');
     if (!sidebar) return;
@@ -38,7 +39,7 @@ async function loadQuizzesSidebar() {
         });
     } catch (err) { sidebar.innerHTML = "Error loading sidebar."; }
 }
-
+// When a quiz is selected from the sidebar, update the state and UI accordingly
 async function selectQuizFromSidebar(title) {
     state.selectedQuizTitle = title;
     const quiz = state.quizzes.find(q => (q.title || q.Title) === title);
@@ -55,7 +56,7 @@ async function selectQuizFromSidebar(title) {
     await loadQuizzesSidebar();
     await switchQuizSubTab(state.activeQuizSubTab || 'view');
 }
-
+// When the "Create New Quiz" button is clicked, reset the state and show the quiz creation view
 function enterCreateQuizMode() {
     state.selectedQuizTitle = null;
     document.getElementById('teacherDashboardEmptyPlaceholder')?.classList.add('d-none');
@@ -293,11 +294,6 @@ async function saveQuestionChanges(qId, type) {
         else alert("Failed to update.");
     } catch (e) { alert("Server error."); }
 }
-
-
-
-
-
 
 
 

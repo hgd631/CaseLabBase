@@ -9,6 +9,7 @@ namespace CaseLabBase.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    // This controller handles question-related API endpoints.
     public class QuestionsController : ControllerBase
     {
         private readonly QuestionService _questionService;
@@ -21,6 +22,7 @@ namespace CaseLabBase.API.Controllers
         }
 
         [HttpGet]
+        // GET: api/questions?quizTitle={quizTitle}
         public async Task<IActionResult> GetActiveQuestions([FromQuery] string? quizTitle)
         {
             if (string.IsNullOrEmpty(quizTitle))
@@ -58,6 +60,8 @@ namespace CaseLabBase.API.Controllers
         }
 
         [HttpGet("quizzes")]
+        // GET: api/questions/quizzes
+        // This endpoint retrieves a list of all quizzes.
         public async Task<IActionResult> GetAllQuizzes()
         {
             var list = await _questionService.GetAllQuizzesAsync();
@@ -65,6 +69,8 @@ namespace CaseLabBase.API.Controllers
         }
 
         [HttpPost("publish")]
+        // POST: api/questions/publish
+        // This endpoint allows instructors to publish a new task (quiz) and notify all students.
         public async Task<IActionResult> PublishNewTask([FromBody] PublishTaskRequest request)
         {
             if (request == null || string.IsNullOrWhiteSpace(request.Title) || request.Questions == null || request.Questions.Count == 0)
@@ -90,7 +96,8 @@ namespace CaseLabBase.API.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
+        // POST: api/questions/update-question
+        // This endpoint allows instructors to update an existing question.
         [HttpPost("update-question")]
         public async Task<IActionResult> UpdateQuestion([FromBody] UpdateQuestionRequest request)
         {
@@ -102,6 +109,8 @@ namespace CaseLabBase.API.Controllers
             await _questionService.UpdateQuestionAsync(request);
             return Ok(new { Message = "Question updated successfully." });
         }
+        // POST: api/questions/update-settings
+        // This endpoint allows instructors to update quiz configurations.
 
         [HttpPost("update-settings")]
         public async Task<IActionResult> UpdateQuizSettings([FromBody] UpdateQuizSettingsRequest request)

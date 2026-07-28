@@ -6,6 +6,7 @@ namespace CaseLabBase.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    // This controller handles authentication-related API endpoints.
     public class AuthController : ControllerBase
     {
         private readonly AuthService _authService;
@@ -16,12 +17,15 @@ namespace CaseLabBase.API.Controllers
         }
 
         [HttpGet("users")]
+        // GET: api/auth/users
+        // This endpoint retrieves a list of all users.
         public async Task<IActionResult> GetAllUsers()
         {
             var list = await _authService.GetAllUsersAsync();
             return Ok(list);
         }
-
+        // GET: api/auth/users/{id}
+        // This endpoint retrieves a specific user by their ID.
         [HttpGet("users/{id}")]
         public async Task<IActionResult> GetUserById(string id)
         {
