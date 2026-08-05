@@ -116,9 +116,7 @@ CREATE TABLE "Notifications" (
     "CreatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================================
--- Seed: Users & Error Tags only (NO quiz seed data)
--- Create your own quiz from the Instructor Dashboard to test!
+
 -- ============================================================
 INSERT INTO "Users" ("Id", "Name", "Role") VALUES
 ('s1', 'Han Dang', 'student'),
